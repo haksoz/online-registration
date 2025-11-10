@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [rows] = await pool.execute(
-      'SELECT id, email, full_name as name, role, created_at FROM users WHERE id = ?',
+      'SELECT id, email, name, role, created_at FROM users WHERE id = ?',
       [decoded.userId]
     )
 
