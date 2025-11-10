@@ -1,0 +1,670 @@
+'use client'
+
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { paymentSchema, type PaymentFormData } from '@/schemas/validationSchemas'
+import { useFormStore } from '@/store/formStore'
+import { useEffect, useState } from 'react'
+
+import { RegistrationType } from '@/types/registration'
+import { formatTurkishCurrency } from '@/lib/currencyUtils'
+import { getFormattedBankAccounts, getPaymentSettings } from '@/constants/bankInfo'
+import { useFormSettings } from '@/hooks/useFormSettings'
+import { useTranslation } from '@/hooks/useTranslation'
+
+interface Step3PaymentProps {
+  onNext: () => void
+  onBack: () => void
+}
+
+export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
+  const { formData, updatePayment, setReferenceNumber } = useFormStore()
+  const { getEnabledPaymentMethods, loading: settingsLoading } = useFormSettings()
+  const { t } = useTranslation()
+  const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
+  const [bankAccounts, setBankAccounts] = useState<any[]>([])
+  const [paymentSettings, setPaymentSettings] = useState<any>({})
+  
+  const enabledPaymentMethods = getEnabledPaymentMethods()
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Kayıt türlerini getir
+        const regResponse = await fetch('/api/registration-types')
+        const regData = await regResponse.json()
+        if (regData.success) {
+          setRegistrationTypes(regData.data)
+        }
+
+        // Banka hesaplarını getir
+        const accounts = await getFormattedBankAccounts()
+        setBankAccounts(accounts)
+
+        // Ödeme ayarlarını getir
+        const settings = await getPaymentSettings()
+        setPaymentSettings(settings)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+    fetchData()
+  }, [])
+
+  // Eğer sadece 1 ödeme yöntemi aktifse, otomatik seç
+  useEffect(() => {
+    if (!settingsLoading && enabledPaymentMethods.length === 1 && !formData.payment.paymentMethod) {
+      const singleMethod = enabledPaymentMethods[0]
+      updatePayment({ paymentMethod: singleMethod.method_name as 'online' | 'bank_transfer' })
+    }
+  }, [settingsLoading, enabledPaymentMethods, formData.payment.paymentMethod, updatePayment])
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      paymentMethod: formData.payment.paymentMethod || undefined
+    },
+  })
+
+  const paymentMethod = watch('paymentMethod')
+
+  const [paymentError, setPaymentError] = useState<{ code: string; message: string } | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const onSubmit = async (data: PaymentFormData) => {
+    try {
+      setIsProcessing(true)
+      setPaymentError(null)
+
+      // Ödeme bilgilerini store'a kaydet (kart bilgileri dahil)
+      updatePayment({ 
+        paymentMethod: data.paymentMethod,
+        cardHolderName: data.cardHolderName,
+        cardNumber: data.cardNumber,
+        cardExpiry: data.cardExpiry,
+        cardCvv: data.cardCvv
+      })
+
+      // Tüm form verilerini al (Step1 ve Step2 verileri dahil)
+      const formStore = useFormStore.getState()
+      const completeFormData = formStore.formData
+
+      // MySQL'e kayıt
+      const response = await fetch('/api/saveForm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(completeFormData),
+      })
+
+      const result = await response.json()
+      
+      if (result.success && result.referenceNumber) {
+        // Referans numarasını store'a kaydet
+        setReferenceNumber(result.referenceNumber)
+        
+        // Online ödeme kontrolü
+        if (data.paymentMethod === 'online' && result.paymentResult) {
+          if (!result.paymentResult.success) {
+            // Ödeme başarısız - hata göster
+            setPaymentError({
+              code: result.paymentResult.errorCode,
+              message: result.paymentResult.errorMessage
+            })
+            setIsProcessing(false)
+            return // Step4'e geçme
+          }
+        }
+        
+        // Başarılı - Step4'e geç
+        onNext()
+      } else {
+        alert('Kayıt sırasında hata oluştu.')
+        setIsProcessing(false)
+      }
+    } catch (error) {
+      console.error(error)
+      alert('Kayıt sırasında hata oluştu.')
+      setIsProcessing(false)
+    }
+  }
+
+  const selectedRegistrationType = registrationTypes.find(
+    type => type.value === formData.accommodation.registrationType
+  )
+  
+  const accommodationData = formData.accommodation as any
+  const selectedCurrency = accommodationData.selectedCurrency || 'TRY'
+  const feeInCurrency = accommodationData.feeInCurrency
+  const feeInTRY = accommodationData.feeInTRY
+  
+  const getCurrencySymbol = (currency: string): string => {
+    if (currency === 'USD') return '$'
+    if (currency === 'EUR') return '€'
+    return '₺'
+  }
+  
+  const registrationInfo = selectedRegistrationType
+    ? {
+        label: selectedRegistrationType.label,
+        fee: formatTurkishCurrency(selectedRegistrationType.fee_try),
+        feeInCurrency: feeInCurrency,
+        feeInTRY: feeInTRY,
+        currency: selectedCurrency
+      }
+    : {
+        label: formData.accommodation.registrationType || '',
+        fee: '',
+        feeInCurrency: 0,
+        feeInTRY: 0,
+        currency: 'TRY'
+      }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Ödeme Bilgileri</h2>
+          <p className="text-sm text-gray-600">Lütfen ödeme yönteminizi seçin</p>
+        </div>
+
+        {/* Summary Section */}
+        <div className="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Özet</h3>
+          
+          {/* Step 1 Summary */}
+          <div className="mb-4 pb-4 border-b border-gray-300">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Kişisel Bilgiler</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-gray-600">Ad Soyad:</span>
+                <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.fullName || `${formData.personalInfo.firstName} ${formData.personalInfo.lastName}`.trim()}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">E-posta:</span>
+                <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.email}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Telefon:</span>
+                <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.phone}</span>
+              </div>
+              {formData.personalInfo.address && (
+                <div className="md:col-span-2">
+                  <span className="text-gray-600">Adres:</span>
+                  <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.address}</span>
+                </div>
+              )}
+              {formData.personalInfo.company && (
+                <div className="md:col-span-2">
+                  <span className="text-gray-600">Şirket:</span>
+                  <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.company}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Invoice Information Summary */}
+          <div className="mb-4 pb-4 border-b border-gray-300">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Fatura Bilgileri</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-gray-600">Fatura Türü:</span>
+                <span className="ml-2 font-medium text-gray-900">
+                  {formData.personalInfo.invoiceType === 'bireysel' ? 'Bireysel' : 
+                   formData.personalInfo.invoiceType === 'kurumsal' ? 'Kurumsal' : '-'}
+                </span>
+              </div>
+              
+              {/* Bireysel Fatura Bilgileri */}
+              {formData.personalInfo.invoiceType === 'bireysel' && (
+                <>
+                  {formData.personalInfo.invoiceFullName && (
+                    <div>
+                      <span className="text-gray-600">Fatura Adı:</span>
+                      <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceFullName}</span>
+                    </div>
+                  )}
+                  {formData.personalInfo.idNumber && (
+                    <div>
+                      <span className="text-gray-600">TC Kimlik No:</span>
+                      <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.idNumber}</span>
+                    </div>
+                  )}
+                  {formData.personalInfo.invoiceAddress && (
+                    <div className="md:col-span-2">
+                      <span className="text-gray-600">Fatura Adresi:</span>
+                      <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Kurumsal Fatura Bilgileri */}
+              {formData.personalInfo.invoiceType === 'kurumsal' && (
+                <>
+                  {formData.personalInfo.invoiceCompanyName && (
+                    <div>
+                      <span className="text-gray-600">Şirket Adı:</span>
+                      <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceCompanyName}</span>
+                    </div>
+                  )}
+                  {formData.personalInfo.taxOffice && (
+                    <div>
+                      <span className="text-gray-600">Vergi Dairesi:</span>
+                      <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.taxOffice}</span>
+                    </div>
+                  )}
+                  {formData.personalInfo.taxNumber && (
+                    <div>
+                      <span className="text-gray-600">Vergi No:</span>
+                      <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.taxNumber}</span>
+                    </div>
+                  )}
+                  {formData.personalInfo.invoiceAddress && (
+                    <div className="md:col-span-2">
+                      <span className="text-gray-600">Fatura Adresi:</span>
+                      <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Step 2 Summary */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Kayıt Türü ve Ücret</h4>
+            <div className="space-y-2">
+              <div className="text-sm">
+                <span className="text-gray-600">Seçilen Tür:</span>
+                <span className="ml-2 font-medium text-gray-900">{registrationInfo.label}</span>
+              </div>
+              
+              {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
+                <div className="text-sm bg-blue-50 border border-blue-200 rounded p-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Seçilen Döviz Ücreti:</span>
+                    <span className="font-bold text-blue-600">
+                      {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-gray-600">TL Karşılığı:</span>
+                    <span className="font-bold text-primary-600">
+                      {formatTurkishCurrency(Number(registrationInfo.feeInTRY))}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {registrationInfo.currency === 'TRY' && registrationInfo.fee && (
+                <div className="text-sm">
+                  <span className="text-gray-600">Ücret:</span>
+                  <span className="ml-2 font-bold text-primary-600">{registrationInfo.fee}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Method Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Ödeme Yöntemi <span className="text-red-500">*</span>
+          </label>
+          
+          {settingsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+              <span className="ml-3 text-gray-600">Ödeme yöntemleri yükleniyor...</span>
+            </div>
+          ) : enabledPaymentMethods.length === 0 ? (
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 text-sm font-medium">⚠️ Aktif ödeme yöntemi bulunmamaktadır</p>
+              <p className="text-yellow-700 text-xs mt-1">Lütfen yönetici ile iletişime geçin.</p>
+            </div>
+          ) : (
+            <div className={`grid grid-cols-1 ${enabledPaymentMethods.length > 1 ? 'sm:grid-cols-2' : ''} gap-3`}>
+              {enabledPaymentMethods.map((method) => (
+                <label
+                  key={method.method_name}
+                  className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    paymentMethod === method.method_name
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-300 hover:border-primary-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value={method.method_name}
+                    {...register('paymentMethod')}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 focus:ring-offset-2"
+                  />
+                  <span className="ml-3 mr-2 text-2xl">{method.icon}</span>
+                  <span className="text-gray-700 font-medium">{method.method_label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+          {errors.paymentMethod && (
+            <p className="mt-1.5 text-sm text-red-600">{errors.paymentMethod.message}</p>
+          )}
+        </div>
+
+        {/* Online Payment Form */}
+        {paymentMethod === 'online' && (
+          <div className="space-y-6 mb-6">
+            {/* Payment Error Message */}
+            {paymentError && (
+              <div className="bg-red-50 rounded-lg p-6 border-2 border-red-300 animate-pulse">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-red-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-red-900 mb-2">❌ Ödeme Başarısız</h3>
+                    <div className="bg-white rounded border border-red-200 p-4 mb-3">
+                      <p className="text-sm font-semibold text-red-800 mb-1">Hata Kodu: {paymentError.code}</p>
+                      <p className="text-base font-bold text-red-900">{paymentError.message}</p>
+                    </div>
+                    <p className="text-sm text-red-800">
+                      Lütfen kart bilgilerinizi kontrol ederek tekrar deneyiniz.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentError(null)}
+                      className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                    >
+                      Tekrar Dene
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Test Mode Banner - Only show in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-300">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm text-yellow-800 font-bold">🧪 TEST MODU</p>
+                    <p className="text-xs text-yellow-700 mt-1 mb-2">
+                      Aşağıdaki test kartlarını kullanabilirsiniz:
+                    </p>
+                    <div className="bg-white rounded border border-yellow-200 p-3 text-xs space-y-2">
+                      <div>
+                        <p className="font-semibold text-gray-800 mb-1">Kart Numarası (Tüm testler için):</p>
+                        <p className="font-mono text-gray-900 text-sm">4546 7112 3456 7894</p>
+                        <p className="text-gray-600">Son Kullanma: 12/26</p>
+                      </div>
+                      <div className="pt-2 border-t border-yellow-200">
+                        <p className="font-semibold text-gray-800 mb-1">CVV Kodları:</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="font-mono text-green-700">000 - ✅ Başarılı</p>
+                            <p className="font-mono text-red-700">120 - ❌ Geçersiz İşlem</p>
+                            <p className="font-mono text-red-700">130 - ❌ Geçersiz Tutar</p>
+                          </div>
+                          <div>
+                            <p className="font-mono text-red-700">340 - ❌ Fraud Şüphesi</p>
+                            <p className="font-mono text-red-700">370 - ❌ Çalıntı Kart</p>
+                            <p className="font-mono text-red-700">510 - ❌ Limit Yetersiz</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Info Banner */}
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm text-blue-800 font-medium">Güvenli Ödeme</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Kart bilgileriniz SSL ile şifrelenir ve güvenli bir şekilde işlenir. Kart bilgileriniz saklanmaz.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card Information Form */}
+            <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Kart Bilgileri
+              </h3>
+              
+              <div className="space-y-4">
+                {/* Cardholder Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kart Sahibinin Adı <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    {...register('cardHolderName')}
+                    placeholder="Kart üzerindeki isim"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent uppercase"
+                    maxLength={50}
+                  />
+                  {errors.cardHolderName && (
+                    <p className="mt-1.5 text-sm text-red-600">{errors.cardHolderName.message}</p>
+                  )}
+                </div>
+
+                {/* Card Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kart Numarası <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    {...register('cardNumber')}
+                    placeholder="1234 5678 9012 3456"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono"
+                    maxLength={19}
+                    onChange={(e) => {
+                      // Format card number with spaces
+                      let value = e.target.value.replace(/\s/g, '')
+                      value = value.replace(/(\d{4})/g, '$1 ').trim()
+                      e.target.value = value
+                    }}
+                  />
+                  {errors.cardNumber && (
+                    <p className="mt-1.5 text-sm text-red-600">{errors.cardNumber.message}</p>
+                  )}
+                  <div className="flex items-center mt-2 space-x-2">
+                    <img src="/images/visa.svg" alt="Visa" className="h-6" onError={(e) => e.currentTarget.style.display = 'none'} />
+                    <img src="/images/mastercard.svg" alt="Mastercard" className="h-6" onError={(e) => e.currentTarget.style.display = 'none'} />
+                    <span className="text-xs text-gray-500">Visa, Mastercard kabul edilir</span>
+                  </div>
+                </div>
+
+                {/* Expiry and CVV */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Son Kullanma Tarihi <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      {...register('cardExpiry')}
+                      placeholder="MM/YY"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono"
+                      maxLength={5}
+                      onChange={(e) => {
+                        // Format expiry date
+                        let value = e.target.value.replace(/\D/g, '')
+                        if (value.length >= 2) {
+                          value = value.slice(0, 2) + '/' + value.slice(2, 4)
+                        }
+                        e.target.value = value
+                      }}
+                    />
+                    {errors.cardExpiry && (
+                      <p className="mt-1.5 text-sm text-red-600">{errors.cardExpiry.message}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      CVV <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      {...register('cardCvv')}
+                      placeholder="123"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono"
+                      maxLength={4}
+                      onChange={(e) => {
+                        // Only numbers
+                        e.target.value = e.target.value.replace(/\D/g, '')
+                      }}
+                    />
+                    {errors.cardCvv && (
+                      <p className="mt-1.5 text-sm text-red-600">{errors.cardCvv.message}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">Kartın arkasındaki 3 haneli kod</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Security Notice */}
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <div>
+                  <p className="text-sm text-green-800 font-medium">256-bit SSL Şifreleme</p>
+                  <p className="text-xs text-green-700 mt-1">
+                    Ödemeniz 3D Secure ile güvence altındadır. Kart bilgileriniz hiçbir zaman saklanmaz.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bank Transfer Information */}
+        {paymentMethod === 'bank_transfer' && (
+          <div className="space-y-4 mb-6">
+            {/* Banka Hesapları */}
+            <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Banka Hesapları</h3>
+              <div className="space-y-4">
+                {bankAccounts
+                  .filter(account => {
+                    // TRY seçiliyse sadece TRY hesapları
+                    if (selectedCurrency === 'TRY') {
+                      return account.currency === 'TRY'
+                    }
+                    // USD seçiliyse TRY ve USD hesapları
+                    if (selectedCurrency === 'USD') {
+                      return account.currency === 'TRY' || account.currency === 'USD'
+                    }
+                    // EUR seçiliyse TRY ve EUR hesapları
+                    if (selectedCurrency === 'EUR') {
+                      return account.currency === 'TRY' || account.currency === 'EUR'
+                    }
+                    return true
+                  })
+                  .map((account, index) => (
+                  <div key={account.id} className={`${index > 0 ? 'pt-4 border-t border-blue-200' : ''}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-800">{account.accountName}</h4>
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {account.currency}
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex flex-col sm:flex-row">
+                        <span className="font-medium text-gray-700 sm:w-32">Banka:</span>
+                        <span className="text-gray-900">{account.bankName}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row">
+                        <span className="font-medium text-gray-700 sm:w-32">Hesap Sahibi:</span>
+                        <span className="text-gray-900">{account.accountHolder}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row">
+                        <span className="font-medium text-gray-700 sm:w-32">IBAN:</span>
+                        <span className="text-gray-900 font-mono">{account.iban}</span>
+                      </div>
+                      {account.description && (
+                        <div className="flex flex-col sm:flex-row">
+                          <span className="font-medium text-gray-700 sm:w-32">Açıklama:</span>
+                          <span className="text-gray-600">{account.description}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dekont Bilgisi */}
+            <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-yellow-800">
+                  <span className="font-medium">
+                    {paymentSettings.dekontMessage?.replace('{email}', paymentSettings.dekontEmail) || 
+                     'Lütfen dekontunuzu dekont@ko.com.tr adresine iletiniz.'}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-8 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors shadow-sm hover:shadow-md"
+          >
+            {t('common.back')}
+          </button>
+          <button
+            type="submit"
+            disabled={isProcessing}
+            className="px-8 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          >
+            {isProcessing ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                İşleniyor...
+              </>
+            ) : (
+              t('common.next')
+            )}
+          </button>
+        </div>
+      </div>
+    </form>
+  )
+}
+

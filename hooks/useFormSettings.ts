@@ -1,0 +1,110 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
+export interface FormFieldSetting {
+  field_name: string
+  field_label: string
+  field_type: string
+  step_number: number
+  is_visible: boolean
+  is_required: boolean
+  display_order: number
+  placeholder?: string
+  help_text?: string
+}
+
+export interface PaymentMethodSetting {
+  method_name: string
+  method_label: string
+  is_enabled: boolean
+  display_order: number
+  description?: string
+  icon?: string
+}
+
+export function useFormSettings() {
+  const [fields, setFields] = useState<FormFieldSetting[]>([])
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSetting[]>([])
+  const [registrationDeadline, setRegistrationDeadline] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/form-settings')
+      const data = await response.json()
+      
+      if (data.success) {
+        // MySQL'den gelen 0/1 değerlerini boolean'a çevir
+        const normalizedFields = (data.fields || []).map((field: any) => ({
+          ...field,
+          is_visible: Boolean(field.is_visible),
+          is_required: Boolean(field.is_required)
+        }))
+        
+        const normalizedPaymentMethods = (data.paymentMethods || []).map((method: any) => ({
+          ...method,
+          is_enabled: Boolean(method.is_enabled)
+        }))
+        
+        setFields(normalizedFields)
+        setPaymentMethods(normalizedPaymentMethods)
+        setRegistrationDeadline(data.registrationDeadline || '')
+      }
+    } catch (error) {
+      console.error('Error fetching form settings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const isFieldVisible = (fieldName: string): boolean => {
+    const field = fields.find(f => f.field_name === fieldName)
+    // Explicitly convert to boolean to handle 0/1 values
+    return field ? Boolean(field.is_visible) : true // Default: visible
+  }
+
+  const isFieldRequired = (fieldName: string): boolean => {
+    const field = fields.find(f => f.field_name === fieldName)
+    // Explicitly convert to boolean to handle 0/1 values
+    return field ? Boolean(field.is_required) : false // Default: not required
+  }
+
+  const getFieldSetting = (fieldName: string): FormFieldSetting | undefined => {
+    return fields.find(f => f.field_name === fieldName)
+  }
+
+  const isPaymentMethodEnabled = (methodName: string): boolean => {
+    const method = paymentMethods.find(m => m.method_name === methodName)
+    return method?.is_enabled ?? true // Default: enabled
+  }
+
+  const getEnabledPaymentMethods = (): PaymentMethodSetting[] => {
+    return paymentMethods.filter(m => m.is_enabled)
+  }
+
+  const isRegistrationOpen = (): boolean => {
+    if (!registrationDeadline) return true // Deadline yoksa her zaman açık
+    const deadline = new Date(registrationDeadline)
+    const now = new Date()
+    return now < deadline
+  }
+
+  return {
+    fields,
+    paymentMethods,
+    registrationDeadline,
+    loading,
+    isFieldVisible,
+    isFieldRequired,
+    getFieldSetting,
+    isPaymentMethodEnabled,
+    getEnabledPaymentMethods,
+    isRegistrationOpen,
+    refetch: fetchSettings
+  }
+}

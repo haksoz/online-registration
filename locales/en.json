@@ -1,0 +1,76 @@
+{
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "required": "required",
+    "optional": "optional"
+  },
+  "step1": {
+    "title": "Personal Information",
+    "subtitle": "Please enter your personal information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "company": "Company",
+    "invoiceType": "Invoice Type",
+    "individual": "Individual",
+    "corporate": "Corporate",
+    "invoiceFullName": "Invoice Name",
+    "idNumber": "ID Number",
+    "invoiceAddress": "Invoice Address",
+    "invoiceCompanyName": "Company Name",
+    "taxOffice": "Tax Office",
+    "taxNumber": "Tax Number"
+  },
+  "step2": {
+    "title": "Registration Type",
+    "subtitle": "Please select your registration type",
+    "registrationType": "Registration Type",
+    "selectType": "Select",
+    "fee": "Fee",
+    "currency": "Currency",
+    "selectCurrency": "Select Currency"
+  },
+  "step3": {
+    "title": "Payment Information",
+    "subtitle": "Please select your payment method",
+    "paymentMethod": "Payment Method",
+    "onlinePayment": "Online Payment",
+    "bankTransfer": "Bank Transfer",
+    "summary": "Summary",
+    "personalInfo": "Personal Information",
+    "invoiceInfo": "Invoice Information",
+    "registrationTypeAndFee": "Registration Type and Fee",
+    "selectedType": "Selected Type",
+    "selectedCurrencyFee": "Selected Currency Fee",
+    "tryEquivalent": "TRY Equivalent",
+    "bankAccounts": "Bank Accounts",
+    "bank": "Bank",
+    "accountHolder": "Account Holder",
+    "description": "Description",
+    "receiptNote": "Please send your receipt to {email}."
+  },
+  "step4": {
+    "title": "Registration Completed",
+    "subtitle": "Your registration has been successfully received",
+    "referenceNumber": "Reference Number",
+    "registrationSummary": "Registration Summary",
+    "downloadPDF": "Download PDF",
+    "newRegistration": "New Registration",
+    "goToHomepage": "Go to Homepage",
+    "paymentInfo": "Payment Information"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "phone": "Please enter a valid phone number",
+    "minLength": "Must be at least {min} characters",
+    "maxLength": "Must be at most {max} characters"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "common": {
+    "next": "İleri",
+    "back": "Geri",
+    "submit": "Gönder",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "required": "zorunlu",
+    "optional": "opsiyonel"
+  },
+  "step1": {
+    "title": "Kişisel Bilgiler",
+    "subtitle": "Lütfen kişisel bilgilerinizi girin",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "fullName": "Ad Soyad",
+    "email": "E-posta",
+    "phone": "Telefon",
+    "address": "Adres",
+    "company": "Şirket",
+    "invoiceType": "Fatura Tipi",
+    "individual": "Bireysel",
+    "corporate": "Kurumsal",
+    "invoiceFullName": "Fatura Adı",
+    "idNumber": "TC Kimlik No",
+    "invoiceAddress": "Fatura Adresi",
+    "invoiceCompanyName": "Şirket Adı",
+    "taxOffice": "Vergi Dairesi",
+    "taxNumber": "Vergi No"
+  },
+  "step2": {
+    "title": "Kayıt Türü",
+    "subtitle": "Lütfen kayıt türünüzü seçin",
+    "registrationType": "Kayıt Türü",
+    "selectType": "Seçiniz",
+    "fee": "Ücret",
+    "currency": "Para Birimi",
+    "selectCurrency": "Para Birimi Seçin"
+  },
+  "step3": {
+    "title": "Ödeme Bilgileri",
+    "subtitle": "Lütfen ödeme yönteminizi seçin",
+    "paymentMethod": "Ödeme Yöntemi",
+    "onlinePayment": "Online Ödeme",
+    "bankTransfer": "Banka Havalesi",
+    "summary": "Özet",
+    "personalInfo": "Kişisel Bilgiler",
+    "invoiceInfo": "Fatura Bilgileri",
+    "registrationTypeAndFee": "Kayıt Türü ve Ücret",
+    "selectedType": "Seçilen Tür",
+    "selectedCurrencyFee": "Seçilen Döviz Ücreti",
+    "tryEquivalent": "TL Karşılığı",
+    "bankAccounts": "Banka Hesapları",
+    "bank": "Banka",
+    "accountHolder": "Hesap Sahibi",
+    "description": "Açıklama",
+    "receiptNote": "Lütfen dekontunuzu {email} adresine iletiniz."
+  },
+  "step4": {
+    "title": "Kayıt Tamamlandı",
+    "subtitle": "Kaydınız başarıyla alındı",
+    "referenceNumber": "Referans Numarası",
+    "registrationSummary": "Kayıt Özeti",
+    "downloadPDF": "PDF İndir",
+    "newRegistration": "Yeni Kayıt",
+    "goToHomepage": "Ana Sayfaya Git",
+    "paymentInfo": "Ödeme Bilgileri"
+  },
+  "validation": {
+    "required": "Bu alan zorunludur",
+    "email": "Geçerli bir e-posta adresi girin",
+    "phone": "Geçerli bir telefon numarası girin",
+    "minLength": "En az {min} karakter olmalıdır",
+    "maxLength": "En fazla {max} karakter olmalıdır"
+  }
+}

@@ -1,0 +1,154 @@
+'use client'
+
+import { useFormStore } from '@/store/formStore'
+import { useFormSettings } from '@/hooks/useFormSettings'
+import Step1PersonalInfo from '@/components/steps/Step1PersonalInfo'
+import Step2Accommodation from '@/components/steps/Step2Accommodation'
+import Step3Payment from '@/components/steps/Step3Payment'
+import Step4Confirmation from '@/components/steps/Step4Confirmation'
+
+const steps = [
+  { number: 1, title: 'Kişisel Bilgiler' },
+  { number: 2, title: 'Kayıt' },
+  { number: 3, title: 'Ödeme' },
+  { number: 4, title: 'Onay' },
+]
+
+export default function FormWizard() {
+  const { currentStep, setCurrentStep, resetForm } = useFormStore()
+  const { isRegistrationOpen, registrationDeadline, loading } = useFormSettings()
+
+  const handleNext = () => {
+    if (currentStep < 4) {
+      setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const handleReset = () => {
+    resetForm()
+  }
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return <Step1PersonalInfo onNext={handleNext} />
+      case 2:
+        return <Step2Accommodation onNext={handleNext} onBack={handleBack} />
+      case 3:
+        return <Step3Payment onNext={handleNext} onBack={handleBack} />
+      case 4:
+        return <Step4Confirmation />
+      default:
+        return <Step1PersonalInfo onNext={handleNext} />
+    }
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  // Registration closed
+  if (!isRegistrationOpen()) {
+    const deadline = registrationDeadline ? new Date(registrationDeadline) : null
+    return (
+      <div className="text-center py-12">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+          <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Kayıtlar Kapandı</h2>
+        <p className="text-gray-600 mb-4">
+          {deadline ? (
+            <>
+              Kayıt son tarihi <strong>{deadline.toLocaleDateString('tr-TR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</strong> olarak geçmiştir.
+            </>
+          ) : (
+            'Kayıt dönemi sona ermiştir.'
+          )}
+        </p>
+        <p className="text-sm text-gray-500">
+          Daha fazla bilgi için lütfen organizatörlerle iletişime geçin.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {/* Progress Indicator */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          {steps.map((step, index) => (
+            <div key={step.number} className="flex items-center flex-1">
+              <div className="flex flex-col items-center flex-1">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
+                    currentStep >= step.number
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
+                  {currentStep > step.number ? (
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  ) : (
+                    step.number
+                  )}
+                </div>
+                <span
+                  className={`mt-2 text-xs font-medium hidden sm:block ${
+                    currentStep >= step.number ? 'text-primary-600' : 'text-gray-500'
+                  }`}
+                >
+                  {step.title}
+                </span>
+              </div>
+              {index < steps.length - 1 && (
+                <div
+                  className={`h-1 flex-1 mx-2 ${
+                    currentStep > step.number ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Step Content */}
+      <div className="mt-8">{renderStep()}</div>
+    </>
+  )
+}
+
+export { steps }
+
