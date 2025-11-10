@@ -22,7 +22,7 @@ export interface PersonalInfo {
 }
 
 export interface AccommodationInfo {
-  registrationType: 'dernek_uyesi' | 'dernek_uyesi_degil' | 'ogrenci' | ''
+  registrationType: string
   registrationTypeLabel?: string
   registrationTypeLabelEn?: string
 }

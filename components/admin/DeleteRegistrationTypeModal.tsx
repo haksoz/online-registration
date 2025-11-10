@@ -78,7 +78,7 @@ export default function DeleteRegistrationTypeModal({
               {registrationType.label}
             </p>
             <p className="text-sm text-gray-600">
-              Value: {registrationType.value} | Ücret: {registrationType.fee.toLocaleString('tr-TR')} TL
+              Value: {registrationType.value} | Ücret: {registrationType.fee_try.toLocaleString('tr-TR')} TL
             </p>
           </div>
 

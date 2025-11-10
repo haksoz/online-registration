@@ -84,7 +84,7 @@ export default function Step2Accommodation({ onNext, onBack }: Step2Accommodatio
 
   useEffect(() => {
     const subscription = watch((data) => {
-      updateAccommodation(data as Partial<AccommodationFormData>)
+      updateAccommodation(data)
     })
     return () => subscription.unsubscribe()
   }, [watch, updateAccommodation])
@@ -175,7 +175,7 @@ export default function Step2Accommodation({ onNext, onBack }: Step2Accommodatio
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-800">{error}</p>
             <button
-              onClick={fetchRegistrationTypes}
+              onClick={fetchData}
               className="mt-2 text-red-600 hover:text-red-800 underline"
             >
               Tekrar Dene

@@ -63,7 +63,9 @@ export class RegistrationTypeService {
       id: index + 1,
       value,
       label: registrationTypeLabels[value] || value,
-      fee,
+      fee_try: fee,
+      fee_usd: Math.round(fee / 30), // Approximate conversion
+      fee_eur: Math.round(fee / 35), // Approximate conversion
       description: '',
       is_active: true,
       created_at: new Date().toISOString(),

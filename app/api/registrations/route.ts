@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching registrations:', error)
     return NextResponse.json(
-      { error: 'Kayıtlar yüklenirken hata oluştu', details: error.message },
+      { error: 'Kayıtlar yüklenirken hata oluştu', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }

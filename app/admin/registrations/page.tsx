@@ -208,7 +208,7 @@ export default function RegistrationsPage() {
       const notes = notesInput?.value.trim()
       
       try {
-        let paymentData = {
+        let paymentData: any = {
           payment_status: 'completed',
           payment_confirmed_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
         }

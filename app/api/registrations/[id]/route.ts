@@ -144,7 +144,7 @@ export async function PATCH(
 
       return NextResponse.json({ 
         success: true, 
-        message: `Kayıt durumu "${statusLabels[status] || status}" olarak güncellendi`
+        message: `Kayıt durumu "${statusLabels[status as keyof typeof statusLabels] || status}" olarak güncellendi`
       }, { status: 200 })
     }
 

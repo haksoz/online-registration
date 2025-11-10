@@ -117,12 +117,12 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   schemaFields.taxNumber = z.string().optional()
 
   // Create base schema
-  let schema = z.object(schemaFields)
+  let schema: any = z.object(schemaFields)
 
   // Add conditional validations for invoice fields
   // Bireysel invoice validations
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'bireysel' && isVisible('invoiceFullName') && isRequired('invoiceFullName')) {
         return data.invoiceFullName && data.invoiceFullName.length >= 1
       }
@@ -135,7 +135,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   )
 
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'bireysel' && isVisible('idNumber') && isRequired('idNumber')) {
         return data.idNumber && data.idNumber.length >= 1
       }
@@ -148,7 +148,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   )
 
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'bireysel' && data.idNumber) {
         return validateTCId(data.idNumber)
       }
@@ -161,7 +161,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   )
 
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'bireysel' && isVisible('invoiceAddress') && isRequired('invoiceAddress')) {
         return data.invoiceAddress && data.invoiceAddress.length >= 1
       }
@@ -175,7 +175,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
 
   // Kurumsal invoice validations
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'kurumsal' && isVisible('invoiceCompanyName') && isRequired('invoiceCompanyName')) {
         return data.invoiceCompanyName && data.invoiceCompanyName.length >= 1
       }
@@ -188,7 +188,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   )
 
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'kurumsal' && isVisible('invoiceAddress') && isRequired('invoiceAddress')) {
         return data.invoiceAddress && data.invoiceAddress.length >= 1
       }
@@ -201,7 +201,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   )
 
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'kurumsal' && isVisible('taxOffice') && isRequired('taxOffice')) {
         return data.taxOffice && data.taxOffice.length >= 1
       }
@@ -214,7 +214,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   )
 
   schema = schema.refine(
-    (data) => {
+    (data: any) => {
       if (data.invoiceType === 'kurumsal' && isVisible('taxNumber') && isRequired('taxNumber')) {
         return data.taxNumber && data.taxNumber.length >= 1
       }

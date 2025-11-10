@@ -1,0 +1,18 @@
+Railway Environment Variables:
+
+DB_HOST=<your-railway-mysql-host>
+DB_PORT=<your-railway-mysql-port>
+DB_USER=<your-railway-mysql-user>
+DB_PASSWORD=<your-railway-mysql-password>
+DB_NAME=<your-railway-mysql-database>
+
+# JWT Secret (generate a random string)
+JWT_SECRET=your-super-secret-jwt-key-here-make-it-long-and-random
+
+# Next.js
+NEXTAUTH_SECRET=your-nextauth-secret-here
+NEXTAUTH_URL=https://your-app-name.railway.app
+
+# Optional: File upload settings
+MAX_FILE_SIZE=5242880
+UPLOAD_DIR=/tmp/uploads
