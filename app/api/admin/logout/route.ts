@@ -8,12 +8,14 @@ export async function POST(request: NextRequest) {
     })
 
     // Cookie'yi sil
-    response.cookies.set('admin_user_id', '', {
+    response.cookies.set('admin_token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 0 // Hemen sil
     })
+
+    console.log('🍪 Admin token cookie cleared');
 
     return response
   } catch (error) {

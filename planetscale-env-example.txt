@@ -1,0 +1,10 @@
+# PlanetScale Connection (Railway alternatifi)
+DATABASE_URL="mysql://username:password@host.connect.psdb.cloud/database-name?sslaccept=strict"
+
+# Veya ayrı ayrı:
+DB_HOST=host.connect.psdb.cloud
+DB_PORT=3306
+DB_USER=username
+DB_PASSWORD=password
+DB_NAME=database-name
+DB_SSL=true

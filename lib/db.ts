@@ -1,11 +1,14 @@
 import mysql from "mysql2/promise";
 
 export const pool = mysql.createPool({
-  host: "127.0.0.1",           // localhost yerine 127.0.0.1
-  user: process.env.MYSQL_USER || "root",
-  password: process.env.MYSQL_PASSWORD || "",
-  database: process.env.MYSQL_DB || "form_wizard",
-  port: Number(process.env.MYSQL_PORT) || 3306,
+  host: process.env.DB_HOST || "127.0.0.1",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "railway",
+  port: Number(process.env.DB_PORT) || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
 

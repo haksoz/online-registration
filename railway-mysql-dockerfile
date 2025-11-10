@@ -1,0 +1,14 @@
+# Railway MySQL Dockerfile (eğer gerekirse)
+FROM mysql:8.0
+
+ENV MYSQL_ROOT_PASSWORD=rootpassword
+ENV MYSQL_DATABASE=railway
+ENV MYSQL_USER=railwayuser
+ENV MYSQL_PASSWORD=railwaypass
+
+EXPOSE 3306
+
+# Initialize database
+COPY railway-migration.sql /docker-entrypoint-initdb.d/
+
+CMD ["mysqld"]

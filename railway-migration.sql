@@ -156,9 +156,11 @@ CREATE TABLE IF NOT EXISTS exchange_rates (
   rate_to_try DECIMAL(10,4) NOT NULL,
   source VARCHAR(50) DEFAULT 'TCMB',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_currency_date (currency_code, DATE(created_at))
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- Add unique constraint separately
+CREATE UNIQUE INDEX IF NOT EXISTS unique_currency_date ON exchange_rates (currency_code, DATE(created_at));
 
 -- Create registration_logs table
 CREATE TABLE IF NOT EXISTS registration_logs (
@@ -249,12 +251,14 @@ CREATE TABLE IF NOT EXISTS online_payments (
   processed_at TIMESTAMP NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE,
-  INDEX idx_transaction_id (transaction_id),
-  INDEX idx_registration_id (registration_id),
-  INDEX idx_status (status),
-  INDEX idx_created_at (created_at)
+  FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE
 );
+
+-- Add indexes separately
+CREATE INDEX IF NOT EXISTS idx_transaction_id ON online_payments (transaction_id);
+CREATE INDEX IF NOT EXISTS idx_registration_id ON online_payments (registration_id);
+CREATE INDEX IF NOT EXISTS idx_status ON online_payments (status);
+CREATE INDEX IF NOT EXISTS idx_created_at ON online_payments (created_at);
 
 -- Insert default admin user
 INSERT IGNORE INTO users (username, email, password_hash, full_name, role) VALUES 
