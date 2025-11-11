@@ -433,10 +433,6 @@ export default function RegistrationsPage() {
                   <td className="px-6 py-4">
                     <div className="text-sm">
                       <div className="font-medium text-gray-900">{r.full_name}</div>
-                      <div className="text-gray-500">{r.email}</div>
-                      {r.phone && (
-                        <div className="text-xs text-gray-500">{r.phone}</div>
-                      )}
                       <div className="flex items-center gap-2 mt-1">
                         {r.status === 1 ? (
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
