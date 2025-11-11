@@ -333,7 +333,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
           {isFieldVisible('invoiceType') && (
             <div className="pt-4 border-t border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                Fatura Türü {isFieldRequired('invoiceType') && <span className="text-red-500">*</span>}
+                {t('step1.invoiceType')} {isFieldRequired('invoiceType') && <span className="text-red-500">*</span>}
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
@@ -343,7 +343,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     {...register('invoiceType')}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500 focus:ring-offset-2"
                   />
-                  <span className="ml-3 text-gray-700 font-medium">Bireysel</span>
+                  <span className="ml-3 text-gray-700 font-medium">{t('step1.individual')}</span>
                 </label>
                 <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                   <input
@@ -352,7 +352,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     {...register('invoiceType')}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500 focus:ring-offset-2"
                   />
-                  <span className="ml-3 text-gray-700 font-medium">Kurumsal</span>
+                  <span className="ml-3 text-gray-700 font-medium">{t('step1.corporate')}</span>
                 </label>
               </div>
               {errors.invoiceType && (
@@ -391,7 +391,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
           {/* Bireysel Invoice Fields */}
           {invoiceType === 'bireysel' && (
             <div className="space-y-4 pt-4 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Bireysel Fatura Bilgileri</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('step1.individualInvoiceInfo')}</h3>
               
               {/* Use Personal Name Checkbox */}
               {isFieldVisible('invoiceFullName') && (
@@ -415,7 +415,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded mt-0.5"
                     />
                     <span className="ml-3 text-sm text-gray-700">
-                      Kişisel bilgilerimdeki adımı soyadımı kullan
+                      {t('step1.usePersonalName')}
                     </span>
                   </label>
                 </div>
@@ -442,7 +442,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                   />
                   {usePersonalName && (
                     <p className="mt-1.5 text-xs text-gray-500">
-                      ℹ️ Kişisel bilgilerinizdeki ad soyad otomatik olarak kullanılıyor
+                      {t('step1.autoFilledInfo')}
                     </p>
                   )}
                   {errors.invoiceFullName && (
@@ -496,7 +496,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
           {/* Kurumsal Invoice Fields */}
           {invoiceType === 'kurumsal' && (
             <div className="space-y-4 pt-4 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Kurumsal Fatura Bilgileri</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('step1.corporateInvoiceInfo')}</h3>
               
               {isFieldVisible('invoiceCompanyName') && (
                 <div>
