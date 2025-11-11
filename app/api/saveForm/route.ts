@@ -94,14 +94,20 @@ export async function POST(request: NextRequest) {
                          'unknown'
         const userAgent = request.headers.get('user-agent') || ''
         
+        // Müşteri bilgilerini hazırla
+        const customerName = personalInfo.fullName || `${personalInfo.firstName} ${personalInfo.lastName}`.trim()
+        const customerEmail = personalInfo.email
+        const customerPhone = personalInfo.phone
+        const registrationType = accommodation.registrationType
+        
         await pool.execute(
           `INSERT INTO online_payment_transactions (
             registration_id, transaction_id, order_id, amount, currency,
             status, payment_status, error_code, error_message,
             gateway_name, card_type, card_last4, card_bin,
-            cardholder_name, ip_address, fraud_score,
-            user_agent, initiated_at, completed_at, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
+            cardholder_name, customer_name, customer_email, customer_phone, registration_type,
+            ip_address, fraud_score, user_agent, initiated_at, completed_at, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
           [
             null, // registration_id - henüz oluşturulmadı
             transactionId,
@@ -117,6 +123,10 @@ export async function POST(request: NextRequest) {
             cardLast4,
             cardBin,
             payment.cardHolderName,
+            customerName,
+            customerEmail,
+            customerPhone,
+            registrationType,
             ipAddress,
             fraudScore,
             userAgent
