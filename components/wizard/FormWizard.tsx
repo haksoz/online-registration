@@ -2,21 +2,23 @@
 
 import { useFormStore } from '@/store/formStore'
 import { useFormSettings } from '@/hooks/useFormSettings'
+import { useTranslation } from '@/hooks/useTranslation'
 import Step1PersonalInfo from '@/components/steps/Step1PersonalInfo'
 import Step2Accommodation from '@/components/steps/Step2Accommodation'
 import Step3Payment from '@/components/steps/Step3Payment'
 import Step4Confirmation from '@/components/steps/Step4Confirmation'
 
-const steps = [
-  { number: 1, title: 'Kişisel Bilgiler' },
-  { number: 2, title: 'Kayıt' },
-  { number: 3, title: 'Ödeme' },
-  { number: 4, title: 'Onay' },
-]
-
 export default function FormWizard() {
   const { currentStep, setCurrentStep, resetForm } = useFormStore()
   const { isRegistrationOpen, registrationDeadline, loading } = useFormSettings()
+  const { t } = useTranslation()
+
+  const steps = [
+    { number: 1, title: t('steps.step1') },
+    { number: 2, title: t('steps.step2') },
+    { number: 3, title: t('steps.step3') },
+    { number: 4, title: t('steps.step4') },
+  ]
 
   const handleNext = () => {
     if (currentStep < 4) {

@@ -76,6 +76,12 @@
     "goToHomepage": "Ana Sayfaya Git",
     "paymentInfo": "Ödeme Bilgileri"
   },
+  "steps": {
+    "step1": "Kişisel Bilgiler",
+    "step2": "Kayıt",
+    "step3": "Ödeme",
+    "step4": "Onay"
+  },
   "validation": {
     "required": "Bu alan zorunludur",
     "email": "Geçerli bir e-posta adresi girin",

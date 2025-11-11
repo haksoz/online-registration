@@ -76,6 +76,12 @@
     "goToHomepage": "Go to Homepage",
     "paymentInfo": "Payment Information"
   },
+  "steps": {
+    "step1": "Personal Information",
+    "step2": "Registration",
+    "step3": "Payment",
+    "step4": "Confirmation"
+  },
   "validation": {
     "required": "This field is required",
     "email": "Please enter a valid email address",
