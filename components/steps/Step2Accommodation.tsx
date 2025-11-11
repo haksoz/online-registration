@@ -17,7 +17,7 @@ interface Step2AccommodationProps {
 
 export default function Step2Accommodation({ onNext, onBack }: Step2AccommodationProps) {
   const { formData, updateAccommodation } = useFormStore()
-  const { t, language, loading: translationLoading } = useTranslation()
+  const { t, language, canChangeLanguage, changeLanguage, loading: translationLoading } = useTranslation()
   const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
   const [currencyType, setCurrencyType] = useState('TRY')
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({})
@@ -191,8 +191,40 @@ export default function Step2Accommodation({ onNext, onBack }: Step2Accommodatio
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('step2.title')}</h2>
-          <p className="text-sm text-gray-600">{t('step2.subtitle')}</p>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('step2.title')}</h2>
+              <p className="text-sm text-gray-600">{t('step2.subtitle')}</p>
+            </div>
+            
+            {/* Language Selector */}
+            {canChangeLanguage && (
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => changeLanguage('tr')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    language === 'tr'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  🇹🇷 TR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeLanguage('en')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    language === 'en'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  🇬🇧 EN
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Currency Info */}
