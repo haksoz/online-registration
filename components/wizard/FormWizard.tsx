@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useFormStore } from '@/store/formStore'
 import { useFormSettings } from '@/hooks/useFormSettings'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -11,14 +12,14 @@ import Step4Confirmation from '@/components/steps/Step4Confirmation'
 export default function FormWizard() {
   const { currentStep, setCurrentStep, resetForm } = useFormStore()
   const { isRegistrationOpen, registrationDeadline, loading } = useFormSettings()
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
 
-  const steps = [
+  const steps = useMemo(() => [
     { number: 1, title: t('steps.step1') },
     { number: 2, title: t('steps.step2') },
     { number: 3, title: t('steps.step3') },
     { number: 4, title: t('steps.step4') },
-  ]
+  ], [t, language])
 
   const handleNext = () => {
     if (currentStep < 4) {
