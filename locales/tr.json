@@ -36,7 +36,24 @@
     "taxOffice": "Vergi Dairesi",
     "taxNumber": "Vergi No",
     "usePersonalName": "Kişisel bilgilerimdeki adımı soyadımı kullan",
-    "autoFilledInfo": "ℹ️ Kişisel bilgilerinizdeki ad soyad otomatik olarak kullanılıyor"
+    "autoFilledInfo": "ℹ️ Kişisel bilgilerinizdeki ad soyad otomatik olarak kullanılıyor",
+    "optional": "Opsiyonel",
+    "placeholders": {
+      "firstName": "Adınız",
+      "lastName": "Soyadınız",
+      "fullName": "Ad Soyad",
+      "email": "ornek@email.com",
+      "phone": "Telefon numarası",
+      "address": "Adres bilgisi",
+      "company": "Örnek Şirket A.Ş.",
+      "department": "Departman adı",
+      "invoiceFullName": "Ad Soyad",
+      "idNumber": "12345678901",
+      "invoiceAddress": "Fatura adresi",
+      "invoiceCompanyName": "Şirket Adı",
+      "taxOffice": "Kadıköy",
+      "taxNumber": "1234567890"
+    }
   },
   "step2": {
     "title": "Kayıt Türü",

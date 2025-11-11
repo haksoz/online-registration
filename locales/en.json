@@ -36,7 +36,24 @@
     "taxOffice": "Tax Office",
     "taxNumber": "Tax Number",
     "usePersonalName": "Use my personal name",
-    "autoFilledInfo": "ℹ️ Your personal information is being used automatically"
+    "autoFilledInfo": "ℹ️ Your personal information is being used automatically",
+    "optional": "Optional",
+    "placeholders": {
+      "firstName": "Your first name",
+      "lastName": "Your last name",
+      "fullName": "Full Name",
+      "email": "example@email.com",
+      "phone": "Phone number",
+      "address": "Address information",
+      "company": "Example Company Inc.",
+      "department": "Department name",
+      "invoiceFullName": "Full Name",
+      "idNumber": "12345678901",
+      "invoiceAddress": "Invoice address",
+      "invoiceCompanyName": "Company Name",
+      "taxOffice": "Tax Office",
+      "taxNumber": "1234567890"
+    }
   },
   "step2": {
     "title": "Registration Type",

@@ -139,7 +139,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('lastName') && (
                 <div>
                   <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Soyad {isFieldRequired('lastName') && <span className="text-red-500">*</span>}
+                    {t('step1.lastName')} {isFieldRequired('lastName') && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     id="lastName"
@@ -216,7 +216,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('email') && (
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    E-posta {isFieldRequired('email') && <span className="text-red-500">*</span>}
+                    {t('step1.email')} {isFieldRequired('email') && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     id="email"
@@ -238,7 +238,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('phone') && (
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Telefon {isFieldRequired('phone') && <span className="text-red-500">*</span>}
+                    {t('step1.phone')} {isFieldRequired('phone') && <span className="text-red-500">*</span>}
                   </label>
                   <InternationalPhoneInput
                     id="phone"
@@ -248,7 +248,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                       updatePersonalInfo({ phone: value })
                     }}
                     error={errors.phone?.message}
-                    placeholder="Telefon numarası"
+                    placeholder={t('step1.placeholders.phone')}
                   />
                 </div>
               )}
@@ -259,7 +259,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
           {isFieldVisible('address') && (
             <div>
               <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                Adres {isFieldRequired('address') && <span className="text-red-500">*</span>}
+                {t('step1.address')} {isFieldRequired('address') && <span className="text-red-500">*</span>}
               </label>
               <input
                 id="address"
@@ -284,7 +284,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('company') && (
                 <div>
                   <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                    Şirket/Kurum {!isFieldRequired('company') && <span className="text-gray-400 text-xs">(Opsiyonel)</span>}
+                    {t('step1.company')} {!isFieldRequired('company') && <span className="text-gray-400 text-xs">({t('step1.optional')})</span>}
                     {isFieldRequired('company') && <span className="text-red-500">*</span>}
                   </label>
                   <input
@@ -296,7 +296,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="Örnek Şirket A.Ş."
+                    placeholder={t('step1.placeholders.company')}
                   />
                   {errors.company && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.company.message}</p>
@@ -424,7 +424,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('invoiceFullName') && (
                 <div>
                   <label htmlFor="invoiceFullName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Fatura Ad Soyad {isFieldRequired('invoiceFullName') && <span className="text-red-500">*</span>}
+                    {t('step1.invoiceFullName')} {isFieldRequired('invoiceFullName') && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     id="invoiceFullName"
@@ -438,7 +438,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="Ad Soyad"
+                    placeholder={t('step1.placeholders.invoiceFullName')}
                   />
                   {usePersonalName && (
                     <p className="mt-1.5 text-xs text-gray-500">
@@ -472,7 +472,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('invoiceAddress') && (
                 <div>
                   <label htmlFor="invoiceAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                    Fatura Adresi {isFieldRequired('invoiceAddress') && <span className="text-red-500">*</span>}
+                    {t('step1.invoiceAddress')} {isFieldRequired('invoiceAddress') && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     id="invoiceAddress"
@@ -483,7 +483,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="Fatura adresi"
+                    placeholder={t('step1.placeholders.invoiceAddress')}
                   />
                   {errors.invoiceAddress && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.invoiceAddress.message}</p>
@@ -501,7 +501,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('invoiceCompanyName') && (
                 <div>
                   <label htmlFor="invoiceCompanyName" className="block text-sm font-medium text-gray-700 mb-2">
-                    Şirket Adı {isFieldRequired('invoiceCompanyName') && <span className="text-red-500">*</span>}
+                    {t('step1.invoiceCompanyName')} {isFieldRequired('invoiceCompanyName') && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     id="invoiceCompanyName"
@@ -512,7 +512,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="Şirket Adı"
+                    placeholder={t('step1.placeholders.invoiceCompanyName')}
                   />
                   {errors.invoiceCompanyName && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.invoiceCompanyName.message}</p>
