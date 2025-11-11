@@ -128,7 +128,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="Ahmet"
+                    placeholder={t('step1.placeholders.firstName')}
                   />
                   {errors.firstName && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.firstName.message}</p>
@@ -150,7 +150,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="Yılmaz"
+                    placeholder={t('step1.placeholders.lastName')}
                   />
                   {errors.lastName && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.lastName.message}</p>
@@ -164,7 +164,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
           {isFieldVisible('gender') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cinsiyet {isFieldRequired('gender') && <span className="text-red-500">*</span>}
+                {t('step1.gender')} {isFieldRequired('gender') && <span className="text-red-500">*</span>}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
@@ -174,7 +174,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     {...register('gender')}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Erkek</span>
+                  <span className="ml-2 text-sm text-gray-700">{t('step1.male')}</span>
                 </label>
                 <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                   <input
@@ -183,7 +183,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     {...register('gender')}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Kadın</span>
+                  <span className="ml-2 text-sm text-gray-700">{t('step1.female')}</span>
                 </label>
                 <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                   <input
@@ -192,7 +192,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     {...register('gender')}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Diğer</span>
+                  <span className="ml-2 text-sm text-gray-700">{t('step1.other')}</span>
                 </label>
                 <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                   <input
@@ -201,7 +201,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     {...register('gender')}
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Belirtmek İstemiyorum</span>
+                  <span className="ml-2 text-sm text-gray-700">{t('step1.preferNotToSay')}</span>
                 </label>
               </div>
               {errors.gender && (
@@ -227,7 +227,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="ornek@email.com"
+                    placeholder={t('step1.placeholders.email')}
                   />
                   {errors.email && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.email.message}</p>
@@ -270,7 +270,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                     : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                 }`}
-                placeholder="Örnek Cadde No:123, İstanbul"
+                placeholder={t('step1.placeholders.address')}
               />
               {errors.address && (
                 <p className="mt-1.5 text-sm text-red-600">{errors.address.message}</p>
@@ -307,7 +307,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('department') && (
                 <div>
                   <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-                    Departman {!isFieldRequired('department') && <span className="text-gray-400 text-xs">(Opsiyonel)</span>}
+                    {t('step1.department')} {!isFieldRequired('department') && <span className="text-gray-400 text-xs">({t('step1.optional')})</span>}
                     {isFieldRequired('department') && <span className="text-red-500">*</span>}
                   </label>
                   <input
@@ -319,7 +319,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="İnsan Kaynakları"
+                    placeholder={t('step1.placeholders.department')}
                   />
                   {errors.department && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.department.message}</p>
@@ -454,7 +454,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {isFieldVisible('idNumber') && (
                 <div>
                   <label htmlFor="idNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                    TC Kimlik No {isFieldRequired('idNumber') && <span className="text-red-500">*</span>}
+                    {t('step1.idNumber')} {isFieldRequired('idNumber') && <span className="text-red-500">*</span>}
                   </label>
                   <TCIdInput
                     id="idNumber"
@@ -464,7 +464,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                       updatePersonalInfo({ idNumber: value })
                     }}
                     error={errors.idNumber?.message}
-                    placeholder="12345678901"
+                    placeholder={t('step1.placeholders.idNumber')}
                   />
                 </div>
               )}
@@ -534,7 +534,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
-                    placeholder="Fatura adresi"
+                    placeholder={t('step1.placeholders.invoiceAddress')}
                   />
                   {errors.invoiceAddress && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.invoiceAddress.message}</p>
@@ -546,7 +546,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                 {isFieldVisible('taxOffice') && (
                   <div>
                     <label htmlFor="taxOffice" className="block text-sm font-medium text-gray-700 mb-2">
-                      Vergi Dairesi {isFieldRequired('taxOffice') && <span className="text-red-500">*</span>}
+                      {t('step1.taxOffice')} {isFieldRequired('taxOffice') && <span className="text-red-500">*</span>}
                     </label>
                     <input
                       id="taxOffice"
@@ -557,7 +557,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                           ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                           : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                       }`}
-                      placeholder="Kadıköy"
+                      placeholder={t('step1.placeholders.taxOffice')}
                     />
                     {errors.taxOffice && (
                       <p className="mt-1.5 text-sm text-red-600">{errors.taxOffice.message}</p>
@@ -568,7 +568,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                 {isFieldVisible('taxNumber') && (
                   <div>
                     <label htmlFor="taxNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                      Vergi No {isFieldRequired('taxNumber') && <span className="text-red-500">*</span>}
+                      {t('step1.taxNumber')} {isFieldRequired('taxNumber') && <span className="text-red-500">*</span>}
                     </label>
                     <input
                       id="taxNumber"
@@ -579,7 +579,7 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                           ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                           : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                       }`}
-                      placeholder="1234567890"
+                      placeholder={t('step1.placeholders.taxNumber')}
                     />
                     {errors.taxNumber && (
                       <p className="mt-1.5 text-sm text-red-600">{errors.taxNumber.message}</p>

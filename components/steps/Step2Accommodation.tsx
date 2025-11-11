@@ -152,8 +152,8 @@ export default function Step2Accommodation({ onNext, onBack }: Step2Accommodatio
       <div className="w-full">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Kayıt Türü Seçimi</h2>
-            <p className="text-sm text-gray-600">Kayıt türleri yükleniyor...</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('step2.title')}</h2>
+            <p className="text-sm text-gray-600">{language === 'en' ? 'Loading registration types...' : 'Kayıt türleri yükleniyor...'}</p>
           </div>
           <div className="animate-pulse space-y-3">
             <div className="h-16 bg-gray-200 rounded-lg"></div>
@@ -191,8 +191,8 @@ export default function Step2Accommodation({ onNext, onBack }: Step2Accommodatio
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Kayıt Türü Seçimi</h2>
-          <p className="text-sm text-gray-600">Lütfen bir kayıt türü seçin</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('step2.title')}</h2>
+          <p className="text-sm text-gray-600">{t('step2.subtitle')}</p>
         </div>
 
         {/* Currency Info */}
