@@ -315,6 +315,47 @@ INSERT IGNORE INTO registration_types (value, label, label_en, fee_try, fee_usd,
 INSERT IGNORE INTO bank_accounts (bank_name, bank_name_en, account_holder, account_holder_en, account_number, iban, currency_type, display_order) VALUES
 ('Türkiye İş Bankası', 'Turkiye Is Bankasi', 'ÖRNEK ORGANİZASYON', 'SAMPLE ORGANIZATION', '1234567890', 'TR123456789012345678901234', 'TRY', 1);
 
+-- Create online_payment_transactions table
+CREATE TABLE IF NOT EXISTS online_payment_transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  registration_id INT NULL,
+  transaction_id VARCHAR(100) UNIQUE NOT NULL,
+  order_id VARCHAR(100),
+  amount DECIMAL(10,2) NOT NULL,
+  currency VARCHAR(3) DEFAULT 'TRY',
+  status ENUM('pending', 'success', 'failed', 'cancelled') DEFAULT 'pending',
+  payment_status ENUM('approved', 'declined', 'pending') DEFAULT 'pending',
+  error_code VARCHAR(10),
+  error_message VARCHAR(255),
+  gateway_name VARCHAR(100),
+  gateway_response JSON,
+  card_type VARCHAR(20),
+  card_last4 VARCHAR(4),
+  card_bin VARCHAR(6),
+  cardholder_name VARCHAR(200),
+  installment_count INT DEFAULT 1,
+  commission_rate DECIMAL(5,4) DEFAULT 0,
+  commission_amount DECIMAL(10,2) DEFAULT 0,
+  net_amount DECIMAL(10,2),
+  auth_code VARCHAR(20),
+  reference_number VARCHAR(100),
+  ip_address VARCHAR(45),
+  fraud_score INT DEFAULT 0,
+  user_agent TEXT,
+  initiated_at TIMESTAMP NULL,
+  completed_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE SET NULL
+);
+
+-- Add indexes for online_payment_transactions
+CREATE INDEX IF NOT EXISTS idx_registration_id ON online_payment_transactions (registration_id);
+CREATE INDEX IF NOT EXISTS idx_transaction_id ON online_payment_transactions (transaction_id);
+CREATE INDEX IF NOT EXISTS idx_order_id ON online_payment_transactions (order_id);
+CREATE INDEX IF NOT EXISTS idx_status ON online_payment_transactions (status);
+CREATE INDEX IF NOT EXISTS idx_created_at ON online_payment_transactions (created_at);
+
 -- Insert current exchange rates (sample)
 INSERT IGNORE INTO exchange_rates (currency_code, rate_to_try) VALUES
 ('USD', 30.0000),
