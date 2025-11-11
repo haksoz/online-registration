@@ -42,13 +42,26 @@ export async function GET() {
     )
     const registrationDeadline = (deadlineRows as any[])[0]?.setting_value || ''
 
+    // Invoice notes
+    const [individualNoteRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'invoice_individual_note'`
+    )
+    const invoiceIndividualNote = (individualNoteRows as any[])[0]?.setting_value || ''
+
+    const [corporateNoteRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'invoice_corporate_note'`
+    )
+    const invoiceCorporateNote = (corporateNoteRows as any[])[0]?.setting_value || ''
+
     return NextResponse.json({
       success: true,
       fields: fieldRows,
       paymentMethods: paymentRows,
       step2Settings: step2Settings,
       language: language,
-      registrationDeadline: registrationDeadline
+      registrationDeadline: registrationDeadline,
+      invoiceIndividualNote: invoiceIndividualNote,
+      invoiceCorporateNote: invoiceCorporateNote
     })
   } catch (error) {
     console.error('Error fetching form settings:', error)

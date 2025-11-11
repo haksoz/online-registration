@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { type PersonalInfoFormData } from '@/schemas/validationSchemas'
 import { buildPersonalInfoSchema } from '@/schemas/dynamicValidationSchema'
 import { useFormStore } from '@/store/formStore'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { InternationalPhoneInput } from '@/components/ui/InternationalPhoneInput'
 import { TCIdInput } from '@/components/ui/TCIdInput'
 import { useFormSettings } from '@/hooks/useFormSettings'
@@ -17,8 +17,9 @@ interface Step1PersonalInfoProps {
 
 export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
   const { formData, updatePersonalInfo, setFormLanguage } = useFormStore()
-  const { fields, isFieldVisible, isFieldRequired, loading: settingsLoading } = useFormSettings()
+  const { fields, isFieldVisible, isFieldRequired, invoiceIndividualNote, invoiceCorporateNote, loading: settingsLoading } = useFormSettings()
   const { t, language, canChangeLanguage, changeLanguage, loading: translationLoading } = useTranslation()
+  const [usePersonalName, setUsePersonalName] = useState(false)
 
   // Dil değiştiğinde store'u güncelle
   useEffect(() => {
@@ -357,6 +358,29 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               {errors.invoiceType && (
                 <p className="mt-1.5 text-sm text-red-600">{errors.invoiceType.message}</p>
               )}
+              
+              {/* Invoice Type Notes */}
+              {invoiceType === 'bireysel' && invoiceIndividualNote && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-blue-800">{invoiceIndividualNote}</p>
+                  </div>
+                </div>
+              )}
+              
+              {invoiceType === 'kurumsal' && invoiceCorporateNote && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-blue-800">{invoiceCorporateNote}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -364,6 +388,34 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
           {invoiceType === 'bireysel' && (
             <div className="space-y-4 pt-4 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Bireysel Fatura Bilgileri</h3>
+              
+              {/* Use Personal Name Checkbox */}
+              {isFieldVisible('invoiceFullName') && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={usePersonalName}
+                      onChange={(e) => {
+                        const checked = e.target.checked
+                        setUsePersonalName(checked)
+                        if (checked) {
+                          const fullName = watch('fullName') || `${watch('firstName')} ${watch('lastName')}`.trim()
+                          setValue('invoiceFullName', fullName, { shouldValidate: true })
+                          updatePersonalInfo({ invoiceFullName: fullName })
+                        } else {
+                          setValue('invoiceFullName', '', { shouldValidate: true })
+                          updatePersonalInfo({ invoiceFullName: '' })
+                        }
+                      }}
+                      className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded mt-0.5"
+                    />
+                    <span className="ml-3 text-sm text-gray-700">
+                      Kişisel bilgilerimdeki adımı soyadımı kullan
+                    </span>
+                  </label>
+                </div>
+              )}
               
               {isFieldVisible('invoiceFullName') && (
                 <div>

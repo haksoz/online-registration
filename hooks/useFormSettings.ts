@@ -27,6 +27,8 @@ export function useFormSettings() {
   const [fields, setFields] = useState<FormFieldSetting[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSetting[]>([])
   const [registrationDeadline, setRegistrationDeadline] = useState<string>('')
+  const [invoiceIndividualNote, setInvoiceIndividualNote] = useState<string>('')
+  const [invoiceCorporateNote, setInvoiceCorporateNote] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -54,6 +56,8 @@ export function useFormSettings() {
         setFields(normalizedFields)
         setPaymentMethods(normalizedPaymentMethods)
         setRegistrationDeadline(data.registrationDeadline || '')
+        setInvoiceIndividualNote(data.invoiceIndividualNote || '')
+        setInvoiceCorporateNote(data.invoiceCorporateNote || '')
       }
     } catch (error) {
       console.error('Error fetching form settings:', error)
@@ -98,6 +102,8 @@ export function useFormSettings() {
     fields,
     paymentMethods,
     registrationDeadline,
+    invoiceIndividualNote,
+    invoiceCorporateNote,
     loading,
     isFieldVisible,
     isFieldRequired,
