@@ -94,9 +94,9 @@ export async function GET() {
 
     // Döviz kurları (son güncelleme)
     const [exchangeRates] = await pool.execute(
-      `SELECT currency_code, rate_to_try as rate, updated_at 
+      `SELECT currency_code, rate_to_try as rate, last_updated as updated_at 
        FROM exchange_rates 
-       ORDER BY updated_at DESC 
+       ORDER BY last_updated DESC 
        LIMIT 3`
     )
 
