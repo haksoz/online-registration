@@ -53,6 +53,16 @@ export async function GET() {
     )
     const invoiceCorporateNote = (corporateNoteRows as any[])[0]?.setting_value || ''
 
+    const [individualNoteEnRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'invoice_individual_note_en'`
+    )
+    const invoiceIndividualNoteEn = (individualNoteEnRows as any[])[0]?.setting_value || ''
+
+    const [corporateNoteEnRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'invoice_corporate_note_en'`
+    )
+    const invoiceCorporateNoteEn = (corporateNoteEnRows as any[])[0]?.setting_value || ''
+
     return NextResponse.json({
       success: true,
       fields: fieldRows,
@@ -61,7 +71,9 @@ export async function GET() {
       language: language,
       registrationDeadline: registrationDeadline,
       invoiceIndividualNote: invoiceIndividualNote,
-      invoiceCorporateNote: invoiceCorporateNote
+      invoiceCorporateNote: invoiceCorporateNote,
+      invoiceIndividualNoteEn: invoiceIndividualNoteEn,
+      invoiceCorporateNoteEn: invoiceCorporateNoteEn
     })
   } catch (error) {
     console.error('Error fetching form settings:', error)

@@ -31,6 +31,8 @@ export default function FormFieldsSettingsPage() {
   const [language, setLanguage] = useState('tr')
   const [invoiceIndividualNote, setInvoiceIndividualNote] = useState('')
   const [invoiceCorporateNote, setInvoiceCorporateNote] = useState('')
+  const [invoiceIndividualNoteEn, setInvoiceIndividualNoteEn] = useState('')
+  const [invoiceCorporateNoteEn, setInvoiceCorporateNoteEn] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -51,6 +53,8 @@ export default function FormFieldsSettingsPage() {
         setLanguage(data.language || 'tr')
         setInvoiceIndividualNote(data.invoiceIndividualNote || '')
         setInvoiceCorporateNote(data.invoiceCorporateNote || '')
+        setInvoiceIndividualNoteEn(data.invoiceIndividualNoteEn || '')
+        setInvoiceCorporateNoteEn(data.invoiceCorporateNoteEn || '')
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
@@ -95,7 +99,9 @@ export default function FormFieldsSettingsPage() {
           step2Settings: { currency_type: step2CurrencyType },
           language,
           invoiceIndividualNote,
-          invoiceCorporateNote
+          invoiceCorporateNote,
+          invoiceIndividualNoteEn,
+          invoiceCorporateNoteEn
         })
       })
 
@@ -263,36 +269,72 @@ export default function FormFieldsSettingsPage() {
         </div>
         
         <div className="p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bireysel Fatura Notu
-            </label>
-            <textarea
-              value={invoiceIndividualNote}
-              onChange={(e) => setInvoiceIndividualNote(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Bireysel fatura seçildiğinde gösterilecek not..."
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Örnek: "Bireysel fatura için TC Kimlik numaranız gereklidir."
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🇹🇷 Bireysel Fatura Notu (Türkçe)
+              </label>
+              <textarea
+                value={invoiceIndividualNote}
+                onChange={(e) => setInvoiceIndividualNote(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Bireysel fatura seçildiğinde gösterilecek not..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Örnek: "Bireysel fatura için TC Kimlik numaranız gereklidir."
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🇬🇧 Individual Invoice Note (English)
+              </label>
+              <textarea
+                value={invoiceIndividualNoteEn}
+                onChange={(e) => setInvoiceIndividualNoteEn(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Note to show when individual invoice is selected..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Example: "Your Turkish ID number is required for individual invoice."
+              </p>
+            </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kurumsal Fatura Notu
-            </label>
-            <textarea
-              value={invoiceCorporateNote}
-              onChange={(e) => setInvoiceCorporateNote(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Kurumsal fatura seçildiğinde gösterilecek not..."
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Örnek: "Kurumsal fatura için şirket bilgileri ve vergi numarası gereklidir."
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🇹🇷 Kurumsal Fatura Notu (Türkçe)
+              </label>
+              <textarea
+                value={invoiceCorporateNote}
+                onChange={(e) => setInvoiceCorporateNote(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Kurumsal fatura seçildiğinde gösterilecek not..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Örnek: "Kurumsal fatura için şirket bilgileri ve vergi numarası gereklidir."
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                🇬🇧 Corporate Invoice Note (English)
+              </label>
+              <textarea
+                value={invoiceCorporateNoteEn}
+                onChange={(e) => setInvoiceCorporateNoteEn(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Note to show when corporate invoice is selected..."
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Example: "Company information and tax number are required for corporate invoice."
+              </p>
+            </div>
           </div>
         </div>
       </div>

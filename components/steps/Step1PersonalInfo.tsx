@@ -17,7 +17,7 @@ interface Step1PersonalInfoProps {
 
 export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
   const { formData, updatePersonalInfo, setFormLanguage } = useFormStore()
-  const { fields, isFieldVisible, isFieldRequired, invoiceIndividualNote, invoiceCorporateNote, loading: settingsLoading } = useFormSettings()
+  const { fields, isFieldVisible, isFieldRequired, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn, loading: settingsLoading } = useFormSettings()
   const { t, language, canChangeLanguage, changeLanguage, loading: translationLoading } = useTranslation()
   const [usePersonalName, setUsePersonalName] = useState(false)
 
@@ -360,24 +360,28 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               )}
               
               {/* Invoice Type Notes */}
-              {invoiceType === 'bireysel' && invoiceIndividualNote && (
+              {invoiceType === 'bireysel' && (language === 'en' ? invoiceIndividualNoteEn : invoiceIndividualNote) && (
                 <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start">
                     <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-sm text-blue-800">{invoiceIndividualNote}</p>
+                    <p className="text-sm text-blue-800">
+                      {language === 'en' ? invoiceIndividualNoteEn : invoiceIndividualNote}
+                    </p>
                   </div>
                 </div>
               )}
               
-              {invoiceType === 'kurumsal' && invoiceCorporateNote && (
+              {invoiceType === 'kurumsal' && (language === 'en' ? invoiceCorporateNoteEn : invoiceCorporateNote) && (
                 <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start">
                     <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-sm text-blue-800">{invoiceCorporateNote}</p>
+                    <p className="text-sm text-blue-800">
+                      {language === 'en' ? invoiceCorporateNoteEn : invoiceCorporateNote}
+                    </p>
                   </div>
                 </div>
               )}
