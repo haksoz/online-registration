@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
         
         // POS transaction kaydı oluştur
         await pool.execute(
-          `INSERT INTO online_payment_transactions (
+          `INSERT INTO online_payments (
             registration_id, transaction_id, order_id, amount, currency,
             status, payment_status, error_code, error_message,
             gateway_name, card_type, card_last4, card_bin,
@@ -187,9 +187,11 @@ export async function POST(request: NextRequest) {
             userAgent
           ]
         )
-      } catch (posError) {
+      } catch (posError: any) {
         console.error('Error creating POS transaction:', posError)
-        paymentResult = { success: false, errorCode: '99', errorMessage: 'Sistem Hatası' }
+        console.error('POS Error details:', posError?.message)
+        // Don't fail the whole registration if POS logging fails
+        // paymentResult is already set above based on CVV
       }
     }
 
