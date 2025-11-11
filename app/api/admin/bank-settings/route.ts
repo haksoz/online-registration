@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     
     
     const [result] = await pool.execute(
-      `INSERT INTO bank_accounts (account_name, bank_name, account_holder, iban, currency, swift_code, account_number, bank_address, description, is_active, display_order) 
+      `INSERT INTO bank_accounts (account_name, bank_name, account_holder, iban, currency_type, swift_code, account_number, bank_address, description, is_active, display_order) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         account_name, 
