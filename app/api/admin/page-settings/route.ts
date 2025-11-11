@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import mysql from 'mysql2/promise'
-
-const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-}
+import { pool } from '@/lib/db'
 
 // GET - Sayfa ayarlarını getir
 export async function GET() {
   try {
-    const connection = await mysql.createConnection(dbConfig)
-    
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       'SELECT setting_key, setting_value FROM page_settings'
     )
-    
-    await connection.end()
     
     // Ayarları obje formatına çevir
     const settings: Record<string, string> = {}
@@ -51,11 +40,9 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    const connection = await mysql.createConnection(dbConfig)
-    
     // Her ayarı güncelle
     for (const [key, value] of Object.entries(settings)) {
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO page_settings (setting_key, setting_value) 
          VALUES (?, ?) 
          ON DUPLICATE KEY UPDATE 
@@ -64,8 +51,6 @@ export async function PUT(request: NextRequest) {
         [key, value]
       )
     }
-    
-    await connection.end()
     
     return NextResponse.json({
       success: true,
