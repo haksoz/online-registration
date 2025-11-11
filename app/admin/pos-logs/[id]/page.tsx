@@ -8,10 +8,10 @@ async function getPOSTransaction(id: string) {
       `SELECT 
         opt.*,
         r.reference_number,
-        r.full_name,
-        r.email,
-        r.phone,
-        r.registration_type
+        COALESCE(r.full_name, opt.customer_name) as full_name,
+        COALESCE(r.email, opt.customer_email) as email,
+        COALESCE(r.phone, opt.customer_phone) as phone,
+        COALESCE(r.registration_type, opt.registration_type) as registration_type
       FROM online_payment_transactions opt
       LEFT JOIN registrations r ON opt.registration_id = r.id
       WHERE opt.id = ?`,

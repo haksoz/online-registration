@@ -10,6 +10,9 @@ interface POSTransaction {
   full_name: string
   email: string
   phone: string
+  customer_name: string
+  customer_email: string
+  customer_phone: string
   registration_type: string
   transaction_id: string
   order_id: string
@@ -149,6 +152,31 @@ export default function POSLogDetailClient({ transaction }: POSLogDetailClientPr
                 <p className="text-sm text-gray-600">Banka</p>
                 <p className="text-gray-900">{transaction.bank_name || '-'}</p>
               </div>
+              <div>
+                <p className="text-sm text-gray-600">Ödeme Durumu</p>
+                <p className="text-gray-900">
+                  {transaction.payment_status === 'approved' && (
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      ✅ Onaylandı
+                    </span>
+                  )}
+                  {transaction.payment_status === 'declined' && (
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                      ❌ Reddedildi
+                    </span>
+                  )}
+                  {transaction.payment_status === 'pending' && (
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      ⏳ Beklemede
+                    </span>
+                  )}
+                  {!transaction.payment_status && '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Para Birimi</p>
+                <p className="text-gray-900">{transaction.currency}</p>
+              </div>
             </div>
           </div>
 
@@ -255,11 +283,11 @@ export default function POSLogDetailClient({ transaction }: POSLogDetailClientPr
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-600">Ad Soyad</p>
-                <p className="font-medium text-gray-900">{transaction.full_name}</p>
+                <p className="font-medium text-gray-900">{transaction.full_name || '-'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">E-posta</p>
-                <p className="text-gray-900">{transaction.email}</p>
+                <p className="text-gray-900">{transaction.email || '-'}</p>
               </div>
               {transaction.phone && (
                 <div>
@@ -267,26 +295,39 @@ export default function POSLogDetailClient({ transaction }: POSLogDetailClientPr
                   <p className="text-gray-900">{transaction.phone}</p>
                 </div>
               )}
-              {transaction.reference_number && (
+              {transaction.registration_type && (
+                <div>
+                  <p className="text-sm text-gray-600">Kayıt Türü</p>
+                  <p className="text-gray-900">{transaction.registration_type}</p>
+                </div>
+              )}
+              {transaction.reference_number ? (
                 <div>
                   <p className="text-sm text-gray-600">Referans No</p>
                   <p className="font-mono text-primary-600">{transaction.reference_number}</p>
                 </div>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded p-3">
+                  <p className="text-sm text-red-800 font-medium">⚠️ Kayıt Oluşturulmadı</p>
+                  <p className="text-xs text-red-600 mt-1">Ödeme başarısız olduğu için kayıt oluşturulmamıştır.</p>
+                </div>
               )}
-              <div className="pt-3 border-t">
-                <Link
-                  href={`/admin/registrations/${transaction.registration_id}`}
-                  className="text-sm text-primary-600 hover:text-primary-800 font-medium"
-                >
-                  Kayıt Detayına Git →
-                </Link>
-              </div>
+              {transaction.registration_id && (
+                <div className="pt-3 border-t">
+                  <Link
+                    href={`/admin/registrations/${transaction.registration_id}`}
+                    className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+                  >
+                    Kayıt Detayına Git →
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Güvenlik Bilgileri */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Güvenlik</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Güvenlik & Teknik</h2>
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-gray-600">IP Adresi</p>
@@ -314,6 +355,12 @@ export default function POSLogDetailClient({ transaction }: POSLogDetailClientPr
                 <div>
                   <p className="text-sm text-gray-600">Fraud Durumu</p>
                   <p className="text-gray-900">{transaction.fraud_status}</p>
+                </div>
+              )}
+              {transaction.user_agent && (
+                <div>
+                  <p className="text-sm text-gray-600">User Agent</p>
+                  <p className="text-xs text-gray-700 break-all">{transaction.user_agent}</p>
                 </div>
               )}
               {transaction.session_id && (
