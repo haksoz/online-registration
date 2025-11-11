@@ -75,7 +75,7 @@ export const TCIdInput = forwardRef<HTMLInputElement, TCIdInputProps>(
     // Gösterilecek mesajı belirle
     const getDisplayMessage = () => {
       if (error) return error
-      if (!validationMessage) return 'T.C. kimlik numaranızı girin (11 hane)'
+      if (!validationMessage) return ''
       return validationMessage
     }
 
