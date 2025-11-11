@@ -18,7 +18,7 @@ interface Step4ConfirmationProps {}
 export default function Step4Confirmation({}: Step4ConfirmationProps) {
   const formStore = useFormStore()
   const { formData } = formStore
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const paymentMethod = formData.payment.paymentMethod
   const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
   const [bankAccounts, setBankAccounts] = useState<any[]>([])
@@ -352,7 +352,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Kayıt Tamamlandı</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('step4.title')}</h2>
         </div>
 
         {/* Success Message and Reference Number */}

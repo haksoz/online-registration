@@ -6,6 +6,7 @@
 export interface BankAccount {
   id: number
   account_name: string
+  account_name_en?: string
   bank_name: string
   account_holder: string
   iban: string
@@ -18,6 +19,7 @@ export interface BankAccount {
 export interface PaymentSettings {
   dekontEmail: string
   dekontMessage: string
+  dekontMessageEn?: string
 }
 
 export interface BankData {
@@ -66,7 +68,8 @@ export async function fetchActiveBankAccounts(): Promise<BankData> {
         accounts: data.data.accounts || [DEFAULT_BANK_ACCOUNT],
         settings: {
           dekontEmail: data.data.settings?.dekont_email || DEFAULT_PAYMENT_SETTINGS.dekontEmail,
-          dekontMessage: data.data.settings?.dekont_message || DEFAULT_PAYMENT_SETTINGS.dekontMessage
+          dekontMessage: data.data.settings?.dekont_message || DEFAULT_PAYMENT_SETTINGS.dekontMessage,
+          dekontMessageEn: data.data.settings?.dekont_message_en
         }
       }
       
@@ -109,6 +112,7 @@ export const getFormattedBankAccounts = async () => {
   return bankData.accounts.map(account => ({
     id: account.id,
     accountName: account.account_name,
+    accountNameEn: account.account_name_en,
     bankName: account.bank_name,
     accountHolder: account.account_holder,
     iban: formatIban(account.iban),

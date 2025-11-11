@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/useToast'
 interface BankAccount {
   id: number
   account_name: string
+  account_name_en?: string
   bank_name: string
   account_holder: string
   iban: string
@@ -18,13 +19,15 @@ interface BankAccount {
 interface PaymentSettings {
   dekont_email: string
   dekont_message: string
+  dekont_message_en?: string
 }
 
 export default function BankSettingsPage() {
   const [accounts, setAccounts] = useState<BankAccount[]>([])
   const [settings, setSettings] = useState<PaymentSettings>({
     dekont_email: '',
-    dekont_message: ''
+    dekont_message: '',
+    dekont_message_en: ''
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -45,7 +48,7 @@ export default function BankSettingsPage() {
       
       if (data.success) {
         setAccounts(data.data.accounts || [])
-        setSettings(data.data.settings || { dekont_email: '', dekont_message: '' })
+        setSettings(data.data.settings || { dekont_email: '', dekont_message: '', dekont_message_en: '' })
       } else {
         showError('Veriler yüklenemedi')
       }
@@ -254,7 +257,7 @@ export default function BankSettingsPage() {
           {/* Dekont Mesajı */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Dekont Mesajı
+              Dekont Mesajı (Türkçe)
             </label>
             <textarea
               value={settings.dekont_message}
@@ -265,6 +268,23 @@ export default function BankSettingsPage() {
             />
             <p className="text-xs text-gray-500 mt-1">
               {'{email}'} kısmı otomatik olarak e-posta adresi ile değiştirilir
+            </p>
+          </div>
+
+          {/* Dekont Mesajı (İngilizce) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Dekont Mesajı (İngilizce)
+            </label>
+            <textarea
+              value={settings.dekont_message_en || ''}
+              onChange={(e) => setSettings(prev => ({ ...prev, dekont_message_en: e.target.value }))}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Please send your receipt to {email}."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {'{email}'} will be automatically replaced with the email address
             </p>
           </div>
         </div>
@@ -310,6 +330,7 @@ interface BankAccountModalProps {
 function BankAccountModal({ account, onClose, onSave }: BankAccountModalProps) {
   const [formData, setFormData] = useState({
     account_name: account?.account_name || '',
+    account_name_en: account?.account_name_en || '',
     bank_name: account?.bank_name || '',
     account_holder: account?.account_holder || '',
     iban: account?.iban || '',
@@ -394,7 +415,7 @@ function BankAccountModal({ account, onClose, onSave }: BankAccountModalProps) {
             {/* Hesap Adı */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hesap Adı <span className="text-red-500">*</span>
+                Hesap Adı (Türkçe) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -402,6 +423,20 @@ function BankAccountModal({ account, onClose, onSave }: BankAccountModalProps) {
                 onChange={(e) => setFormData(prev => ({ ...prev, account_name: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Örnek: Ana Hesap (TRY)"
+              />
+            </div>
+
+            {/* Hesap Adı (İngilizce) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Hesap Adı (İngilizce)
+              </label>
+              <input
+                type="text"
+                value={formData.account_name_en}
+                onChange={(e) => setFormData(prev => ({ ...prev, account_name_en: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Example: Main Account (TRY)"
               />
             </div>
 

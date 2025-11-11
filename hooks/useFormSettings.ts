@@ -17,6 +17,7 @@ export interface FormFieldSetting {
 export interface PaymentMethodSetting {
   method_name: string
   method_label: string
+  method_label_en?: string
   is_enabled: boolean
   display_order: number
   description?: string

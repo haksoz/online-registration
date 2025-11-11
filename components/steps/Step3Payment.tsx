@@ -20,7 +20,7 @@ interface Step3PaymentProps {
 export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
   const { formData, updatePayment, setReferenceNumber } = useFormStore()
   const { getEnabledPaymentMethods, loading: settingsLoading } = useFormSettings()
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
   const [bankAccounts, setBankAccounts] = useState<any[]>([])
   const [paymentSettings, setPaymentSettings] = useState<any>({})
@@ -160,7 +160,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
   
   const registrationInfo = selectedRegistrationType
     ? {
-        label: selectedRegistrationType.label,
+        label: language === 'en' ? selectedRegistrationType.label_en || selectedRegistrationType.label : selectedRegistrationType.label,
         fee: formatTurkishCurrency(selectedRegistrationType.fee_try),
         feeInCurrency: feeInCurrency,
         feeInTRY: feeInTRY,
@@ -179,39 +179,39 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
         {/* Header */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Ödeme Bilgileri</h2>
-          <p className="text-sm text-gray-600">Lütfen ödeme yönteminizi seçin</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('step3.title')}</h2>
+          <p className="text-sm text-gray-600">{t('step3.subtitle')}</p>
         </div>
 
         {/* Summary Section */}
         <div className="bg-gray-50 rounded-lg p-6 mb-6 border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Özet</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('step3.summary')}</h3>
           
           {/* Step 1 Summary */}
           <div className="mb-4 pb-4 border-b border-gray-300">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Kişisel Bilgiler</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('step3.personalInfo')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-600">Ad Soyad:</span>
+                <span className="text-gray-600">{t('step3.fullName')}:</span>
                 <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.fullName || `${formData.personalInfo.firstName} ${formData.personalInfo.lastName}`.trim()}</span>
               </div>
               <div>
-                <span className="text-gray-600">E-posta:</span>
+                <span className="text-gray-600">{t('step3.email')}:</span>
                 <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.email}</span>
               </div>
               <div>
-                <span className="text-gray-600">Telefon:</span>
+                <span className="text-gray-600">{t('step3.phone')}:</span>
                 <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.phone}</span>
               </div>
               {formData.personalInfo.address && (
                 <div className="md:col-span-2">
-                  <span className="text-gray-600">Adres:</span>
+                  <span className="text-gray-600">{t('step3.address')}:</span>
                   <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.address}</span>
                 </div>
               )}
               {formData.personalInfo.company && (
                 <div className="md:col-span-2">
-                  <span className="text-gray-600">Şirket:</span>
+                  <span className="text-gray-600">{t('step3.company')}:</span>
                   <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.company}</span>
                 </div>
               )}
@@ -220,13 +220,13 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
 
           {/* Invoice Information Summary */}
           <div className="mb-4 pb-4 border-b border-gray-300">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Fatura Bilgileri</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('step3.invoiceInfo')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-600">Fatura Türü:</span>
+                <span className="text-gray-600">{t('step3.invoiceType')}:</span>
                 <span className="ml-2 font-medium text-gray-900">
-                  {formData.personalInfo.invoiceType === 'bireysel' ? 'Bireysel' : 
-                   formData.personalInfo.invoiceType === 'kurumsal' ? 'Kurumsal' : '-'}
+                  {formData.personalInfo.invoiceType === 'bireysel' ? t('step3.individual') : 
+                   formData.personalInfo.invoiceType === 'kurumsal' ? t('step3.corporate') : '-'}
                 </span>
               </div>
               
@@ -235,19 +235,19 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                 <>
                   {formData.personalInfo.invoiceFullName && (
                     <div>
-                      <span className="text-gray-600">Fatura Adı:</span>
+                      <span className="text-gray-600">{t('step3.invoiceFullName')}:</span>
                       <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceFullName}</span>
                     </div>
                   )}
                   {formData.personalInfo.idNumber && (
                     <div>
-                      <span className="text-gray-600">TC Kimlik No:</span>
+                      <span className="text-gray-600">{t('step3.idNumber')}:</span>
                       <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.idNumber}</span>
                     </div>
                   )}
                   {formData.personalInfo.invoiceAddress && (
                     <div className="md:col-span-2">
-                      <span className="text-gray-600">Fatura Adresi:</span>
+                      <span className="text-gray-600">{t('step3.invoiceAddress')}:</span>
                       <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</span>
                     </div>
                   )}
@@ -259,25 +259,25 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                 <>
                   {formData.personalInfo.invoiceCompanyName && (
                     <div>
-                      <span className="text-gray-600">Şirket Adı:</span>
+                      <span className="text-gray-600">{t('step3.invoiceCompanyName')}:</span>
                       <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceCompanyName}</span>
                     </div>
                   )}
                   {formData.personalInfo.taxOffice && (
                     <div>
-                      <span className="text-gray-600">Vergi Dairesi:</span>
+                      <span className="text-gray-600">{t('step3.taxOffice')}:</span>
                       <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.taxOffice}</span>
                     </div>
                   )}
                   {formData.personalInfo.taxNumber && (
                     <div>
-                      <span className="text-gray-600">Vergi No:</span>
+                      <span className="text-gray-600">{t('step3.taxNumber')}:</span>
                       <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.taxNumber}</span>
                     </div>
                   )}
                   {formData.personalInfo.invoiceAddress && (
                     <div className="md:col-span-2">
-                      <span className="text-gray-600">Fatura Adresi:</span>
+                      <span className="text-gray-600">{t('step3.invoiceAddress')}:</span>
                       <span className="ml-2 font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</span>
                     </div>
                   )}
@@ -288,23 +288,23 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
 
           {/* Step 2 Summary */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Kayıt Türü ve Ücret</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('step3.registrationTypeAndFee')}</h4>
             <div className="space-y-2">
               <div className="text-sm">
-                <span className="text-gray-600">Seçilen Tür:</span>
+                <span className="text-gray-600">{t('step3.selectedType')}:</span>
                 <span className="ml-2 font-medium text-gray-900">{registrationInfo.label}</span>
               </div>
               
               {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
                 <div className="text-sm bg-blue-50 border border-blue-200 rounded p-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Seçilen Döviz Ücreti:</span>
+                    <span className="text-gray-600">{t('step3.selectedCurrencyFee')}:</span>
                     <span className="font-bold text-blue-600">
                       {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-gray-600">TL Karşılığı:</span>
+                    <span className="text-gray-600">{t('step3.tryEquivalent')}:</span>
                     <span className="font-bold text-primary-600">
                       {formatTurkishCurrency(Number(registrationInfo.feeInTRY))}
                     </span>
@@ -314,7 +314,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
               
               {registrationInfo.currency === 'TRY' && registrationInfo.fee && (
                 <div className="text-sm">
-                  <span className="text-gray-600">Ücret:</span>
+                  <span className="text-gray-600">{t('step3.fee')}:</span>
                   <span className="ml-2 font-bold text-primary-600">{registrationInfo.fee}</span>
                 </div>
               )}
@@ -325,18 +325,18 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
         {/* Payment Method Selection */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Ödeme Yöntemi <span className="text-red-500">*</span>
+            {t('step3.paymentMethod')} <span className="text-red-500">*</span>
           </label>
           
           {settingsLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-              <span className="ml-3 text-gray-600">Ödeme yöntemleri yükleniyor...</span>
+              <span className="ml-3 text-gray-600">{t('step3.loadingPaymentMethods')}</span>
             </div>
           ) : enabledPaymentMethods.length === 0 ? (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800 text-sm font-medium">⚠️ Aktif ödeme yöntemi bulunmamaktadır</p>
-              <p className="text-yellow-700 text-xs mt-1">Lütfen yönetici ile iletişime geçin.</p>
+              <p className="text-yellow-800 text-sm font-medium">⚠️ {t('step3.noPaymentMethods')}</p>
+              <p className="text-yellow-700 text-xs mt-1">{t('step3.contactAdmin')}</p>
             </div>
           ) : (
             <div className={`grid grid-cols-1 ${enabledPaymentMethods.length > 1 ? 'sm:grid-cols-2' : ''} gap-3`}>
@@ -356,7 +356,13 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                     className="w-4 h-4 text-primary-600 focus:ring-primary-500 focus:ring-offset-2"
                   />
                   <span className="ml-3 mr-2 text-2xl">{method.icon}</span>
-                  <span className="text-gray-700 font-medium">{method.method_label}</span>
+                  <span className="text-gray-700 font-medium">
+                    {language === 'en' 
+                      ? method.method_label_en || 
+                        (method.method_name === 'online' ? 'Online Payment' : 
+                         method.method_name === 'bank_transfer' ? 'Bank Transfer' : method.method_label)
+                      : method.method_label}
+                  </span>
                 </label>
               ))}
             </div>
@@ -383,7 +389,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                       <p className="text-base font-bold text-red-900">{paymentError.message}</p>
                     </div>
                     <p className="text-sm text-red-800">
-                      Lütfen kart bilgilerinizi kontrol ederek tekrar deneyiniz.
+                      {t('step3.checkCardInfo')}
                     </p>
                     <button
                       type="button"
@@ -411,12 +417,12 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                     </p>
                     <div className="bg-white rounded border border-yellow-200 p-3 text-xs space-y-2">
                       <div>
-                        <p className="font-semibold text-gray-800 mb-1">Kart Numarası (Tüm testler için):</p>
+                        <p className="font-semibold text-gray-800 mb-1">{t('step3.testCardNumber')}</p>
                         <p className="font-mono text-gray-900 text-sm">4546 7112 3456 7894</p>
-                        <p className="text-gray-600">Son Kullanma: 12/26</p>
+                        <p className="text-gray-600">{t('step3.testExpiry')}</p>
                       </div>
                       <div className="pt-2 border-t border-yellow-200">
-                        <p className="font-semibold text-gray-800 mb-1">CVV Kodları:</p>
+                        <p className="font-semibold text-gray-800 mb-1">{t('step3.testCvvCodes')}</p>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <p className="font-mono text-green-700">000 - ✅ Başarılı</p>
@@ -443,9 +449,9 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm text-blue-800 font-medium">Güvenli Ödeme</p>
+                  <p className="text-sm text-blue-800 font-medium">{t('step3.securePayment')}</p>
                   <p className="text-xs text-blue-700 mt-1">
-                    Kart bilgileriniz SSL ile şifrelenir ve güvenli bir şekilde işlenir. Kart bilgileriniz saklanmaz.
+                    {t('step3.securePaymentDesc')}
                   </p>
                 </div>
               </div>
@@ -457,14 +463,14 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                 <svg className="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
-                Kart Bilgileri
+                {t('step3.cardInfo')}
               </h3>
               
               <div className="space-y-4">
                 {/* Cardholder Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Kart Sahibinin Adı <span className="text-red-500">*</span>
+                    {t('step3.cardHolderName')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -481,7 +487,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                 {/* Card Number */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Kart Numarası <span className="text-red-500">*</span>
+                    {t('step3.cardNumber')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -510,7 +516,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Son Kullanma Tarihi <span className="text-red-500">*</span>
+                      {t('step3.cardExpiry')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -534,7 +540,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      CVV <span className="text-red-500">*</span>
+                      {t('step3.cvv')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -550,7 +556,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                     {errors.cardCvv && (
                       <p className="mt-1.5 text-sm text-red-600">{errors.cardCvv.message}</p>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">Kartın arkasındaki 3 haneli kod</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('step3.cvvHelp')}</p>
                   </div>
                 </div>
               </div>
@@ -563,9 +569,9 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
                 <div>
-                  <p className="text-sm text-green-800 font-medium">256-bit SSL Şifreleme</p>
+                  <p className="text-sm text-green-800 font-medium">{t('step3.sslEncryption')}</p>
                   <p className="text-xs text-green-700 mt-1">
-                    Ödemeniz 3D Secure ile güvence altındadır. Kart bilgileriniz hiçbir zaman saklanmaz.
+                    {t('step3.sslEncryptionDesc')}
                   </p>
                 </div>
               </div>
@@ -578,7 +584,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
           <div className="space-y-4 mb-6">
             {/* Banka Hesapları */}
             <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Banka Hesapları</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('step3.bankAccounts')}</h3>
               <div className="space-y-4">
                 {bankAccounts
                   .filter(account => {
@@ -599,18 +605,24 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                   .map((account, index) => (
                   <div key={account.id} className={`${index > 0 ? 'pt-4 border-t border-blue-200' : ''}`}>
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-800">{account.accountName}</h4>
+                      <h4 className="font-medium text-gray-800">
+                        {(() => {
+                          const name = language === 'en' ? (account as any).accountNameEn || account.accountName : account.accountName;
+                          console.log('Account:', account, 'Language:', language, 'Display name:', name);
+                          return name;
+                        })()}
+                      </h4>
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                         {account.currency}
                       </span>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex flex-col sm:flex-row">
-                        <span className="font-medium text-gray-700 sm:w-32">Banka:</span>
+                        <span className="font-medium text-gray-700 sm:w-32">{t('step3.bank')}:</span>
                         <span className="text-gray-900">{account.bankName}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row">
-                        <span className="font-medium text-gray-700 sm:w-32">Hesap Sahibi:</span>
+                        <span className="font-medium text-gray-700 sm:w-32">{t('step3.accountHolder')}:</span>
                         <span className="text-gray-900">{account.accountHolder}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row">
@@ -619,7 +631,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                       </div>
                       {account.description && (
                         <div className="flex flex-col sm:flex-row">
-                          <span className="font-medium text-gray-700 sm:w-32">Açıklama:</span>
+                          <span className="font-medium text-gray-700 sm:w-32">{t('step3.description')}:</span>
                           <span className="text-gray-600">{account.description}</span>
                         </div>
                       )}
@@ -637,8 +649,11 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                 </svg>
                 <p className="text-sm text-yellow-800">
                   <span className="font-medium">
-                    {paymentSettings.dekontMessage?.replace('{email}', paymentSettings.dekontEmail) || 
-                     'Lütfen dekontunuzu dekont@ko.com.tr adresine iletiniz.'}
+                    {language === 'en' 
+                      ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.replace('{email}', paymentSettings.dekontEmail) || 
+                        `Please send your receipt to ${paymentSettings.dekontEmail}.`
+                      : paymentSettings.dekontMessage?.replace('{email}', paymentSettings.dekontEmail) || 
+                        'Lütfen dekontunuzu dekont@ko.com.tr adresine iletiniz.'}
                   </span>
                 </p>
               </div>

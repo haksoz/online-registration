@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useFormStore } from '@/store/formStore'
 import trTranslations from '@/locales/tr.json'
 import enTranslations from '@/locales/en.json'
 
@@ -11,6 +12,7 @@ const translations: Record<string, Translations> = {
 }
 
 export function useTranslation() {
+  const { formData } = useFormStore()
   const [language, setLanguage] = useState<'tr' | 'en'>('tr')
   const [languageMode, setLanguageMode] = useState<'tr' | 'en' | 'tr_en' | 'en_tr'>('tr')
   const [loading, setLoading] = useState(true)
@@ -25,11 +27,15 @@ export function useTranslation() {
           const mode = data.language
           setLanguageMode(mode)
           
-          // Varsayılan dili ayarla
-          if (mode === 'tr' || mode === 'tr_en') {
-            setLanguage('tr')
-          } else if (mode === 'en' || mode === 'en_tr') {
-            setLanguage('en')
+          // Store'da kayıtlı dil varsa onu kullan, yoksa varsayılan dili ayarla
+          if (formData.formLanguage) {
+            setLanguage(formData.formLanguage)
+          } else {
+            if (mode === 'tr' || mode === 'tr_en') {
+              setLanguage('tr')
+            } else if (mode === 'en' || mode === 'en_tr') {
+              setLanguage('en')
+            }
           }
         }
       } catch (error) {
@@ -40,6 +46,13 @@ export function useTranslation() {
     }
     fetchLanguage()
   }, [])
+
+  // Store'daki dil değiştiğinde güncelle
+  useEffect(() => {
+    if (formData.formLanguage) {
+      setLanguage(formData.formLanguage)
+    }
+  }, [formData.formLanguage])
 
   const t = (key: TranslationKey, params?: Record<string, string>): string => {
     const keys = key.split('.')

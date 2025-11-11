@@ -3,10 +3,12 @@ export interface RegistrationType {
   id: number
   value: string
   label: string
+  label_en?: string
   fee_try: number
   fee_usd: number
   fee_eur: number
   description?: string
+  description_en?: string
   is_active: boolean
   created_at: string
   updated_at: string

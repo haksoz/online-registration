@@ -227,13 +227,13 @@ export default function Step2Accommodation({ onNext, onBack }: Step2Accommodatio
               <div className="ml-4 flex-1">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-900 font-medium">
-                    {language === 'en' ? (option as any).label_en || option.label : option.label}
+                    {language === 'en' ? option.label_en || option.label : option.label}
                   </span>
                   <span className="text-lg font-bold text-primary-600">{formatFee(option)}</span>
                 </div>
-                {(language === 'en' ? (option as any).description_en || option.description : option.description) && (
+                {(language === 'en' ? option.description_en || option.description : option.description) && (
                   <p className="mt-1 text-sm text-gray-600">
-                    {language === 'en' ? (option as any).description_en || option.description : option.description}
+                    {language === 'en' ? option.description_en || option.description : option.description}
                   </p>
                 )}
               </div>
