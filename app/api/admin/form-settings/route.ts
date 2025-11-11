@@ -38,13 +38,26 @@ export async function GET() {
     )
     const registrationDeadline = (deadlineRows as any[])[0]?.setting_value || ''
 
+    // Invoice notes
+    const [individualNoteRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'invoice_individual_note'`
+    )
+    const invoiceIndividualNote = (individualNoteRows as any[])[0]?.setting_value || ''
+
+    const [corporateNoteRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'invoice_corporate_note'`
+    )
+    const invoiceCorporateNote = (corporateNoteRows as any[])[0]?.setting_value || ''
+
     return NextResponse.json({
       success: true,
       fields: fieldRows,
       paymentMethods: paymentRows,
       step2Settings: step2Settings,
       language: language,
-      registrationDeadline: registrationDeadline
+      registrationDeadline: registrationDeadline,
+      invoiceIndividualNote: invoiceIndividualNote,
+      invoiceCorporateNote: invoiceCorporateNote
     })
   } catch (error) {
     console.error('Error fetching admin form settings:', error)
@@ -59,7 +72,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { fields, paymentMethods, step2Settings, language, registrationDeadline } = body
+    const { fields, paymentMethods, step2Settings, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote } = body
 
     const connection = await pool.getConnection()
     
@@ -118,6 +131,25 @@ export async function PUT(request: NextRequest) {
            VALUES ('registration_deadline', ?, 'Kayıt son tarihi (boş ise sınırsız)')
            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
           [registrationDeadline || '']
+        )
+      }
+
+      // Invoice notes güncelle
+      if (invoiceIndividualNote !== undefined) {
+        await connection.execute(
+          `INSERT INTO form_settings (setting_key, setting_value, description) 
+           VALUES ('invoice_individual_note', ?, 'Bireysel fatura seçimi için uyarı notu')
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+          [invoiceIndividualNote]
+        )
+      }
+
+      if (invoiceCorporateNote !== undefined) {
+        await connection.execute(
+          `INSERT INTO form_settings (setting_key, setting_value, description) 
+           VALUES ('invoice_corporate_note', ?, 'Kurumsal fatura seçimi için uyarı notu')
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+          [invoiceCorporateNote]
         )
       }
 

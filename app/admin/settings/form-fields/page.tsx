@@ -29,6 +29,8 @@ export default function FormFieldsSettingsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSetting[]>([])
   const [step2CurrencyType, setStep2CurrencyType] = useState('TRY')
   const [language, setLanguage] = useState('tr')
+  const [invoiceIndividualNote, setInvoiceIndividualNote] = useState('')
+  const [invoiceCorporateNote, setInvoiceCorporateNote] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -47,6 +49,8 @@ export default function FormFieldsSettingsPage() {
         setPaymentMethods(data.paymentMethods || [])
         setStep2CurrencyType(data.step2Settings?.currency_type || 'TRY')
         setLanguage(data.language || 'tr')
+        setInvoiceIndividualNote(data.invoiceIndividualNote || '')
+        setInvoiceCorporateNote(data.invoiceCorporateNote || '')
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
@@ -89,7 +93,9 @@ export default function FormFieldsSettingsPage() {
           fields, 
           paymentMethods,
           step2Settings: { currency_type: step2CurrencyType },
-          language
+          language,
+          invoiceIndividualNote,
+          invoiceCorporateNote
         })
       })
 
@@ -245,6 +251,48 @@ export default function FormFieldsSettingsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Invoice Notes */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Fatura Türü Notları</h2>
+          <p className="text-sm text-gray-600 mt-1">Kullanıcı fatura türü seçtiğinde gösterilecek bilgilendirme notları</p>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Bireysel Fatura Notu
+            </label>
+            <textarea
+              value={invoiceIndividualNote}
+              onChange={(e) => setInvoiceIndividualNote(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Bireysel fatura seçildiğinde gösterilecek not..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Örnek: "Bireysel fatura için TC Kimlik numaranız gereklidir."
+            </p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Kurumsal Fatura Notu
+            </label>
+            <textarea
+              value={invoiceCorporateNote}
+              onChange={(e) => setInvoiceCorporateNote(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Kurumsal fatura seçildiğinde gösterilecek not..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Örnek: "Kurumsal fatura için şirket bilgileri ve vergi numarası gereklidir."
+            </p>
           </div>
         </div>
       </div>
