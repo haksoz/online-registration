@@ -426,13 +426,21 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     id="invoiceFullName"
                     type="text"
                     {...register('invoiceFullName')}
+                    disabled={usePersonalName}
                     className={`w-full px-4 py-3 border rounded-lg transition-colors focus:outline-none focus:ring-2 ${
+                      usePersonalName ? 'bg-gray-100 cursor-not-allowed' : ''
+                    } ${
                       errors.invoiceFullName
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
                         : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
                     }`}
                     placeholder="Ad Soyad"
                   />
+                  {usePersonalName && (
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      ℹ️ Kişisel bilgilerinizdeki ad soyad otomatik olarak kullanılıyor
+                    </p>
+                  )}
                   {errors.invoiceFullName && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.invoiceFullName.message}</p>
                   )}
