@@ -151,6 +151,3 @@ export default function FormWizard() {
     </>
   )
 }
-
-export { steps }
-
