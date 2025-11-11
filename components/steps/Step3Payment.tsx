@@ -387,8 +387,8 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
               </div>
             )}
 
-            {/* Test Mode Banner - Only show in development */}
-            {process.env.NODE_ENV === 'development' && (
+            {/* Test Mode Banner - Show when test mode is enabled */}
+            {process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true' && (
               <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-300">
                 <div className="flex items-start">
                   <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
