@@ -1,29 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import mysql from 'mysql2/promise'
+import { pool } from "@/lib/db"
 
-const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-}
 
 // GET - Banka hesapları ve ödeme ayarlarını getir
 export async function GET() {
   try {
-    const connection = await mysql.createConnection(dbConfig)
+    
     
     // Banka hesaplarını getir
-    const [accounts] = await connection.execute(
+    const [accounts] = await pool.execute(
       'SELECT * FROM bank_accounts ORDER BY display_order, id'
     )
     
     // Ödeme ayarlarını getir
-    const [settings] = await connection.execute(
+    const [settings] = await pool.execute(
       'SELECT setting_key, setting_value FROM payment_settings'
     )
     
-    await connection.end()
     
     // Ayarları obje formatına çevir
     const paymentSettings: Record<string, string> = {}
@@ -70,9 +63,9 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    const connection = await mysql.createConnection(dbConfig)
     
-    const [result] = await connection.execute(
+    
+    const [result] = await pool.execute(
       `INSERT INTO bank_accounts (account_name, bank_name, account_holder, iban, currency, swift_code, account_number, bank_address, description, is_active, display_order) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -90,7 +83,6 @@ export async function POST(request: NextRequest) {
       ]
     )
     
-    await connection.end()
     
     return NextResponse.json({
       success: true,
@@ -119,11 +111,11 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    const connection = await mysql.createConnection(dbConfig)
+    
     
     // Her ayarı güncelle
     for (const [key, value] of Object.entries(settings)) {
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO payment_settings (setting_key, setting_value) 
          VALUES (?, ?) 
          ON DUPLICATE KEY UPDATE 
@@ -133,7 +125,6 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    await connection.end()
     
     return NextResponse.json({
       success: true,

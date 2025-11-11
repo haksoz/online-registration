@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import mysql from 'mysql2/promise'
+import { pool } from "@/lib/db"
 
-const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-}
 
 // PUT - Banka hesabını güncelle
 export async function PUT(
@@ -34,9 +28,9 @@ export async function PUT(
       }
     }
     
-    const connection = await mysql.createConnection(dbConfig)
     
-    await connection.execute(
+    
+    await pool.execute(
       `UPDATE bank_accounts 
        SET account_name = ?, bank_name = ?, account_holder = ?, iban = ?, 
            currency = ?, swift_code = ?, account_number = ?, bank_address = ?,
@@ -58,7 +52,6 @@ export async function PUT(
       ]
     )
     
-    await connection.end()
     
     return NextResponse.json({
       success: true,
@@ -79,14 +72,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const connection = await mysql.createConnection(dbConfig)
     
-    await connection.execute(
+    
+    await pool.execute(
       'DELETE FROM bank_accounts WHERE id = ?',
       [params.id]
     )
     
-    await connection.end()
     
     return NextResponse.json({
       success: true,
