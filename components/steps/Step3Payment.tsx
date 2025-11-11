@@ -103,6 +103,16 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
 
       const result = await response.json()
       
+      // Ödeme başarısız durumu (status 400)
+      if (!response.ok && result.paymentResult) {
+        setPaymentError({
+          code: result.paymentResult.errorCode || 'ERROR',
+          message: result.paymentResult.errorMessage || 'Ödeme başarısız oldu'
+        })
+        setIsProcessing(false)
+        return
+      }
+      
       if (result.success && result.referenceNumber) {
         // Referans numarasını store'a kaydet
         setReferenceNumber(result.referenceNumber)
