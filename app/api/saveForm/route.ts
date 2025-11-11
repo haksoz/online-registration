@@ -32,6 +32,51 @@ export async function POST(request: NextRequest) {
     // Generate unique reference number
     const referenceNumber = generateReferenceNumber()
 
+    // Online ödeme seçildiyse önce ödemeyi kontrol et
+    let paymentResult: { success: boolean; errorCode: string | null; errorMessage: string | null } = { 
+      success: true, 
+      errorCode: null, 
+      errorMessage: null 
+    }
+    
+    if (payment.paymentMethod === 'online' && payment.cardNumber) {
+      const isTestMode = process.env.PAYMENT_TEST_MODE === 'true'
+      
+      // Kart numarasından son 4 hane ve BIN al
+      const cardNumber = payment.cardNumber.replace(/\s/g, '')
+      const cvv = payment.cardCvv
+      
+      if (!isTestMode) {
+        // TODO: Production'da gerçek POS entegrasyonu yapılacak
+        console.warn('⚠️ PAYMENT_TEST_MODE=false but no real POS integration implemented yet')
+      }
+      
+      // CVV'ye göre ödeme sonucunu belirle (TEST MODE)
+      if (cvv === '120') {
+        paymentResult = { success: false, errorCode: '12', errorMessage: 'Geçersiz İşlem' }
+      } else if (cvv === '130') {
+        paymentResult = { success: false, errorCode: '13', errorMessage: 'Geçersiz Tutar' }
+      } else if (cvv === '340') {
+        paymentResult = { success: false, errorCode: '34', errorMessage: 'Fraud Şüphesi' }
+      } else if (cvv === '370') {
+        paymentResult = { success: false, errorCode: '37', errorMessage: 'Çalıntı Kart' }
+      } else if (cvv === '510') {
+        paymentResult = { success: false, errorCode: '51', errorMessage: 'Limit Yetersiz' }
+      }
+      
+      // Ödeme başarısız ise kaydı oluşturma
+      if (!paymentResult.success) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Ödeme başarısız oldu', 
+            paymentResult: paymentResult
+          },
+          { status: 400 }
+        )
+      }
+    }
+
     // Determine payment status based on payment method
     const paymentStatus = payment.paymentMethod === 'online' ? 'completed' : 'pending'
 
@@ -80,71 +125,12 @@ export async function POST(request: NextRequest) {
     const registrationId = (result as any).insertId
 
     // Online ödeme seçildiyse POS transaction kaydı oluştur
-    let paymentResult: { success: boolean; errorCode: string | null; errorMessage: string | null } = { 
-      success: true, 
-      errorCode: null, 
-      errorMessage: null 
-    }
-    
     if (payment.paymentMethod === 'online' && payment.cardNumber) {
       try {
-        const isTestMode = process.env.PAYMENT_TEST_MODE === 'true'
-        
         // Kart numarasından son 4 hane ve BIN al
         const cardNumber = payment.cardNumber.replace(/\s/g, '')
         const cardLast4 = cardNumber.slice(-4)
         const cardBin = cardNumber.slice(0, 6)
-        
-        // CVV'ye göre işlem durumunu belirle (TEST MODE)
-        const cvv = payment.cardCvv
-        let status = 'success'
-        let paymentStatus = 'approved'
-        let errorCode = null
-        let errorMessage = null
-        let fraudScore = 10
-        
-        if (!isTestMode) {
-          // TODO: Production'da gerçek POS entegrasyonu yapılacak
-          console.warn('⚠️ PAYMENT_TEST_MODE=false but no real POS integration implemented yet')
-        }
-        
-        // CVV'ye göre hata kodları
-        if (cvv === '120') {
-          status = 'failed'
-          paymentStatus = 'declined'
-          errorCode = '12'
-          errorMessage = 'Geçersiz İşlem'
-          fraudScore = 25
-          paymentResult = { success: false, errorCode, errorMessage }
-        } else if (cvv === '130') {
-          status = 'failed'
-          paymentStatus = 'declined'
-          errorCode = '13'
-          errorMessage = 'Geçersiz Tutar'
-          fraudScore = 20
-          paymentResult = { success: false, errorCode, errorMessage }
-        } else if (cvv === '340') {
-          status = 'failed'
-          paymentStatus = 'declined'
-          errorCode = '34'
-          errorMessage = 'Fraud Şüphesi'
-          fraudScore = 85
-          paymentResult = { success: false, errorCode, errorMessage }
-        } else if (cvv === '370') {
-          status = 'failed'
-          paymentStatus = 'declined'
-          errorCode = '37'
-          errorMessage = 'Çalıntı Kart'
-          fraudScore = 95
-          paymentResult = { success: false, errorCode, errorMessage }
-        } else if (cvv === '510') {
-          status = 'failed'
-          paymentStatus = 'declined'
-          errorCode = '51'
-          errorMessage = 'Limit Yetersiz'
-          fraudScore = 15
-          paymentResult = { success: false, errorCode, errorMessage }
-        }
         
         // Transaction ID oluştur
         const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)}`
@@ -158,9 +144,18 @@ export async function POST(request: NextRequest) {
         // User agent al
         const userAgent = request.headers.get('user-agent') || ''
         
-        // POS transaction kaydı oluştur
+        // Determine fraud score and status based on CVV
+        const cvv = payment.cardCvv
+        let fraudScore = 10
+        if (cvv === '120') fraudScore = 25
+        else if (cvv === '130') fraudScore = 20
+        else if (cvv === '340') fraudScore = 85
+        else if (cvv === '370') fraudScore = 95
+        else if (cvv === '510') fraudScore = 15
+        
+        // POS transaction kaydı oluştur (başarılı ödemeler için)
         await pool.execute(
-          `INSERT INTO online_payments (
+          `INSERT INTO online_payment_transactions (
             registration_id, transaction_id, order_id, amount, currency,
             status, payment_status, error_code, error_message,
             gateway_name, card_type, card_last4, card_bin,
@@ -173,10 +168,10 @@ export async function POST(request: NextRequest) {
             orderId,
             fee,
             currencyCode,
-            status,
-            paymentStatus,
-            errorCode,
-            errorMessage,
+            'success',
+            'approved',
+            null,
+            null,
             'Test Gateway',
             'VISA',
             cardLast4,
@@ -191,21 +186,7 @@ export async function POST(request: NextRequest) {
         console.error('Error creating POS transaction:', posError)
         console.error('POS Error details:', posError?.message)
         // Don't fail the whole registration if POS logging fails
-        // paymentResult is already set above based on CVV
       }
-    }
-
-    // If online payment failed, delete the registration
-    if (payment.paymentMethod === 'online' && !paymentResult.success) {
-      await pool.execute('DELETE FROM registrations WHERE id = ?', [registrationId])
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Ödeme başarısız oldu', 
-          paymentResult: paymentResult
-        },
-        { status: 400 }
-      )
     }
 
     return NextResponse.json(
