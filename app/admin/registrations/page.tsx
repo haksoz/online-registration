@@ -390,13 +390,7 @@ export default function RegistrationsPage() {
                 />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Referans No
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ad Soyad
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kayıt Durumu
+                Katılımcı Bilgileri
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fatura Tipi
@@ -421,7 +415,7 @@ export default function RegistrationsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {!Array.isArray(registrations) || registrations.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                   {loading ? 'Yükleniyor...' : 'Henüz kayıt bulunmamaktadır.'}
                 </td>
               </tr>
@@ -436,43 +430,45 @@ export default function RegistrationsPage() {
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    <span className="font-mono text-primary-600">
-                      {r.reference_number || '-'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {r.full_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex flex-col gap-1">
-                      {r.status === 1 ? (
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          Kayıtlı
-                        </span>
-                      ) : r.status === 0 ? (
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
-                          İptal
-                        </span>
-                      ) : (
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                          Bilinmiyor
-                        </span>
+                  <td className="px-6 py-4">
+                    <div className="text-sm">
+                      <div className="font-medium text-gray-900">{r.full_name}</div>
+                      <div className="text-gray-500">{r.email}</div>
+                      {r.phone && (
+                        <div className="text-xs text-gray-500">{r.phone}</div>
                       )}
-                      
-                      {/* İade durumu - sadece iptal edilmiş ve ödeme tamamlanmış kayıtlar için */}
-                      {r.status === 0 && r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' && (
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          r.refund_status === 'completed' ? 'bg-red-100 text-red-800' : // Kırmızı = Kalıcı iptal
-                          r.refund_status === 'rejected' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {r.refund_status === 'pending' ? '💰 İade Beklemede' :
-                           r.refund_status === 'completed' ? '🔒 İade Tamamlandı' : // Kilit simgesi = Kalıcı
-                           r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
-                           `💰 ${r.refund_status}`}
-                        </span>
+                      <div className="flex items-center gap-2 mt-1">
+                        {r.status === 1 ? (
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            ✅ Kayıtlı
+                          </span>
+                        ) : r.status === 0 ? (
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                            ❌ İptal
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Bilinmiyor
+                          </span>
+                        )}
+                        
+                        {/* İade durumu */}
+                        {r.status === 0 && r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' && (
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            r.refund_status === 'completed' ? 'bg-red-100 text-red-800' :
+                            r.refund_status === 'rejected' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {r.refund_status === 'pending' ? '💰 İade Beklemede' :
+                             r.refund_status === 'completed' ? '🔒 İade Tamamlandı' :
+                             r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
+                             `💰 ${r.refund_status}`}
+                          </span>
+                        )}
+                      </div>
+                      {r.reference_number && (
+                        <div className="text-xs text-gray-400 mt-1">Ref: {r.reference_number}</div>
                       )}
                     </div>
                   </td>
