@@ -195,6 +195,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // If online payment failed, delete the registration
+    if (payment.paymentMethod === 'online' && !paymentResult.success) {
+      await pool.execute('DELETE FROM registrations WHERE id = ?', [registrationId])
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Ödeme başarısız oldu', 
+          paymentResult: paymentResult
+        },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { 
         success: true, 
