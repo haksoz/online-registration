@@ -88,18 +88,25 @@ export async function POST(request: NextRequest) {
     
     if (payment.paymentMethod === 'online' && payment.cardNumber) {
       try {
+        const isTestMode = process.env.PAYMENT_TEST_MODE === 'true'
+        
         // Kart numarasından son 4 hane ve BIN al
         const cardNumber = payment.cardNumber.replace(/\s/g, '')
         const cardLast4 = cardNumber.slice(-4)
         const cardBin = cardNumber.slice(0, 6)
         
-        // CVV'ye göre işlem durumunu belirle
+        // CVV'ye göre işlem durumunu belirle (TEST MODE)
         const cvv = payment.cardCvv
         let status = 'success'
         let paymentStatus = 'approved'
         let errorCode = null
         let errorMessage = null
         let fraudScore = 10
+        
+        if (!isTestMode) {
+          // TODO: Production'da gerçek POS entegrasyonu yapılacak
+          console.warn('⚠️ PAYMENT_TEST_MODE=false but no real POS integration implemented yet')
+        }
         
         // CVV'ye göre hata kodları
         if (cvv === '120') {
