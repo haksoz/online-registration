@@ -29,8 +29,10 @@ export async function GET(request: NextRequest) {
       SELECT 
         opt.*,
         r.reference_number,
-        r.full_name,
-        r.email
+        COALESCE(r.full_name, opt.customer_name) as full_name,
+        COALESCE(r.email, opt.customer_email) as email,
+        opt.customer_phone,
+        opt.registration_type
       FROM online_payment_transactions opt
       LEFT JOIN registrations r ON opt.registration_id = r.id
       ${whereClause}

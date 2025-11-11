@@ -10,6 +10,8 @@ interface POSTransaction {
   reference_number: string
   full_name: string
   email: string
+  customer_phone: string
+  registration_type: string
   transaction_id: string
   order_id: string
   amount: number
@@ -205,10 +207,18 @@ export default function POSLogsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm">
-                            <div className="font-medium text-gray-900">{transaction.full_name}</div>
-                            <div className="text-gray-500">{transaction.email}</div>
-                            {transaction.reference_number && (
+                            <div className="font-medium text-gray-900">{transaction.full_name || '-'}</div>
+                            <div className="text-gray-500">{transaction.email || '-'}</div>
+                            {transaction.customer_phone && (
+                              <div className="text-xs text-gray-500">{transaction.customer_phone}</div>
+                            )}
+                            {transaction.registration_type && (
+                              <div className="text-xs text-blue-600">{transaction.registration_type}</div>
+                            )}
+                            {transaction.reference_number ? (
                               <div className="text-xs text-gray-400">Ref: {transaction.reference_number}</div>
+                            ) : (
+                              <div className="text-xs text-red-400">⚠️ Kayıt oluşturulmadı</div>
                             )}
                           </div>
                         </td>
