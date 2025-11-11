@@ -89,10 +89,14 @@ export async function POST(request: NextRequest) {
       message: 'Banka hesabı eklendi',
       id: (result as any).insertId
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Bank account create error:', error)
     return NextResponse.json(
-      { success: false, error: 'Banka hesabı eklenemedi' },
+      { 
+        success: false, 
+        error: 'Banka hesabı eklenemedi',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }
