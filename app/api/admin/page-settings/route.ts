@@ -71,10 +71,14 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: 'Sayfa ayarları güncellendi'
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Page settings update error:', error)
     return NextResponse.json(
-      { success: false, error: 'Sayfa ayarları güncellenemedi' },
+      { 
+        success: false, 
+        error: 'Sayfa ayarları güncellenemedi',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }
