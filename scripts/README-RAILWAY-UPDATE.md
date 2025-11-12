@@ -26,8 +26,8 @@ Bu script Railway veritabanınıza mail sistemi, kayıt ayarları ve organizasyo
 1. **Railway Dashboard'dan Connection Bilgilerini Alın:**
    - Railway Dashboard → MySQL Service → Connect
    - TCP Proxy bilgilerini not edin:
-     - Host: `ballast.proxy.rlwy.net`
-     - Port: `28944`
+     - Host: `shuttle.proxy.rlwy.net` (veya gösterilen host)
+     - Port: `12314` (veya gösterilen port)
      - User: `root`
      - Password: (gösterilen şifre)
      - Database: `railway`
