@@ -122,7 +122,9 @@
     "registrationSummary": "Registration Summary",
     "registrationType": "Registration Type",
     "personalInfo": "Personal Information",
+    "invoiceInfo": "Invoice Information",
     "paymentInfo": "Payment Information",
+    "bankTransferNote": "Your registration has been received. You can make payment via bank transfer.",
     "downloadPDF": "Download PDF",
     "newRegistration": "New Registration",
     "goToHomepage": "Go to Homepage"

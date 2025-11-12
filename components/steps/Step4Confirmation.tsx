@@ -384,7 +384,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="flex-1">
-                  <p className="text-lg font-semibold text-green-800 mb-2">Kaydınız alınmıştır. Banka havalesi ile ödeme yapabilirsiniz.</p>
+                  <p className="text-lg font-semibold text-green-800 mb-2">{t('step4.bankTransferNote')}</p>
                   {formData.referenceNumber && (
                     <p className="text-sm text-green-700">
                       <span className="font-medium">Referans Numaranız:</span> 
@@ -402,11 +402,13 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-sm text-yellow-800">
-                  <span className="font-medium">Lütfen dekontunuzu</span>{' '}
-                  <a href={`mailto:${paymentSettings.dekontEmail || 'dekont@ko.com.tr'}`} className="underline font-semibold hover:text-yellow-900">
-                    {paymentSettings.dekontEmail || 'dekont@ko.com.tr'}
-                  </a>{' '}
-                  <span className="font-medium">adresine iletiniz.</span>
+                  <span className="font-medium">
+                    {language === 'en' 
+                      ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.replace('{email}', paymentSettings.dekontEmail || 'dekont@ko.com.tr') || 
+                        `Please send your receipt to ${paymentSettings.dekontEmail || 'dekont@ko.com.tr'}.`
+                      : paymentSettings.dekontMessage?.replace('{email}', paymentSettings.dekontEmail || 'dekont@ko.com.tr') || 
+                        'Lütfen dekontunuzu dekont@ko.com.tr adresine iletiniz.'}
+                  </span>
                 </p>
               </div>
             </div>
@@ -456,7 +458,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
 
         {/* Summary Section */}
         <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">Kayıt Özeti</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-3">{t('step4.registrationSummary')}</h3>
           
           {/* 1. Kayıt Türü */}
           <div className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200">
@@ -540,16 +542,16 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
           {/* 3. Fatura Bilgileri */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
             <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
-              3. Fatura Bilgileri
+              3. {t('step4.invoiceInfo')}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">Fatura Türü</p>
+                <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceType')}</p>
                 <p className="font-medium text-gray-900">
                   {formData.personalInfo.invoiceType === 'bireysel'
-                    ? 'Bireysel'
+                    ? t('step3.individual')
                     : formData.personalInfo.invoiceType === 'kurumsal'
-                      ? 'Kurumsal'
+                      ? t('step3.corporate')
                       : '-'}
                 </p>
               </div>
@@ -559,19 +561,19 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                 <>
                   {formData.personalInfo.invoiceFullName && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-0.5">Fatura Adı</p>
+                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceFullName')}</p>
                       <p className="font-medium text-gray-900">{formData.personalInfo.invoiceFullName}</p>
                     </div>
                   )}
                   {formData.personalInfo.idNumber && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-0.5">TC Kimlik No</p>
+                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.idNumber')}</p>
                       <p className="font-medium text-gray-900">{formData.personalInfo.idNumber}</p>
                     </div>
                   )}
                   {formData.personalInfo.invoiceAddress && (
                     <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600 mb-0.5">Fatura Adresi</p>
+                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceAddress')}</p>
                       <p className="font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</p>
                     </div>
                   )}
@@ -583,25 +585,25 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                 <>
                   {formData.personalInfo.invoiceCompanyName && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-0.5">Şirket Adı</p>
+                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceCompanyName')}</p>
                       <p className="font-medium text-gray-900">{formData.personalInfo.invoiceCompanyName}</p>
                     </div>
                   )}
                   {formData.personalInfo.taxOffice && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-0.5">Vergi Dairesi</p>
+                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.taxOffice')}</p>
                       <p className="font-medium text-gray-900">{formData.personalInfo.taxOffice}</p>
                     </div>
                   )}
                   {formData.personalInfo.taxNumber && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-0.5">Vergi No</p>
+                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.taxNumber')}</p>
                       <p className="font-medium text-gray-900">{formData.personalInfo.taxNumber}</p>
                     </div>
                   )}
                   {formData.personalInfo.invoiceAddress && (
                     <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600 mb-0.5">Fatura Adresi</p>
+                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceAddress')}</p>
                       <p className="font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</p>
                     </div>
                   )}

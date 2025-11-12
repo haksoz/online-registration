@@ -122,7 +122,9 @@
     "registrationSummary": "Kayıt Özeti",
     "registrationType": "Kayıt Türü",
     "personalInfo": "Kişisel Bilgiler",
+    "invoiceInfo": "Fatura Bilgileri",
     "paymentInfo": "Ödeme Bilgileri",
+    "bankTransferNote": "Kaydınız alınmıştır. Banka havalesi ile ödeme yapabilirsiniz.",
     "downloadPDF": "PDF İndir",
     "newRegistration": "Yeni Kayıt",
     "goToHomepage": "Ana Sayfaya Git"
