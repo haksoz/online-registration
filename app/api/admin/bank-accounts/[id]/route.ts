@@ -33,7 +33,7 @@ export async function PUT(
     await pool.execute(
       `UPDATE bank_accounts 
        SET account_name = ?, account_name_en = ?, bank_name = ?, account_holder = ?, iban = ?, 
-           currency = ?, swift_code = ?, account_number = ?, bank_address = ?,
+           currency_type = ?, swift_code = ?, account_number = ?, bank_address = ?,
            description = ?, is_active = ?, display_order = ?
        WHERE id = ?`,
       [
