@@ -95,6 +95,7 @@
     "bankAccounts": "Banka Hesapları",
     "bank": "Banka",
     "accountHolder": "Hesap Sahibi",
+    "currency": "Para Birimi",
     "description": "Açıklama",
     "receiptNote": "Lütfen dekontunuzu {email} adresine iletiniz.",
     "loadingPaymentMethods": "Ödeme yöntemleri yükleniyor...",
@@ -126,6 +127,7 @@
     "paymentInfo": "Ödeme Bilgileri",
     "bankTransferNote": "Kaydınız alınmıştır. Banka havalesi ile ödeme yapabilirsiniz.",
     "downloadPDF": "PDF İndir",
+    "generatingPDF": "PDF Oluşturuluyor...",
     "newRegistration": "Yeni Kayıt",
     "goToHomepage": "Ana Sayfaya Git"
   },

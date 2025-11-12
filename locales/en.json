@@ -95,6 +95,7 @@
     "bankAccounts": "Bank Accounts",
     "bank": "Bank",
     "accountHolder": "Account Holder",
+    "currency": "Currency",
     "description": "Description",
     "receiptNote": "Please send your receipt to {email}.",
     "loadingPaymentMethods": "Loading payment methods...",
@@ -126,6 +127,7 @@
     "paymentInfo": "Payment Information",
     "bankTransferNote": "Your registration has been received. You can make payment via bank transfer.",
     "downloadPDF": "Download PDF",
+    "generatingPDF": "Generating PDF...",
     "newRegistration": "New Registration",
     "goToHomepage": "Go to Homepage"
   },
