@@ -20,21 +20,26 @@ export async function GET() {
        ORDER BY display_order`
     )
 
-    // Step 2 settings
-    const [step2Rows] = await pool.execute(
-      `SELECT setting_key, setting_value FROM step2_settings`
+    // Step 2 settings - currency_type from step2_settings
+    const [currencyRows] = await pool.execute(
+      `SELECT setting_value FROM step2_settings WHERE setting_key = 'currency_type' LIMIT 1`
     )
     
-    const step2Settings: Record<string, string> = {}
-    ;(step2Rows as any[]).forEach((row) => {
-      step2Settings[row.setting_key] = row.setting_value
-    })
+    const step2Settings: Record<string, string> = {
+      currency_type: (currencyRows as any[])[0]?.setting_value || 'TRY'
+    }
 
     // Language setting
     const [languageRows] = await pool.execute(
       `SELECT setting_value FROM form_settings WHERE setting_key = 'language'`
     )
     const language = (languageRows as any[])[0]?.setting_value || 'tr'
+
+    // Registration start date
+    const [startDateRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'registration_start_date'`
+    )
+    const registrationStartDate = (startDateRows as any[])[0]?.setting_value || ''
 
     // Registration deadline
     const [deadlineRows] = await pool.execute(
@@ -69,6 +74,7 @@ export async function GET() {
       paymentMethods: paymentRows,
       step2Settings: step2Settings,
       language: language,
+      registrationStartDate: registrationStartDate,
       registrationDeadline: registrationDeadline,
       invoiceIndividualNote: invoiceIndividualNote,
       invoiceCorporateNote: invoiceCorporateNote,

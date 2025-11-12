@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useFormStore } from '@/store/formStore'
 import { useFormSettings } from '@/hooks/useFormSettings'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -11,8 +11,9 @@ import Step4Confirmation from '@/components/steps/Step4Confirmation'
 
 export default function FormWizard() {
   const { currentStep, setCurrentStep, resetForm } = useFormStore()
-  const { isRegistrationOpen, registrationDeadline, loading } = useFormSettings()
+  const { isRegistrationOpen, isRegistrationNotStarted, registrationStartDate, registrationDeadline, loading } = useFormSettings()
   const { t, language } = useTranslation()
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   const steps = useMemo(() => [
     { number: 1, title: t('steps.step1') },
@@ -21,15 +22,21 @@ export default function FormWizard() {
     { number: 4, title: t('steps.step4') },
   ], [t, language])
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < 4) {
+      setIsTransitioning(true)
+      await new Promise(resolve => setTimeout(resolve, 1000))
       setCurrentStep(currentStep + 1)
+      setIsTransitioning(false)
     }
   }
 
-  const handleBack = () => {
+  const handleBack = async () => {
     if (currentStep > 1) {
+      setIsTransitioning(true)
+      await new Promise(resolve => setTimeout(resolve, 1000))
       setCurrentStep(currentStep - 1)
+      setIsTransitioning(false)
     }
   }
 
@@ -53,10 +60,49 @@ export default function FormWizard() {
   }
 
   // Loading state
-  if (loading) {
+  if (loading || isTransitioning) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  // Registration not started yet
+  if (isRegistrationNotStarted()) {
+    const startDate = registrationStartDate ? new Date(registrationStartDate) : null
+    return (
+      <div className="text-center py-12">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          {language === 'en' ? 'Registration Not Open Yet' : 'Kayıtlar Henüz Açılmadı'}
+        </h2>
+        <p className="text-gray-600 mb-4">
+          {startDate ? (
+            <>
+              {language === 'en' ? 'Registration will open on' : 'Kayıtlar'}{' '}
+              <strong>{startDate.toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}</strong>{' '}
+              {language === 'en' ? '' : 'tarihinde açılacaktır.'}
+            </>
+          ) : (
+            language === 'en' ? 'Registration will open soon.' : 'Kayıtlar yakında açılacaktır.'
+          )}
+        </p>
+        <p className="text-sm text-gray-500">
+          {language === 'en' 
+            ? 'Please check back later or contact the organizers for more information.' 
+            : 'Lütfen daha sonra tekrar kontrol edin veya organizatörlerle iletişime geçin.'}
+        </p>
       </div>
     )
   }
@@ -71,24 +117,30 @@ export default function FormWizard() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Kayıtlar Kapandı</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          {language === 'en' ? 'Registration Closed' : 'Kayıtlar Kapandı'}
+        </h2>
         <p className="text-gray-600 mb-4">
           {deadline ? (
             <>
-              Kayıt son tarihi <strong>{deadline.toLocaleDateString('tr-TR', { 
+              {language === 'en' ? 'Registration deadline was' : 'Kayıt son tarihi'}{' '}
+              <strong>{deadline.toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
-              })}</strong> olarak geçmiştir.
+              })}</strong>{' '}
+              {language === 'en' ? 'and has passed.' : 'olarak geçmiştir.'}
             </>
           ) : (
-            'Kayıt dönemi sona ermiştir.'
+            language === 'en' ? 'Registration period has ended.' : 'Kayıt dönemi sona ermiştir.'
           )}
         </p>
         <p className="text-sm text-gray-500">
-          Daha fazla bilgi için lütfen organizatörlerle iletişime geçin.
+          {language === 'en' 
+            ? 'For more information, please contact the organizers.' 
+            : 'Daha fazla bilgi için lütfen organizatörlerle iletişime geçin.'}
         </p>
       </div>
     )

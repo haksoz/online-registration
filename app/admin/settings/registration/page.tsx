@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react'
 
 export default function RegistrationSettingsPage() {
+  const [registrationStartDate, setRegistrationStartDate] = useState('')
   const [registrationDeadline, setRegistrationDeadline] = useState('')
   const [cancellationDeadline, setCancellationDeadline] = useState('')
+  const [notificationEmail, setNotificationEmail] = useState('')
+  const [bccEmail, setBccEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -19,8 +22,11 @@ export default function RegistrationSettingsPage() {
       const data = await response.json()
       
       if (data.success) {
+        setRegistrationStartDate(data.registrationStartDate || '')
         setRegistrationDeadline(data.registrationDeadline || '')
         setCancellationDeadline(data.cancellationDeadline || '')
+        setNotificationEmail(data.notificationEmail || '')
+        setBccEmail(data.bccEmail || '')
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
@@ -38,8 +44,11 @@ export default function RegistrationSettingsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
+          registrationStartDate,
           registrationDeadline,
-          cancellationDeadline
+          cancellationDeadline,
+          notificationEmail,
+          bccEmail
         })
       })
 
@@ -86,23 +95,59 @@ export default function RegistrationSettingsPage() {
       )}
 
       {/* Durum Göstergesi */}
-      {(registrationDeadline || cancellationDeadline) && (
+      {(registrationStartDate || registrationDeadline || cancellationDeadline) && (
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Mevcut Durum</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {registrationStartDate && (
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Kayıt Başlangıcı</span>
+                  {new Date() >= new Date(registrationStartDate) ? (
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      ✅ Başladı
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      ⏳ Bekliyor
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  Başlangıç: {new Date(registrationStartDate).toLocaleString('tr-TR')}
+                </p>
+              </div>
+            )}
+            
             {registrationDeadline && (
               <div className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">Kayıt Durumu</span>
-                  {new Date() < new Date(registrationDeadline) ? (
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                      ✅ Açık
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                      🚫 Kapalı
-                    </span>
-                  )}
+                  {(() => {
+                    const now = new Date()
+                    const startDate = registrationStartDate ? new Date(registrationStartDate) : null
+                    const endDate = new Date(registrationDeadline)
+                    
+                    if (startDate && now < startDate) {
+                      return (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          ⏳ Henüz Başlamadı
+                        </span>
+                      )
+                    } else if (now < endDate) {
+                      return (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          ✅ Açık
+                        </span>
+                      )
+                    } else {
+                      return (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                          🚫 Kapalı
+                        </span>
+                      )
+                    }
+                  })()}
                 </div>
                 <p className="text-xs text-gray-500">
                   Son tarih: {new Date(registrationDeadline).toLocaleString('tr-TR')}
@@ -134,6 +179,22 @@ export default function RegistrationSettingsPage() {
       )}
 
       <div className="bg-white rounded-lg shadow p-6 space-y-6">
+        {/* Kayıt Başlangıç Tarihi */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Kayıt Başlangıç Tarihi
+          </label>
+          <input
+            type="datetime-local"
+            value={registrationStartDate}
+            onChange={(e) => setRegistrationStartDate(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+          <p className="mt-2 text-sm text-gray-500">
+            Bu tarihten önce form sayfasını açanlara "Kayıtlar henüz açılmadı" uyarısı gösterilir. Boş bırakırsanız kayıtlar hemen açık olur.
+          </p>
+        </div>
+
         {/* Kayıt Son Tarihi */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -166,6 +227,40 @@ export default function RegistrationSettingsPage() {
           </p>
         </div>
 
+        {/* Kayıt Bildirim Mail Adresi */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Kayıt Bildirim Mail Adresi
+          </label>
+          <input
+            type="email"
+            value={notificationEmail}
+            onChange={(e) => setNotificationEmail(e.target.value)}
+            placeholder="bildirim@example.com"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+          <p className="mt-2 text-sm text-gray-500">
+            Her yeni kayıtta bu adrese bildirim maili gönderilir. Boş bırakırsanız bildirim gönderilmez.
+          </p>
+        </div>
+
+        {/* Kayıt Bildirim BCC Mail Adresi */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Kayıt Bildirim BCC Mail Adresi
+          </label>
+          <input
+            type="email"
+            value={bccEmail}
+            onChange={(e) => setBccEmail(e.target.value)}
+            placeholder="bcc@example.com"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+          <p className="mt-2 text-sm text-gray-500">
+            Kullanıcıya giden onay mailine BCC (gizli kopya) olarak bu adres eklenir. Boş bırakırsanız BCC eklenmez.
+          </p>
+        </div>
+
         {/* Bilgilendirme */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex">
@@ -178,10 +273,10 @@ export default function RegistrationSettingsPage() {
               <h3 className="text-sm font-medium text-blue-800">Önemli Bilgiler</h3>
               <div className="mt-2 text-sm text-blue-700">
                 <ul className="list-disc list-inside space-y-1">
+                  <li>Kayıt başlangıç tarihinden önce form sayfasını açanlara "Kayıtlar henüz açılmadı" mesajı gösterilir</li>
                   <li>Kayıt son tarihi geçtikten sonra ana sayfada kayıt formu görünmez</li>
                   <li>İptal son tarihi geçtikten sonra kayıt detay sayfasında <strong>dikkat çekici uyarı</strong> gösterilir</li>
                   <li>Admin panelinden her zaman manuel işlem yapabilirsiniz (uyarıya rağmen)</li>
-                  <li>İptal son tarihi geçtikten sonra yapılan iptaller politika dışı kabul edilir</li>
                 </ul>
               </div>
             </div>

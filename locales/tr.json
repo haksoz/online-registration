@@ -62,7 +62,8 @@
     "selectType": "Seçiniz",
     "fee": "Ücret",
     "currency": "Para Birimi",
-    "selectCurrency": "Para Birimi Seçin"
+    "selectCurrency": "Para Birimi Seçin",
+    "currencyWarning": "Fiyatlar {currency} cinsinden gösterilmektedir. Ödeme TL olarak yapılacaktır."
   },
   "step3": {
     "title": "Ödeme Bilgileri",
@@ -118,9 +119,11 @@
   },
   "step4": {
     "title": "Kayıt Tamamlandı",
+    "registrationCompleted": "Kaydınız Alınmıştır",
     "subtitle": "Kaydınız başarıyla alındı",
     "referenceNumber": "Referans Numarası",
     "registrationSummary": "Kayıt Özeti",
+    "registrationInfo": "Kayıt Bilgileri",
     "registrationType": "Kayıt Türü",
     "personalInfo": "Kişisel Bilgiler",
     "invoiceInfo": "Fatura Bilgileri",

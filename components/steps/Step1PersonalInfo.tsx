@@ -85,7 +85,10 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => changeLanguage('tr')}
+                  onClick={() => {
+                    changeLanguage('tr')
+                    setFormLanguage('tr')
+                  }}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                     language === 'tr'
                       ? 'bg-primary-600 text-white'
@@ -96,7 +99,10 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => changeLanguage('en')}
+                  onClick={() => {
+                    changeLanguage('en')
+                    setFormLanguage('en')
+                  }}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                     language === 'en'
                       ? 'bg-primary-600 text-white'

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useFormStore } from '@/store/formStore'
 import trTranslations from '@/locales/tr.json'
 import enTranslations from '@/locales/en.json'
@@ -16,6 +16,7 @@ export function useTranslation() {
   const [language, setLanguage] = useState<'tr' | 'en'>('tr')
   const [languageMode, setLanguageMode] = useState<'tr' | 'en' | 'tr_en' | 'en_tr'>('tr')
   const [loading, setLoading] = useState(true)
+  const prevFormLanguageRef = useRef<'tr' | 'en' | undefined>()
 
   useEffect(() => {
     // Form ayarlarından dil bilgisini al
@@ -23,18 +24,30 @@ export function useTranslation() {
       try {
         const response = await fetch('/api/form-settings')
         const data = await response.json()
+        console.log('🌍 Language from API:', data.language)
         if (data.success && data.language) {
           const mode = data.language
           setLanguageMode(mode)
+          console.log('🌍 Language mode set to:', mode)
           
-          // Store'da kayıtlı dil varsa onu kullan, yoksa varsayılan dili ayarla
-          if (formData.formLanguage) {
-            setLanguage(formData.formLanguage)
+          // Tek dilli modlarda (tr veya en), ayarı zorla uygula
+          if (mode === 'tr') {
+            console.log('🌍 Setting language to TR (single language mode)')
+            setLanguage('tr')
+          } else if (mode === 'en') {
+            console.log('🌍 Setting language to EN (single language mode)')
+            setLanguage('en')
           } else {
-            if (mode === 'tr' || mode === 'tr_en') {
-              setLanguage('tr')
-            } else if (mode === 'en' || mode === 'en_tr') {
-              setLanguage('en')
+            // İki dilli modlarda store'daki dili kullan veya varsayılanı ayarla
+            if (formData.formLanguage) {
+              setLanguage(formData.formLanguage)
+            } else {
+              // Varsayılan dili belirle
+              if (mode === 'tr_en') {
+                setLanguage('tr')
+              } else if (mode === 'en_tr') {
+                setLanguage('en')
+              }
             }
           }
         }
@@ -47,12 +60,17 @@ export function useTranslation() {
     fetchLanguage()
   }, [])
 
-  // Store'daki dil değiştiğinde güncelle
+  // Store'daki dil değiştiğinde güncelle (sadece iki dilli modlarda)
   useEffect(() => {
-    if (formData.formLanguage) {
-      setLanguage(formData.formLanguage)
+    const storedLang = formData.formLanguage
+    // Sadece formLanguage gerçekten değiştiyse güncelle
+    if (storedLang && storedLang !== prevFormLanguageRef.current) {
+      if (languageMode === 'tr_en' || languageMode === 'en_tr') {
+        setLanguage(storedLang)
+      }
+      prevFormLanguageRef.current = storedLang
     }
-  }, [formData.formLanguage])
+  }, [formData.formLanguage, languageMode])
 
   const t = (key: TranslationKey, params?: Record<string, string>): string => {
     const keys = key.split('.')

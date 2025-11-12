@@ -16,6 +16,8 @@ export interface PageSettings {
   header_background_color: string
   currency_type: string
   organization_name: string
+  organization_name_en: string
+  page_title?: string
   contact_email: string
   contact_phone: string
   homepage_url: string
@@ -35,6 +37,8 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
   header_background_color: '#667eea',
   currency_type: 'TRY',
   organization_name: 'Online Kayıt Sistemi',
+  organization_name_en: 'Online Registration System',
+  page_title: '',
   contact_email: 'info@example.com',
   contact_phone: '+90 (212) 123 45 67',
   homepage_url: 'https://example.com'
@@ -72,6 +76,8 @@ export async function fetchPageSettings(): Promise<PageSettings> {
         header_background_color: data.data.header_background_color || DEFAULT_PAGE_SETTINGS.header_background_color,
         currency_type: data.data.currency_type || DEFAULT_PAGE_SETTINGS.currency_type,
         organization_name: data.data.organization_name || DEFAULT_PAGE_SETTINGS.organization_name,
+        organization_name_en: data.data.organization_name_en || DEFAULT_PAGE_SETTINGS.organization_name_en,
+        page_title: data.data.page_title || DEFAULT_PAGE_SETTINGS.page_title,
         contact_email: data.data.contact_email || DEFAULT_PAGE_SETTINGS.contact_email,
         contact_phone: data.data.contact_phone || DEFAULT_PAGE_SETTINGS.contact_phone,
         homepage_url: data.data.homepage_url || DEFAULT_PAGE_SETTINGS.homepage_url

@@ -16,6 +16,7 @@ interface PageSettings {
   header_background_color: string
   currency_type: string
   organization_name: string
+  organization_name_en: string
   contact_email: string
   contact_phone: string
   homepage_url: string
@@ -48,6 +49,7 @@ export default function PageSettingsPage() {
     header_background_color: '#667eea',
     currency_type: 'TRY',
     organization_name: '',
+    organization_name_en: '',
     contact_email: '',
     contact_phone: '',
     homepage_url: ''
@@ -173,6 +175,40 @@ export default function PageSettingsPage() {
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="space-y-6">
+          {/* Organizasyon Adı - EN ÜSTTE */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Organizasyon Adı (Türkçe) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={settings.organization_name}
+                onChange={(e) => handleInputChange('organization_name', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="II. Uluslararası Onkoloji Hemşireliği Derneği Kongresi"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Etkinlik/organizasyon adı - Sayfa başlığında ve kayıt tamamlama ekranında kullanılır
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Organizasyon Adı (İngilizce) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={settings.organization_name_en}
+                onChange={(e) => handleInputChange('organization_name_en', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="2nd International Oncology Nursing Association Congress"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Event/organization name - Used in page title and registration completion screen
+              </p>
+            </div>
+          </div>
+
           {/* Form Başlığı */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -187,7 +223,7 @@ export default function PageSettingsPage() {
                 placeholder="Hoş Geldiniz! 👋"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Ana sayfada görünen başlık metni (opsiyonel)
+                Ana sayfada görünen başlık metni (opsiyonel - boş bırakılabilir, görselde kullanılabilir)
               </p>
             </div>
             <div>
@@ -202,7 +238,7 @@ export default function PageSettingsPage() {
                 placeholder="Welcome! 👋"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Page title text displayed on the main page (optional)
+                Page title text (optional - can be left empty, can be used in banner image)
               </p>
             </div>
           </div>
@@ -433,23 +469,6 @@ export default function PageSettingsPage() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Organizasyon Adı */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Organizasyon Adı <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={settings.organization_name}
-              onChange={(e) => handleInputChange('organization_name', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Online Kayıt Sistemi"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Sistem genelinde kullanılan organizasyon adı
-            </p>
           </div>
 
           {/* İletişim Bilgileri */}

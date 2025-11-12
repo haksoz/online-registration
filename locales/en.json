@@ -118,9 +118,11 @@
   },
   "step4": {
     "title": "Registration Completed",
+    "registrationCompleted": "Your Registration Has Been Received",
     "subtitle": "Your registration has been successfully received",
     "referenceNumber": "Reference Number",
     "registrationSummary": "Registration Summary",
+    "registrationInfo": "Registration Information",
     "registrationType": "Registration Type",
     "personalInfo": "Personal Information",
     "invoiceInfo": "Invoice Information",

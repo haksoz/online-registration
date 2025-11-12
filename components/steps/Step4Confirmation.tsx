@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormStore } from '@/store/formStore'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
@@ -54,6 +54,86 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
     fetchData()
   }, [])
 
+  // Kayıt tamamlandığında mail gönder (sadece 1 kere)
+  const mailSentRef = useRef(false)
+  
+  useEffect(() => {
+    const sendRegistrationMail = async () => {
+      // Eğer mail zaten gönderildiyse, tekrar gönderme
+      if (mailSentRef.current) {
+        return
+      }
+      
+      if (!formData.referenceNumber || !formData.personalInfo.email) {
+        return
+      }
+
+      // Mail gönderildiğini işaretle
+      mailSentRef.current = true
+
+      // Sayfanın tam render edilmesini ve dil değişiminin tamamlanmasını bekle
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // PDF içeriğini al (pdf-full-content div'i)
+      const pdfContentElement = document.getElementById('pdf-full-content')
+      let registrationInfoHtml = ''
+      
+      if (pdfContentElement) {
+        // İçeriği klonla ve ikonları temizle
+        const clonedContent = pdfContentElement.cloneNode(true) as HTMLElement
+        
+        // SVG ikonları kaldır
+        const svgs = clonedContent.querySelectorAll('svg')
+        svgs.forEach(svg => svg.remove())
+        
+        // İkon içeren span'leri kaldır (genelde text-2xl veya text-xl class'ı ile işaretlenmiş)
+        const iconElements = clonedContent.querySelectorAll('.text-2xl, .text-xl, .w-5, .h-5, .w-6, .h-6')
+        iconElements.forEach(element => {
+          // Eğer içinde sadece emoji/ikon varsa kaldır
+          const text = element.textContent?.trim() || ''
+          if (text.length <= 2) { // Emoji genelde 1-2 karakter
+            element.remove()
+          }
+        })
+        
+        // Gizli elementleri kaldır (hidden, display:none vb.)
+        const hiddenElements = clonedContent.querySelectorAll('[style*="display: none"], [style*="display:none"], .hidden')
+        hiddenElements.forEach(element => element.remove())
+        
+        registrationInfoHtml = clonedContent.innerHTML
+        
+        console.log('📧 Mail HTML length:', registrationInfoHtml.length)
+      }
+
+      try {
+        // Form store'daki dil bilgisini kullan (daha güvenilir)
+        const mailLanguage = formData.formLanguage || language
+        
+        console.log('📧 Sending mail with language:', mailLanguage, 'formData.formLanguage:', formData.formLanguage, 'hook language:', language)
+        
+        await fetch('/api/send-registration-mail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.personalInfo.email,
+            name: formData.personalInfo.fullName || `${formData.personalInfo.firstName} ${formData.personalInfo.lastName}`.trim(),
+            referenceNumber: formData.referenceNumber,
+            registrationInfo: registrationInfoHtml,
+            registrationId: null,
+            language: mailLanguage // Form store'daki dil bilgisini kullan
+          })
+        })
+      } catch (error) {
+        console.error('Mail send error:', error)
+        // Hata olsa bile kullanıcıya gösterme, sessizce logla
+        // Hata durumunda flag'i sıfırla ki tekrar deneyebilsin
+        mailSentRef.current = false
+      }
+    }
+
+    sendRegistrationMail()
+  }, [formData.referenceNumber, formData.personalInfo.email, language])
+
   const selectedRegistrationType = registrationTypes.find(
     type => type.value === formData.accommodation.registrationType
   )
@@ -105,36 +185,20 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
         return
       }
 
-      // PDF için özel bir element oluştur
-      const pdfElement = document.getElementById('pdf-content')
-      if (!pdfElement) {
+      // Başlık, referans ve özet dahil tüm içeriği kullan
+      const fullContentElement = document.getElementById('pdf-full-content')
+      if (!fullContentElement) {
         throw new Error('PDF içeriği bulunamadı')
       }
 
-      // Element'in görünür olduğundan emin ol
-      pdfElement.style.display = 'block'
-      pdfElement.style.position = 'absolute'
-      pdfElement.style.left = '-9999px'
-      pdfElement.style.top = '0'
-
-      // Kısa bir bekleme süresi
-      await new Promise(resolve => setTimeout(resolve, 200))
-
-      // Canvas'a çevir - daha basit ayarlar
-      const canvas = await html2canvas(pdfElement, {
-        scale: 1.5,
+      // Canvas'a çevir
+      const canvas = await html2canvas(fullContentElement, {
+        scale: 2,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        logging: false,
-        removeContainer: true
+        logging: false
       })
-
-      // Element'i tekrar gizle
-      pdfElement.style.display = 'none'
-      pdfElement.style.position = 'static'
-      pdfElement.style.left = 'auto'
-      pdfElement.style.top = 'auto'
 
       // PDF oluştur
       const imgData = canvas.toDataURL('image/jpeg', 0.95)
@@ -146,26 +210,23 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
       
       // Canvas boyutlarını PDF'e uyarla
       const canvasAspectRatio = canvas.height / canvas.width
-      const pdfAspectRatio = pdfHeight / pdfWidth
+      const imgWidth = pdfWidth - 20 // 10mm sol ve sağ margin
+      const imgHeight = imgWidth * canvasAspectRatio
       
-      let imgWidth, imgHeight, x, y
+      // Eğer içerik sayfaya sığmıyorsa ölçekle
+      let finalWidth = imgWidth
+      let finalHeight = imgHeight
+      let x = 10
+      let y = 10
       
-      if (canvasAspectRatio > pdfAspectRatio) {
-        // Canvas daha uzun - yüksekliğe göre ölçekle
-        imgHeight = pdfHeight - 20 // 10mm üst ve alt margin
-        imgWidth = imgHeight / canvasAspectRatio
-        x = (pdfWidth - imgWidth) / 2
-        y = 10
-      } else {
-        // Canvas daha geniş - genişliğe göre ölçekle
-        imgWidth = pdfWidth - 20 // 10mm sol ve sağ margin
-        imgHeight = imgWidth * canvasAspectRatio
-        x = 10
-        y = (pdfHeight - imgHeight) / 2
+      if (imgHeight > pdfHeight - 20) {
+        finalHeight = pdfHeight - 20
+        finalWidth = finalHeight / canvasAspectRatio
+        x = (pdfWidth - finalWidth) / 2
       }
 
       // Resmi PDF'e ekle
-      pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
+      pdf.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight)
       
       // PDF'i indir
       const fileName = `Kayit_Ozeti_${formData.referenceNumber || new Date().getTime()}_${new Date().toISOString().split('T')[0]}.pdf`
@@ -350,10 +411,16 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   return (
     <div className="w-full">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('step4.title')}</h2>
-        </div>
+        {/* PDF Content Wrapper - Başlıktan Summary'ye kadar */}
+        <div id="pdf-full-content">
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              {pageSettings?.organization_name
+                ? (language === 'en' && pageSettings.organization_name_en ? pageSettings.organization_name_en : pageSettings.organization_name)
+                : t('step4.title')}
+            </h2>
+          </div>
 
         {/* Success Message and Reference Number */}
         {paymentMethod === 'online' && (
@@ -363,10 +430,12 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="flex-1">
-                <p className="text-lg font-semibold text-green-800 mb-2">Ödemeniz ve Kaydınız alınmıştır.</p>
+                <p className="text-lg font-semibold text-green-800 mb-2">
+                  {language === 'en' ? 'Your payment and registration have been received.' : 'Ödemeniz ve Kaydınız alınmıştır.'}
+                </p>
                 {formData.referenceNumber && (
                   <p className="text-sm text-green-700">
-                    <span className="font-medium">Referans Numaranız:</span> 
+                    <span className="font-medium">{language === 'en' ? 'Your Reference Number:' : 'Referans Numaranız:'}</span> 
                     <span className="font-bold ml-1">{formData.referenceNumber}</span>
                   </p>
                 )}
@@ -387,7 +456,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                   <p className="text-lg font-semibold text-green-800 mb-2">{t('step4.bankTransferNote')}</p>
                   {formData.referenceNumber && (
                     <p className="text-sm text-green-700">
-                      <span className="font-medium">Referans Numaranız:</span> 
+                      <span className="font-medium">{language === 'en' ? 'Your Reference Number:' : 'Referans Numaranız:'}</span> 
                       <span className="font-bold ml-1">{formData.referenceNumber}</span>
                     </p>
                   )}
@@ -458,409 +527,131 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
           </div>
         )}
 
-        {/* Summary Section */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-3">{t('step4.registrationSummary')}</h3>
-          
-          {/* 1. Kayıt Türü */}
+        {/* Summary Section - Simplified */}
+        <div className="mb-6" id="summary-content">
+          {/* Kayıt Bilgileri - Tek Kart */}
           <div className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200">
-            <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
-              1. {t('step4.registrationType')}
-            </h4>
-            <div className="space-y-3">
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">{t('step4.registrationInfo')}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">{t('step3.selectedType')}</p>
-                <p className="font-medium text-gray-900">{registrationInfo.label}</p>
-              </div>
-              
-              {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
-                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-gray-600">{t('step3.selectedCurrencyFee')}</p>
-                    <p className="font-bold text-blue-600">
-                      {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">{t('step3.tryEquivalent')}</p>
-                    <p className="font-bold text-primary-600 text-lg">{registrationInfo.fee}</p>
-                  </div>
-                </div>
-              )}
-              
-              {registrationInfo.currency === 'TRY' && registrationInfo.fee && (
-                <div>
-                  <p className="text-sm text-gray-600 mb-0.5">{t('step3.fee')}</p>
-                  <p className="font-bold text-primary-600 text-lg">{registrationInfo.fee}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 2. Kişisel Bilgiler */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200">
-            <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
-              2. {t('step4.personalInfo')}
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <p className="text-sm text-gray-600 mb-0.5">{t('step3.fullName')}</p>
-                <p className="font-medium text-gray-900">
+                <span className="text-gray-600">{t('step3.fullName')}: </span>
+                <span className="font-semibold text-gray-900">
                   {formData.personalInfo.fullName || `${formData.personalInfo.firstName} ${formData.personalInfo.lastName}`.trim() || '-'}
-                </p>
+                </span>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">{t('step3.email')}</p>
-                <p className="font-medium text-gray-900">
-                  {formData.personalInfo.email || '-'}
-                </p>
+                <span className="text-gray-600">{t('step3.email')}: </span>
+                <span className="font-semibold text-gray-900">{formData.personalInfo.email || '-'}</span>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">{t('step3.phone')}</p>
-                <p className="font-medium text-gray-900">
-                  {formData.personalInfo.phone || '-'}
-                </p>
+                <span className="text-gray-600">{t('step3.phone')}: </span>
+                <span className="font-semibold text-gray-900">{formData.personalInfo.phone || '-'}</span>
               </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-0.5">Adres</p>
-                <p className="font-medium text-gray-900">
-                  {formData.personalInfo.address || '-'}
-                </p>
-              </div>
-              {/* Şirket bilgisi geçici olarak gizlendi */}
-              {/* 
-              {formData.personalInfo.company && (
-                <div className="md:col-span-2">
-                  <p className="text-sm text-gray-600 mb-1">Şirket</p>
-                  <p className="font-medium text-gray-900">
-                    {formData.personalInfo.company}
-                  </p>
+              {formData.personalInfo.address && (
+                <div>
+                  <span className="text-gray-600">Adres: </span>
+                  <span className="font-semibold text-gray-900">{formData.personalInfo.address}</span>
                 </div>
               )}
-              */}
-            </div>
-          </div>
-
-          {/* 3. Fatura Bilgileri */}
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
-              3. {t('step4.invoiceInfo')}
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceType')}</p>
-                <p className="font-medium text-gray-900">
-                  {formData.personalInfo.invoiceType === 'bireysel'
-                    ? t('step3.individual')
-                    : formData.personalInfo.invoiceType === 'kurumsal'
-                      ? t('step3.corporate')
-                      : '-'}
-                </p>
+                <span className="text-gray-600">{t('step4.registrationType')}: </span>
+                <span className="font-semibold text-gray-900">{registrationInfo.label}</span>
               </div>
               
-              {/* Bireysel Fatura Bilgileri */}
-              {formData.personalInfo.invoiceType === 'bireysel' && (
+              {/* Ücret Bilgisi - Döviz Desteği */}
+              {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 ? (
                 <>
-                  {formData.personalInfo.invoiceFullName && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceFullName')}</p>
-                      <p className="font-medium text-gray-900">{formData.personalInfo.invoiceFullName}</p>
-                    </div>
-                  )}
-                  {formData.personalInfo.idNumber && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.idNumber')}</p>
-                      <p className="font-medium text-gray-900">{formData.personalInfo.idNumber}</p>
-                    </div>
-                  )}
-                  {formData.personalInfo.invoiceAddress && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceAddress')}</p>
-                      <p className="font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</p>
-                    </div>
-                  )}
+                  <div>
+                    <span className="text-gray-600">{t('step3.selectedCurrencyFee')}: </span>
+                    <span className="font-bold text-blue-600">
+                      {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">{t('step3.tryEquivalent')}: </span>
+                    <span className="font-bold text-primary-600">{registrationInfo.fee}</span>
+                  </div>
                 </>
-              )}
-              
-              {/* Kurumsal Fatura Bilgileri */}
-              {formData.personalInfo.invoiceType === 'kurumsal' && (
-                <>
-                  {formData.personalInfo.invoiceCompanyName && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceCompanyName')}</p>
-                      <p className="font-medium text-gray-900">{formData.personalInfo.invoiceCompanyName}</p>
-                    </div>
-                  )}
-                  {formData.personalInfo.taxOffice && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.taxOffice')}</p>
-                      <p className="font-medium text-gray-900">{formData.personalInfo.taxOffice}</p>
-                    </div>
-                  )}
-                  {formData.personalInfo.taxNumber && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.taxNumber')}</p>
-                      <p className="font-medium text-gray-900">{formData.personalInfo.taxNumber}</p>
-                    </div>
-                  )}
-                  {formData.personalInfo.invoiceAddress && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-600 mb-0.5">{t('step3.invoiceAddress')}</p>
-                      <p className="font-medium text-gray-900">{formData.personalInfo.invoiceAddress}</p>
-                    </div>
-                  )}
-                </>
+              ) : (
+                <div>
+                  <span className="text-gray-600">{t('step3.fee')}: </span>
+                  <span className="font-bold text-primary-600">{registrationInfo.fee}</span>
+                </div>
               )}
             </div>
           </div>
+
+          {/* Fatura Bilgileri - Ayrı Kart */}
+          {formData.personalInfo.invoiceType && (
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <h4 className="text-lg font-semibold text-gray-800 mb-3">{t('step4.invoiceInfo')}</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <div>
+                  <span className="text-gray-600">{t('step3.invoiceType')}: </span>
+                  <span className="font-semibold text-gray-900">
+                    {formData.personalInfo.invoiceType === 'bireysel' ? t('step3.individual') : t('step3.corporate')}
+                  </span>
+                </div>
+                
+                {/* Bireysel Fatura Bilgileri */}
+                {formData.personalInfo.invoiceType === 'bireysel' && (
+                  <>
+                    {formData.personalInfo.invoiceFullName && (
+                      <div>
+                        <span className="text-gray-600">{t('step3.invoiceFullName')}: </span>
+                        <span className="font-semibold text-gray-900">{formData.personalInfo.invoiceFullName}</span>
+                      </div>
+                    )}
+                    {formData.personalInfo.idNumber && (
+                      <div>
+                        <span className="text-gray-600">{t('step3.idNumber')}: </span>
+                        <span className="font-semibold text-gray-900">{formData.personalInfo.idNumber}</span>
+                      </div>
+                    )}
+                    {formData.personalInfo.invoiceAddress && (
+                      <div className="md:col-span-2">
+                        <span className="text-gray-600">{t('step3.invoiceAddress')}: </span>
+                        <span className="font-semibold text-gray-900">{formData.personalInfo.invoiceAddress}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {/* Kurumsal Fatura Bilgileri */}
+                {formData.personalInfo.invoiceType === 'kurumsal' && (
+                  <>
+                    {formData.personalInfo.invoiceCompanyName && (
+                      <div>
+                        <span className="text-gray-600">{t('step3.invoiceCompanyName')}: </span>
+                        <span className="font-semibold text-gray-900">{formData.personalInfo.invoiceCompanyName}</span>
+                      </div>
+                    )}
+                    {formData.personalInfo.taxOffice && (
+                      <div>
+                        <span className="text-gray-600">{t('step3.taxOffice')}: </span>
+                        <span className="font-semibold text-gray-900">{formData.personalInfo.taxOffice}</span>
+                      </div>
+                    )}
+                    {formData.personalInfo.taxNumber && (
+                      <div>
+                        <span className="text-gray-600">{t('step3.taxNumber')}: </span>
+                        <span className="font-semibold text-gray-900">{formData.personalInfo.taxNumber}</span>
+                      </div>
+                    )}
+                    {formData.personalInfo.invoiceAddress && (
+                      <div className="md:col-span-2">
+                        <span className="text-gray-600">{t('step3.invoiceAddress')}: </span>
+                        <span className="font-semibold text-gray-900">{formData.personalInfo.invoiceAddress}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* PDF Content - Hidden from view */}
-        <div id="pdf-content" style={{ display: 'none' }}>
-          <div className="bg-white p-8 max-w-4xl mx-auto" style={{ fontFamily: 'Arial, sans-serif' }}>
-            {/* PDF Header */}
-            <div className="text-center mb-8 border-b-2 border-gray-300 pb-6">
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                {pageSettings?.organization_name || 'Online Kayıt Sistemi'}
-              </h1>
-              <h2 className="text-2xl font-semibold text-gray-700 mb-4">Kayıt Özeti</h2>
-              <div className="text-lg text-gray-600">
-                <p><strong>Referans No:</strong> {formData.referenceNumber}</p>
-                <p><strong>Tarih:</strong> {new Date().toLocaleDateString('tr-TR', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</p>
-              </div>
-            </div>
-
-            {/* PDF Content Sections */}
-            <div className="space-y-6">
-              {/* 1. Kayıt Türü */}
-              <div className="border border-gray-300 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">
-                  1. {t('step4.registrationType')}
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{t('step3.selectedType')}</p>
-                    <p className="font-semibold text-gray-900">{registrationInfo.label}</p>
-                  </div>
-                  
-                  {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                      <div className="flex justify-between mb-2">
-                        <p className="text-sm text-gray-600">{t('step3.selectedCurrencyFee')}</p>
-                        <p className="font-bold text-blue-600">
-                          {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
-                        </p>
-                      </div>
-                      <div className="flex justify-between">
-                        <p className="text-sm text-gray-600">{t('step3.tryEquivalent')}</p>
-                        <p className="font-bold text-gray-900 text-lg">{registrationInfo.fee}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {registrationInfo.currency === 'TRY' && registrationInfo.fee && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">{t('step3.fee')}</p>
-                      <p className="font-bold text-gray-900 text-lg">{registrationInfo.fee}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 2. Kişisel Bilgiler */}
-              <div className="border border-gray-300 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">
-                  2. {t('step4.personalInfo')}
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{t('step3.fullName')}</p>
-                    <p className="font-semibold text-gray-900">
-                      {formData.personalInfo.fullName || `${formData.personalInfo.firstName} ${formData.personalInfo.lastName}`.trim() || '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{t('step3.email')}</p>
-                    <p className="font-semibold text-gray-900">{formData.personalInfo.email || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">{t('step3.phone')}</p>
-                    <p className="font-semibold text-gray-900">{formData.personalInfo.phone || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Adres</p>
-                    <p className="font-semibold text-gray-900">{formData.personalInfo.address || '-'}</p>
-                  </div>
-                  {/* Şirket bilgisi geçici olarak gizlendi */}
-                  {/* 
-                  {formData.personalInfo.company && (
-                    <div className="col-span-2">
-                      <p className="text-sm text-gray-600 mb-1">Şirket</p>
-                      <p className="font-semibold text-gray-900">{formData.personalInfo.company}</p>
-                    </div>
-                  )}
-                  */}
-                </div>
-              </div>
-
-              {/* 3. Fatura Bilgileri */}
-              <div className="border border-gray-300 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">
-                  3. Fatura Bilgileri
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Fatura Türü</p>
-                    <p className="font-semibold text-gray-900">
-                      {formData.personalInfo.invoiceType === 'bireysel'
-                        ? 'Bireysel'
-                        : formData.personalInfo.invoiceType === 'kurumsal'
-                          ? 'Kurumsal'
-                          : '-'}
-                    </p>
-                  </div>
-                  
-                  {/* Bireysel Fatura Bilgileri */}
-                  {formData.personalInfo.invoiceType === 'bireysel' && (
-                    <>
-                      {formData.personalInfo.invoiceFullName && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Fatura Adı</p>
-                          <p className="font-semibold text-gray-900">{formData.personalInfo.invoiceFullName}</p>
-                        </div>
-                      )}
-                      {formData.personalInfo.idNumber && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">TC Kimlik No</p>
-                          <p className="font-semibold text-gray-900">{formData.personalInfo.idNumber}</p>
-                        </div>
-                      )}
-                      {formData.personalInfo.invoiceAddress && (
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-600 mb-1">Fatura Adresi</p>
-                          <p className="font-semibold text-gray-900">{formData.personalInfo.invoiceAddress}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  
-                  {/* Kurumsal Fatura Bilgileri */}
-                  {formData.personalInfo.invoiceType === 'kurumsal' && (
-                    <>
-                      {formData.personalInfo.invoiceCompanyName && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Şirket Adı</p>
-                          <p className="font-semibold text-gray-900">{formData.personalInfo.invoiceCompanyName}</p>
-                        </div>
-                      )}
-                      {formData.personalInfo.taxOffice && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Vergi Dairesi</p>
-                          <p className="font-semibold text-gray-900">{formData.personalInfo.taxOffice}</p>
-                        </div>
-                      )}
-                      {formData.personalInfo.taxNumber && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-1">Vergi No</p>
-                          <p className="font-semibold text-gray-900">{formData.personalInfo.taxNumber}</p>
-                        </div>
-                      )}
-                      {formData.personalInfo.invoiceAddress && (
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-600 mb-1">Fatura Adresi</p>
-                          <p className="font-semibold text-gray-900">{formData.personalInfo.invoiceAddress}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Ödeme Bilgileri */}
-              {paymentMethod === 'bank_transfer' && bankAccounts.length > 0 && (
-                <div className="border border-gray-300 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">
-                    4. Ödeme Bilgileri
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">Banka Havalesi ile Ödeme</p>
-                  <div className="space-y-4">
-                    {bankAccounts
-                      .filter(account => {
-                        // TRY seçiliyse sadece TRY hesapları
-                        if (selectedCurrency === 'TRY') {
-                          return account.currency === 'TRY'
-                        }
-                        // USD seçiliyse TRY ve USD hesapları
-                        if (selectedCurrency === 'USD') {
-                          return account.currency === 'TRY' || account.currency === 'USD'
-                        }
-                        // EUR seçiliyse TRY ve EUR hesapları
-                        if (selectedCurrency === 'EUR') {
-                          return account.currency === 'TRY' || account.currency === 'EUR'
-                        }
-                        return true
-                      })
-                      .map((account, index) => (
-                      <div key={account.id} className={`${index > 0 ? 'pt-4 border-t border-gray-200' : ''}`}>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">{t('step3.bankAccounts')}</p>
-                            <p className="font-semibold text-gray-900">
-                              {language === 'en' ? account.accountNameEn || account.accountName : account.accountName}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">{t('step3.currency')}</p>
-                            <p className="font-semibold text-gray-900">{account.currency}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">{t('step3.bank')}</p>
-                            <p className="font-semibold text-gray-900">{account.bankName}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600 mb-1">{t('step3.accountHolder')}</p>
-                            <p className="font-semibold text-gray-900">{account.accountHolder}</p>
-                          </div>
-                          <div className="col-span-2">
-                            <p className="text-sm text-gray-600 mb-1">IBAN</p>
-                            <p className="font-mono font-semibold text-gray-900">{account.iban}</p>
-                          </div>
-                          {account.description && (
-                            <div className="col-span-2">
-                              <p className="text-sm text-gray-600 mb-1">{t('step3.description')}</p>
-                              <p className="font-semibold text-gray-900">{account.description}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-                    <p className="text-sm text-gray-700">
-                      <strong>Önemli:</strong> Ödeme dekontunuzu{' '}
-                      <strong>{paymentSettings.dekontEmail || 'dekont@ko.com.tr'}</strong>{' '}
-                      adresine göndermeyi unutmayınız.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* PDF Footer */}
-            <div className="mt-8 pt-6 border-t-2 border-gray-300 text-center text-sm text-gray-600">
-              <p>Bu belge {new Date().toLocaleDateString('tr-TR')} tarihinde otomatik olarak oluşturulmuştur.</p>
-              {pageSettings?.contact_email && (
-                <p>İletişim: {pageSettings.contact_email} | {pageSettings.contact_phone}</p>
-              )}
-            </div>
-          </div>
         </div>
+        {/* PDF Content Wrapper END */}
 
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">

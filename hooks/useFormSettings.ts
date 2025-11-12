@@ -27,6 +27,7 @@ export interface PaymentMethodSetting {
 export function useFormSettings() {
   const [fields, setFields] = useState<FormFieldSetting[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSetting[]>([])
+  const [registrationStartDate, setRegistrationStartDate] = useState<string>('')
   const [registrationDeadline, setRegistrationDeadline] = useState<string>('')
   const [invoiceIndividualNote, setInvoiceIndividualNote] = useState<string>('')
   const [invoiceCorporateNote, setInvoiceCorporateNote] = useState<string>('')
@@ -58,6 +59,7 @@ export function useFormSettings() {
         
         setFields(normalizedFields)
         setPaymentMethods(normalizedPaymentMethods)
+        setRegistrationStartDate(data.registrationStartDate || '')
         setRegistrationDeadline(data.registrationDeadline || '')
         setInvoiceIndividualNote(data.invoiceIndividualNote || '')
         setInvoiceCorporateNote(data.invoiceCorporateNote || '')
@@ -97,15 +99,34 @@ export function useFormSettings() {
   }
 
   const isRegistrationOpen = (): boolean => {
-    if (!registrationDeadline) return true // Deadline yoksa her zaman açık
-    const deadline = new Date(registrationDeadline)
     const now = new Date()
-    return now < deadline
+    
+    // Başlangıç tarihi kontrolü
+    if (registrationStartDate) {
+      const startDate = new Date(registrationStartDate)
+      if (now < startDate) return false // Henüz başlamadı
+    }
+    
+    // Bitiş tarihi kontrolü
+    if (registrationDeadline) {
+      const deadline = new Date(registrationDeadline)
+      if (now >= deadline) return false // Süresi doldu
+    }
+    
+    return true // Kayıtlar açık
+  }
+
+  const isRegistrationNotStarted = (): boolean => {
+    if (!registrationStartDate) return false
+    const startDate = new Date(registrationStartDate)
+    const now = new Date()
+    return now < startDate
   }
 
   return {
     fields,
     paymentMethods,
+    registrationStartDate,
     registrationDeadline,
     invoiceIndividualNote,
     invoiceCorporateNote,
@@ -118,6 +139,7 @@ export function useFormSettings() {
     isPaymentMethodEnabled,
     getEnabledPaymentMethods,
     isRegistrationOpen,
+    isRegistrationNotStarted,
     refetch: fetchSettings
   }
 }

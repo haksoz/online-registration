@@ -29,6 +29,7 @@ interface DashboardStats {
   }>
   refundStats: Array<{ refund_status: string; count: number }>
   deadlines: {
+    registration_start_date?: string
     registration_deadline?: string
     cancellation_deadline?: string
   }
@@ -156,13 +157,49 @@ export default function DashboardPage() {
       </div>
 
       {/* Deadline Uyarıları */}
-      {(stats.deadlines.registration_deadline || stats.deadlines.cancellation_deadline) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {(stats.deadlines.registration_start_date || stats.deadlines.registration_deadline || stats.deadlines.cancellation_deadline) && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {stats.deadlines.registration_start_date && (
+            <div className={`p-4 rounded-lg border-2 ${
+              isDeadlinePassed(stats.deadlines.registration_start_date)
+                ? 'bg-green-50 border-green-200'
+                : 'bg-blue-50 border-blue-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Kayıt Başlangıcı</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    {new Date(stats.deadlines.registration_start_date).toLocaleString('tr-TR')}
+                  </p>
+                </div>
+                {isDeadlinePassed(stats.deadlines.registration_start_date) ? (
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    ✅ Başladı
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                    ⏳ Bekliyor
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+          
           {stats.deadlines.registration_deadline && (
             <div className={`p-4 rounded-lg border-2 ${
-              isDeadlinePassed(stats.deadlines.registration_deadline)
-                ? 'bg-red-50 border-red-200'
-                : 'bg-green-50 border-green-200'
+              (() => {
+                const now = new Date()
+                const startDate = stats.deadlines.registration_start_date ? new Date(stats.deadlines.registration_start_date) : null
+                const endDate = new Date(stats.deadlines.registration_deadline)
+                
+                if (startDate && now < startDate) {
+                  return 'bg-blue-50 border-blue-200'
+                } else if (now >= endDate) {
+                  return 'bg-red-50 border-red-200'
+                } else {
+                  return 'bg-green-50 border-green-200'
+                }
+              })()
             }`}>
               <div className="flex items-center justify-between">
                 <div>
@@ -171,15 +208,31 @@ export default function DashboardPage() {
                     {new Date(stats.deadlines.registration_deadline).toLocaleString('tr-TR')}
                   </p>
                 </div>
-                {isDeadlinePassed(stats.deadlines.registration_deadline) ? (
-                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                    🚫 Kapalı
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                    ✅ Açık
-                  </span>
-                )}
+                {(() => {
+                  const now = new Date()
+                  const startDate = stats.deadlines.registration_start_date ? new Date(stats.deadlines.registration_start_date) : null
+                  const endDate = new Date(stats.deadlines.registration_deadline)
+                  
+                  if (startDate && now < startDate) {
+                    return (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        ⏳ Henüz Başlamadı
+                      </span>
+                    )
+                  } else if (now >= endDate) {
+                    return (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                        🚫 Kapalı
+                      </span>
+                    )
+                  } else {
+                    return (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        ✅ Açık
+                      </span>
+                    )
+                  }
+                })()}
               </div>
             </div>
           )}

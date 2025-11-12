@@ -111,6 +111,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       { href: '/admin/settings/registration', label: 'Kayıt Ayarları', icon: '📅', roles: ['admin', 'manager'] },
       { href: '/admin/settings/form-fields', label: 'Form Ayarları', icon: '📋', roles: ['admin', 'manager'] },
       { href: '/admin/settings/bank', label: 'Banka Ayarları', icon: '🏦', roles: ['admin', 'manager'] },
+      { href: '/admin/settings/mail', label: 'Mail Ayarları', icon: '📧', roles: ['admin', 'manager'] },
+      { href: '/admin/mail-logs', label: 'Mail Logları', icon: '📬', roles: ['admin', 'manager'] },
       { href: '/admin/registration-logs', label: 'Kayıt Logları', icon: '📜', roles: ['admin', 'manager'] },
       { href: '/admin/pos-logs', label: 'POS Logları', icon: '💳', roles: ['admin', 'manager'] },
       { href: '/admin/audit-logs', label: 'Sistem Logları', icon: '🔍', roles: ['admin'] },

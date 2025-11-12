@@ -89,7 +89,7 @@ export async function GET() {
     const [deadlines] = await pool.execute(
       `SELECT setting_key, setting_value 
        FROM form_settings 
-       WHERE setting_key IN ('registration_deadline', 'cancellation_deadline')`
+       WHERE setting_key IN ('registration_start_date', 'registration_deadline', 'cancellation_deadline')`
     )
 
     // Döviz kurları (son güncelleme)
