@@ -606,11 +606,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                   <div key={account.id} className={`${index > 0 ? 'pt-4 border-t border-blue-200' : ''}`}>
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-gray-800">
-                        {(() => {
-                          const name = language === 'en' ? (account as any).accountNameEn || account.accountName : account.accountName;
-                          console.log('Account:', account, 'Language:', language, 'Display name:', name);
-                          return name;
-                        })()}
+                        {language === 'en' ? (account as any).accountNameEn || account.accountName : account.accountName}
                       </h4>
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                         {account.currency}

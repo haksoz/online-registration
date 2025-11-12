@@ -44,7 +44,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { account_name, bank_name, account_holder, iban, currency, swift_code, account_number, bank_address, description, is_active, display_order } = body
+    const { account_name, account_name_en, bank_name, account_holder, iban, currency, swift_code, account_number, bank_address, description, is_active, display_order } = body
     
     if (!account_name || !bank_name || !account_holder || !iban) {
       return NextResponse.json(
@@ -66,10 +66,11 @@ export async function POST(request: NextRequest) {
     
     
     const [result] = await pool.execute(
-      `INSERT INTO bank_accounts (account_name, bank_name, account_holder, iban, currency_type, swift_code, account_number, bank_address, description, is_active, display_order) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO bank_accounts (account_name, account_name_en, bank_name, account_holder, iban, currency, swift_code, account_number, bank_address, description, is_active, display_order) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        account_name, 
+        account_name,
+        account_name_en || null,
         bank_name, 
         account_holder, 
         iban, 

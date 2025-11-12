@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json()
-    const { account_name, bank_name, account_holder, iban, currency, swift_code, account_number, bank_address, description, is_active, display_order } = body
+    const { account_name, account_name_en, bank_name, account_holder, iban, currency, swift_code, account_number, bank_address, description, is_active, display_order } = body
     
     if (!account_name || !bank_name || !account_holder || !iban) {
       return NextResponse.json(
@@ -32,12 +32,13 @@ export async function PUT(
     
     await pool.execute(
       `UPDATE bank_accounts 
-       SET account_name = ?, bank_name = ?, account_holder = ?, iban = ?, 
+       SET account_name = ?, account_name_en = ?, bank_name = ?, account_holder = ?, iban = ?, 
            currency = ?, swift_code = ?, account_number = ?, bank_address = ?,
            description = ?, is_active = ?, display_order = ?
        WHERE id = ?`,
       [
         account_name,
+        account_name_en || null,
         bank_name,
         account_holder,
         iban,

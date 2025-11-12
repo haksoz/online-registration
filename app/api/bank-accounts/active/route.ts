@@ -9,7 +9,7 @@ export async function GET() {
     
     // Sadece aktif hesapları getir
     const [accounts] = await pool.execute(
-      'SELECT id, account_name, bank_name, account_holder, iban, currency, description FROM bank_accounts WHERE is_active = TRUE ORDER BY display_order, id'
+      'SELECT id, account_name, account_name_en, bank_name, account_holder, iban, currency, description FROM bank_accounts WHERE is_active = TRUE ORDER BY display_order, id'
     )
     
     // Ödeme ayarlarını da getir
