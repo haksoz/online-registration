@@ -461,24 +461,24 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
           {/* 1. Kayıt Türü */}
           <div className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200">
             <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
-              1. Kayıt Türü
+              1. {t('step4.registrationType')}
             </h4>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">Seçilen Tür</p>
+                <p className="text-sm text-gray-600 mb-0.5">{t('step3.selectedType')}</p>
                 <p className="font-medium text-gray-900">{registrationInfo.label}</p>
               </div>
               
               {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-gray-600">Seçilen Döviz Ücreti</p>
+                    <p className="text-sm text-gray-600">{t('step3.selectedCurrencyFee')}</p>
                     <p className="font-bold text-blue-600">
                       {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
                     </p>
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">TL Karşılığı</p>
+                    <p className="text-sm text-gray-600">{t('step3.tryEquivalent')}</p>
                     <p className="font-bold text-primary-600 text-lg">{registrationInfo.fee}</p>
                   </div>
                 </div>
@@ -486,7 +486,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
               
               {registrationInfo.currency === 'TRY' && registrationInfo.fee && (
                 <div>
-                  <p className="text-sm text-gray-600 mb-0.5">Ücret</p>
+                  <p className="text-sm text-gray-600 mb-0.5">{t('step3.fee')}</p>
                   <p className="font-bold text-primary-600 text-lg">{registrationInfo.fee}</p>
                 </div>
               )}
@@ -496,23 +496,23 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
           {/* 2. Kişisel Bilgiler */}
           <div className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200">
             <h4 className="text-lg font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-300">
-              2. Kişisel Bilgiler
+              2. {t('step4.personalInfo')}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">Ad Soyad</p>
+                <p className="text-sm text-gray-600 mb-0.5">{t('step3.fullName')}</p>
                 <p className="font-medium text-gray-900">
                   {formData.personalInfo.fullName || `${formData.personalInfo.firstName} ${formData.personalInfo.lastName}`.trim() || '-'}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">E-posta</p>
+                <p className="text-sm text-gray-600 mb-0.5">{t('step3.email')}</p>
                 <p className="font-medium text-gray-900">
                   {formData.personalInfo.email || '-'}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 mb-0.5">Telefon</p>
+                <p className="text-sm text-gray-600 mb-0.5">{t('step3.phone')}</p>
                 <p className="font-medium text-gray-900">
                   {formData.personalInfo.phone || '-'}
                 </p>
@@ -637,24 +637,24 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
               {/* 1. Kayıt Türü */}
               <div className="border border-gray-300 rounded-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">
-                  1. Kayıt Türü
+                  1. {t('step4.registrationType')}
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Seçilen Tür</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('step3.selectedType')}</p>
                     <p className="font-semibold text-gray-900">{registrationInfo.label}</p>
                   </div>
                   
                   {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded p-3">
                       <div className="flex justify-between mb-2">
-                        <p className="text-sm text-gray-600">Seçilen Döviz Ücreti</p>
+                        <p className="text-sm text-gray-600">{t('step3.selectedCurrencyFee')}</p>
                         <p className="font-bold text-blue-600">
                           {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
                         </p>
                       </div>
                       <div className="flex justify-between">
-                        <p className="text-sm text-gray-600">TL Karşılığı</p>
+                        <p className="text-sm text-gray-600">{t('step3.tryEquivalent')}</p>
                         <p className="font-bold text-gray-900 text-lg">{registrationInfo.fee}</p>
                       </div>
                     </div>
@@ -662,7 +662,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                   
                   {registrationInfo.currency === 'TRY' && registrationInfo.fee && (
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">Ücret</p>
+                      <p className="text-sm text-gray-600 mb-1">{t('step3.fee')}</p>
                       <p className="font-bold text-gray-900 text-lg">{registrationInfo.fee}</p>
                     </div>
                   )}
@@ -672,21 +672,21 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
               {/* 2. Kişisel Bilgiler */}
               <div className="border border-gray-300 rounded-lg p-6">
                 <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">
-                  2. Kişisel Bilgiler
+                  2. {t('step4.personalInfo')}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Ad Soyad</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('step3.fullName')}</p>
                     <p className="font-semibold text-gray-900">
                       {formData.personalInfo.fullName || `${formData.personalInfo.firstName} ${formData.personalInfo.lastName}`.trim() || '-'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">E-posta</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('step3.email')}</p>
                     <p className="font-semibold text-gray-900">{formData.personalInfo.email || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Telefon</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('step3.phone')}</p>
                     <p className="font-semibold text-gray-900">{formData.personalInfo.phone || '-'}</p>
                   </div>
                   <div>

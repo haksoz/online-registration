@@ -120,10 +120,12 @@
     "subtitle": "Kaydınız başarıyla alındı",
     "referenceNumber": "Referans Numarası",
     "registrationSummary": "Kayıt Özeti",
+    "registrationType": "Kayıt Türü",
+    "personalInfo": "Kişisel Bilgiler",
+    "paymentInfo": "Ödeme Bilgileri",
     "downloadPDF": "PDF İndir",
     "newRegistration": "Yeni Kayıt",
-    "goToHomepage": "Ana Sayfaya Git",
-    "paymentInfo": "Ödeme Bilgileri"
+    "goToHomepage": "Ana Sayfaya Git"
   },
   "steps": {
     "step1": "Kişisel Bilgiler",

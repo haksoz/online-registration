@@ -120,10 +120,12 @@
     "subtitle": "Your registration has been successfully received",
     "referenceNumber": "Reference Number",
     "registrationSummary": "Registration Summary",
+    "registrationType": "Registration Type",
+    "personalInfo": "Personal Information",
+    "paymentInfo": "Payment Information",
     "downloadPDF": "Download PDF",
     "newRegistration": "New Registration",
-    "goToHomepage": "Go to Homepage",
-    "paymentInfo": "Payment Information"
+    "goToHomepage": "Go to Homepage"
   },
   "steps": {
     "step1": "Personal Information",
