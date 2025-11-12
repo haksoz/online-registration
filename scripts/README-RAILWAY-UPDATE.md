@@ -21,22 +21,34 @@ Bu script Railway veritabanınıza mail sistemi, kayıt ayarları ve organizasyo
 
 ### Kurulum Adımları
 
-#### Yöntem 1: Railway Dashboard (Önerilen)
+#### Yöntem 1: TablePlus / MySQL Workbench (Önerilen - En Kolay)
 
-1. Railway Dashboard'a gidin: https://railway.app
-2. Projenizi seçin
-3. MySQL servisinizi seçin
-4. "Data" sekmesine gidin
-5. "Query" butonuna tıklayın
-6. `scripts/railway-update-mail-system.sql` dosyasının içeriğini kopyalayıp yapıştırın
-7. "Run Query" butonuna tıklayın
+1. **Railway Dashboard'dan Connection Bilgilerini Alın:**
+   - Railway Dashboard → MySQL Service → Connect
+   - TCP Proxy bilgilerini not edin:
+     - Host: `ballast.proxy.rlwy.net`
+     - Port: `28944`
+     - User: `root`
+     - Password: (gösterilen şifre)
+     - Database: `railway`
 
-#### Yöntem 2: MySQL Client ile
+2. **TablePlus veya MySQL Workbench'te Bağlantı Oluşturun:**
+   - Yeni connection oluşturun
+   - Yukarıdaki bilgileri girin
+   - Test Connection → Connect
 
-```bash
-# Railway veritabanı bilgilerinizi kullanarak
-mysql -h [RAILWAY_HOST] -P [RAILWAY_PORT] -u [RAILWAY_USER] -p[RAILWAY_PASSWORD] [RAILWAY_DATABASE] < scripts/railway-update-mail-system.sql
-```
+3. **Script Dosyalarını Sırayla Çalıştırın:**
+   - `railway-step1-mail-settings.sql` (mail_settings tablosu)
+   - `railway-step2-mail-logs.sql` (mail_logs tablosu)
+   - `railway-step3-form-settings.sql` (form_settings güncellemesi)
+   - `railway-step4-page-settings.sql` (page_settings güncellemesi)
+
+4. **Her script'ten sonra "Success" mesajını kontrol edin**
+
+#### Yöntem 2: Tek Script (Hepsi Birden)
+
+Eğer tüm değişiklikleri tek seferde yapmak isterseniz:
+- `railway-update-mail-system.sql` dosyasını çalıştırın
 
 ### Doğrulama
 
