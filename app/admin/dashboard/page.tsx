@@ -57,14 +57,21 @@ export default function DashboardPage() {
   const fetchStats = async () => {
     try {
       setLoading(true)
+      console.log('📊 Fetching dashboard stats...')
       const response = await fetch('/api/admin/dashboard/stats')
+      console.log('📊 Response status:', response.status)
       const data = await response.json()
+      console.log('📊 Response data:', data)
       
       if (data.success) {
         setStats(data.data)
+      } else {
+        console.error('❌ Dashboard stats failed:', data.error, data.details)
+        alert(`Dashboard yüklenemedi: ${data.details || data.error}`)
       }
-    } catch (error) {
-      console.error('Error fetching stats:', error)
+    } catch (error: any) {
+      console.error('❌ Error fetching stats:', error)
+      alert(`Dashboard yüklenirken hata: ${error.message}`)
     } finally {
       setLoading(false)
     }

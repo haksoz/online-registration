@@ -3,11 +3,13 @@ import { pool } from '@/lib/db'
 
 export async function GET() {
   try {
+    console.log('📊 Dashboard stats API called')
     
     // Toplam kayıt sayısı
     const [totalRegistrations] = await pool.execute(
       'SELECT COUNT(*) as total FROM registrations'
     )
+    console.log('✅ Total registrations fetched')
     
     // Bu ayki kayıtlar
     const [thisMonthRegistrations] = await pool.execute(
@@ -147,10 +149,16 @@ export async function GET() {
         riskStats: (riskStats as any[])[0] || { high_risk: 0, medium_risk: 0, low_risk: 0 }
       }
     })
-  } catch (error) {
-    console.error('Dashboard stats error:', error)
+  } catch (error: any) {
+    console.error('❌ Dashboard stats error:', error)
+    console.error('Error message:', error?.message)
+    console.error('Error stack:', error?.stack)
     return NextResponse.json(
-      { success: false, error: 'İstatistikler alınamadı' },
+      { 
+        success: false, 
+        error: 'İstatistikler alınamadı',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }
