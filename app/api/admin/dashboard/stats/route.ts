@@ -110,14 +110,20 @@ export async function GET() {
        ORDER BY count DESC`
     )
 
-    // Risk skorları
-    const [riskStats] = await pool.execute(
-      `SELECT 
-        COUNT(CASE WHEN risk_score >= 70 THEN 1 END) as high_risk,
-        COUNT(CASE WHEN risk_score >= 40 AND risk_score < 70 THEN 1 END) as medium_risk,
-        COUNT(CASE WHEN risk_score < 40 THEN 1 END) as low_risk
-       FROM registration_logs`
-    )
+    // Risk skorları (optional - kolon yoksa skip)
+    let riskStats: any[] = [{ high_risk: 0, medium_risk: 0, low_risk: 0 }]
+    try {
+      const [stats] = await pool.execute(
+        `SELECT 
+          COUNT(CASE WHEN risk_score >= 70 THEN 1 END) as high_risk,
+          COUNT(CASE WHEN risk_score >= 40 AND risk_score < 70 THEN 1 END) as medium_risk,
+          COUNT(CASE WHEN risk_score < 40 THEN 1 END) as low_risk
+         FROM registration_logs`
+      )
+      riskStats = stats as any[]
+    } catch (error: any) {
+      console.log('⚠️ Risk score column not found, using defaults')
+    }
     
     
     // Deadline'ları objeye çevir
