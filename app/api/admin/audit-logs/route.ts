@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
     const limit = 20
     const offset = (page - 1) * limit
