@@ -63,8 +63,20 @@ export function extractUserInfoFromRequest(request: NextRequest) {
 }
 
 export function getCurrentUserId(request: NextRequest): number | null {
-  const userId = request.cookies.get('admin_user_id')?.value
-  return userId ? parseInt(userId) : null
+  try {
+    const token = request.cookies.get('admin_token')?.value
+    if (!token) return null
+    
+    const jwtSecret = process.env.JWT_SECRET
+    if (!jwtSecret) return null
+    
+    const jwt = require('jsonwebtoken')
+    const decoded = jwt.verify(token, jwtSecret) as any
+    return decoded.userId || null
+  } catch (error) {
+    console.error('Error getting user ID from token:', error)
+    return null
+  }
 }
 
 export function compareObjects(oldObj: any, newObj: any): string[] {

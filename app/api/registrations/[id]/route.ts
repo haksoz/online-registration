@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 import { createAuditLog, extractUserInfoFromRequest, getCurrentUserId, compareObjects } from '@/lib/auditLog'
 
+// Force dynamic rendering (uses cookies for auth)
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
