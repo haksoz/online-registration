@@ -7,6 +7,11 @@ const nextConfig = {
   },
   // Optimize fonts and emojis
   optimizeFonts: true,
+  // Experimental features
+  experimental: {
+    // Force all API routes to be dynamic by default
+    isrMemoryCacheSize: 0,
+  },
 }
 
 module.exports = nextConfig

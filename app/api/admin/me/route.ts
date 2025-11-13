@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 import jwt from 'jsonwebtoken'
 
+// Force dynamic rendering (uses cookies)
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Checking user session...');

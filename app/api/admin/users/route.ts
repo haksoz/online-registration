@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const [rows] = await pool.execute(

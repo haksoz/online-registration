@@ -3,6 +3,9 @@ import { getAllRegistrationTypes, createRegistrationType, checkRegistrationTypeE
 import { validateRegistrationTypeInput } from '@/lib/validation'
 import { RegistrationType } from '@/types/registration'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Fetch all active registration types from database
