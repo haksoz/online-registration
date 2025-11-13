@@ -62,7 +62,8 @@
     "selectType": "Select",
     "fee": "Fee",
     "currency": "Currency",
-    "selectCurrency": "Select Currency"
+    "selectCurrency": "Select Currency",
+    "currencyWarning": "Prices are shown in {currency}. Payment will be made in TRY."
   },
   "step3": {
     "title": "Payment Information",
