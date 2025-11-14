@@ -88,16 +88,20 @@ export default function Home() {
               <div className="relative z-10 text-center py-8 md:py-10 px-4 md:px-8">
                 {pageSettings?.form_title && (
                   <h1 
-                    className="font-bold text-white mb-2 md:mb-3 drop-shadow-2xl animate-fade-in leading-tight"
-                    style={{ fontSize: `${pageSettings.header_title_font_size || 48}px` }}
+                    className="font-bold text-white mb-2 md:mb-3 drop-shadow-2xl animate-fade-in leading-tight text-2xl md:text-[var(--title-size)]"
+                    style={{ 
+                      '--title-size': `${pageSettings.header_title_font_size || 48}px` 
+                    } as React.CSSProperties}
                   >
                     {formData.formLanguage === 'en' ? pageSettings.form_title_en || pageSettings.form_title : pageSettings.form_title}
                   </h1>
                 )}
                 {pageSettings?.form_subtitle && (
                   <p 
-                    className="text-white/95 max-w-3xl mx-auto drop-shadow-lg font-medium leading-snug"
-                    style={{ fontSize: `${pageSettings.header_subtitle_font_size || 24}px` }}
+                    className="text-white/95 max-w-3xl mx-auto drop-shadow-lg font-medium leading-snug text-base md:text-[var(--subtitle-size)]"
+                    style={{ 
+                      '--subtitle-size': `${pageSettings.header_subtitle_font_size || 24}px` 
+                    } as React.CSSProperties}
                   >
                     {formData.formLanguage === 'en' ? pageSettings.form_subtitle_en || pageSettings.form_subtitle : pageSettings.form_subtitle}
                   </p>
