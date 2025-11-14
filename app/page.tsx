@@ -75,7 +75,7 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header Section with Background Image - Contained */}
       {hasHeaderContent && (
-        <div className="py-6 px-4 sm:px-6 lg:px-8">
+        <div className="pt-0 pb-6 px-0 sm:px-6 sm:pt-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div 
               className="relative w-full rounded-lg overflow-hidden shadow-lg min-h-[240px] flex items-center justify-center"
@@ -113,9 +113,9 @@ export default function Home() {
       )}
 
       {/* Form Wizard with Warning */}
-      <div className={`pb-8 px-4 sm:px-6 lg:px-8 ${hasHeaderContent ? '-mt-12' : 'pt-8'} relative z-20`}>
+      <div className={`pb-8 px-0 sm:px-6 lg:px-8 ${hasHeaderContent ? '-mt-12' : 'pt-8'} relative z-20`}>
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-xl p-6 md:p-8">
+          <div className="bg-white rounded-lg shadow-xl p-4 md:p-8">
             {/* Progress Indicator & Form Content */}
             <FormWizard />
 
