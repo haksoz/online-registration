@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS registrations (
   payment_receipt_filename VARCHAR(255),
   payment_receipt_uploaded_at TIMESTAMP NULL,
   status TINYINT DEFAULT 1 COMMENT '1: Active, 0: Cancelled, -1: Deleted',
-  refund_status ENUM('none', 'requested', 'approved', 'completed') DEFAULT 'none',
+  refund_status ENUM('none', 'pending', 'completed', 'rejected') DEFAULT 'none',
   refund_amount DECIMAL(10,2) DEFAULT 0,
   refund_date TIMESTAMP NULL,
   refund_notes TEXT,
