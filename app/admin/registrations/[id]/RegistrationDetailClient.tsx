@@ -164,7 +164,6 @@ Devam etmek istediğinizden emin misiniz?`
     }
 
     try {
-      // Basit test için önce sadece status güncelleyelim
       const cancelData: any = {
         status: 0
       }
@@ -173,7 +172,7 @@ Devam etmek istediğinizden emin misiniz?`
       if (registration.payment_status === 'completed') {
         cancelData.refund_status = 'pending'
         cancelData.refund_amount = registration.fee
-        cancelData.cancelled_at = new Date().toISOString().slice(0, 19).replace('T', ' ')
+        // cancelled_at ve cancelled_by API tarafında otomatik ekleniyor
       }
 
       const response = await fetch(`/api/registrations/${registration.id}`, {
@@ -193,7 +192,8 @@ Devam etmek istediğinizden emin misiniz?`
         alert(message)
         window.location.reload()
       } else {
-        alert(data.error || 'İptal işlemi başarısız oldu')
+        console.error('Cancel error:', data)
+        alert(data.error || data.details || 'İptal işlemi başarısız oldu')
       }
     } catch (error) {
       console.error('Error canceling registration:', error)
