@@ -34,10 +34,35 @@ export async function GET(request: NextRequest) {
         COUNT(*) as totalRegistrations,
         SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as activeRegistrations,
         SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as cancelledRegistrations,
-        SUM(CASE WHEN status = 1 THEN fee ELSE 0 END) as totalRevenue,
-        SUM(CASE WHEN status = 1 AND payment_status = 'completed' THEN fee ELSE 0 END) as completedRevenue,
+        -- Toplam gelir: Aktif kayıtlar + İadesi reddedilen kayıtlar
+        SUM(CASE 
+          WHEN status = 1 THEN fee 
+          WHEN status = 0 AND refund_status = 'rejected' THEN fee 
+          ELSE 0 
+        END) as totalRevenue,
+        COUNT(CASE 
+          WHEN status = 1 THEN 1 
+          WHEN status = 0 AND refund_status = 'rejected' THEN 1 
+        END) as totalRevenueCount,
+        -- Tahsil edilen: Aktif completed + İadesi reddedilen completed
+        SUM(CASE 
+          WHEN status = 1 AND payment_status = 'completed' THEN fee 
+          WHEN status = 0 AND refund_status = 'rejected' AND payment_status = 'completed' THEN fee 
+          ELSE 0 
+        END) as completedRevenue,
+        COUNT(CASE 
+          WHEN status = 1 AND payment_status = 'completed' THEN 1 
+          WHEN status = 0 AND refund_status = 'rejected' AND payment_status = 'completed' THEN 1 
+        END) as completedRevenueCount,
         SUM(CASE WHEN status = 1 AND payment_status = 'pending' THEN fee ELSE 0 END) as pendingRevenue,
-        SUM(CASE WHEN status = 0 AND refund_status IN ('pending', 'completed') THEN refund_amount ELSE 0 END) as refundAmount
+        COUNT(CASE WHEN status = 1 AND payment_status = 'pending' THEN 1 END) as pendingRevenueCount,
+        SUM(CASE WHEN status = 0 AND refund_status IN ('pending', 'completed') THEN refund_amount ELSE 0 END) as refundAmount,
+        SUM(CASE WHEN status = 0 AND refund_status = 'pending' THEN refund_amount ELSE 0 END) as refundPending,
+        SUM(CASE WHEN status = 0 AND refund_status = 'completed' THEN refund_amount ELSE 0 END) as refundCompleted,
+        SUM(CASE WHEN status = 0 AND refund_status = 'rejected' THEN refund_amount ELSE 0 END) as refundRejected,
+        COUNT(CASE WHEN status = 0 AND refund_status = 'pending' THEN 1 END) as refundPendingCount,
+        COUNT(CASE WHEN status = 0 AND refund_status = 'completed' THEN 1 END) as refundCompletedCount,
+        COUNT(CASE WHEN status = 0 AND refund_status = 'rejected' THEN 1 END) as refundRejectedCount
       FROM registrations r
       WHERE 1=1 ${dateFilter}
     `)
@@ -104,6 +129,27 @@ export async function GET(request: NextRequest) {
       ORDER BY date DESC
     `)
 
+    // Deadlines
+    const [deadlines] = await pool.execute(`
+      SELECT setting_key, setting_value 
+      FROM form_settings 
+      WHERE setting_key IN ('registration_start_date', 'registration_deadline', 'cancellation_deadline')
+    `)
+
+    // Deadline'ları objeye çevir
+    const deadlineObj: any = {}
+    ;(deadlines as any[]).forEach((row: any) => {
+      deadlineObj[row.setting_key] = row.setting_value
+    })
+
+    // Döviz kurları
+    const [exchangeRates] = await pool.execute(`
+      SELECT currency_code, rate_to_try as rate, last_updated as updated_at 
+      FROM exchange_rates 
+      ORDER BY last_updated DESC 
+      LIMIT 3
+    `)
+
     return NextResponse.json({
       success: true,
       data: {
@@ -112,7 +158,9 @@ export async function GET(request: NextRequest) {
         byPaymentMethod: byMethod,
         byPaymentStatus: byStatus,
         byMonth: byMonth,
-        byDay: byDay
+        byDay: byDay,
+        deadlines: deadlineObj,
+        exchangeRates: exchangeRates
       }
     })
 

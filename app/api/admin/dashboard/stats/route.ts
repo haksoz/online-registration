@@ -54,9 +54,11 @@ export async function GET() {
        ORDER BY date ASC`
     )
     
-    // Toplam gelir (sadece aktif kayıtlar, tamamlanan ödemeler)
+    // Toplam gelir (aktif completed + iadesi reddedilen completed)
     const [totalRevenue] = await pool.execute(
-      'SELECT SUM(fee) as total FROM registrations WHERE status = 1 AND payment_status = "completed"'
+      `SELECT SUM(fee) as total FROM registrations 
+       WHERE (status = 1 AND payment_status = "completed") 
+          OR (status = 0 AND refund_status = "rejected" AND payment_status = "completed")`
     )
     
     // Bekleyen ödemeler (sadece aktif kayıtlar)

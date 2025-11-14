@@ -22,10 +22,11 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "📊 Beklenen Sonuçlar:"
     echo "  • Toplam Kayıt: 8 (sadece aktif)"
-    echo "  • Toplam Gelir: 61,000 TL"
-    echo "  • Tahsil Edilen: 39,000 TL"
+    echo "  • Toplam Gelir: 68,500 TL (aktif + iade reddedildi)"
+    echo "  • Tahsil Edilen: 46,500 TL (aktif completed + iade reddedildi)"
     echo "  • Bekleyen: 22,000 TL"
     echo "  • İade Tutarı: 17,000 TL"
+    echo "  • İade Reddedildi: 7,500 TL (gelir olarak sayılır!)"
     echo ""
     echo "🌐 Dashboard'ı kontrol edin: http://localhost:3000/admin/dashboard"
 else

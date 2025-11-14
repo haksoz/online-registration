@@ -34,6 +34,7 @@ interface Registration {
   payment_status: 'pending' | 'completed'
   status: number
   refund_status?: 'none' | 'pending' | 'completed' | 'rejected'
+  refund_amount?: number
   payment_receipt_filename?: string
   payment_notes?: string
   created_at: string
@@ -440,26 +441,11 @@ export default function RegistrationsPage() {
                           </span>
                         ) : r.status === 0 ? (
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
-                            ❌ İptal
+                            ❌ İptal Edildi
                           </span>
                         ) : (
                           <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                            Bilinmiyor
-                          </span>
-                        )}
-                        
-                        {/* İade durumu */}
-                        {r.status === 0 && r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' && (
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            r.refund_status === 'completed' ? 'bg-red-100 text-red-800' :
-                            r.refund_status === 'rejected' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {r.refund_status === 'pending' ? '💰 İade Beklemede' :
-                             r.refund_status === 'completed' ? '🔒 İade Tamamlandı' :
-                             r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
-                             `💰 ${r.refund_status}`}
+                            ❓ Bilinmiyor
                           </span>
                         )}
                       </div>
@@ -479,26 +465,63 @@ export default function RegistrationsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex flex-col gap-1">
-                      <span className={getPaymentStatusBadge(r.payment_status)}>
-                        {getCombinedPaymentStatus(r.payment_method, r.payment_status)}
-                      </span>
-                      
-                      {/* Dekont durumu - sadece dekont varsa göster */}
-                      {r.payment_method === 'bank_transfer' && r.payment_receipt_filename && (
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          📄 Dekont Var
-                        </span>
+                      {/* Aktif kayıtlar için ödeme durumu */}
+                      {r.status === 1 && (
+                        <>
+                          <span className={getPaymentStatusBadge(r.payment_status)}>
+                            {getCombinedPaymentStatus(r.payment_method, r.payment_status)}
+                          </span>
+                          
+                          {/* Dekont durumu - sadece dekont varsa göster */}
+                          {r.payment_method === 'bank_transfer' && r.payment_receipt_filename && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              📄 Dekont Var
+                            </span>
+                          )}
+                          
+                          {/* Tahsilat onay butonu */}
+                          {r.payment_method === 'bank_transfer' && r.payment_status === 'pending' && currentUser?.role !== 'reporter' && (
+                            <button
+                              onClick={() => handlePaymentConfirmation(r.id)}
+                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                              title="Tahsilatı Onayla"
+                            >
+                              ✓ Tahsilatı Onayla
+                            </button>
+                          )}
+                        </>
                       )}
                       
-                      {/* Tahsilat onay butonu */}
-                      {r.payment_method === 'bank_transfer' && r.payment_status === 'pending' && r.status === 1 && currentUser?.role !== 'reporter' && (
-                        <button
-                          onClick={() => handlePaymentConfirmation(r.id)}
-                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                          title="Tahsilatı Onayla"
-                        >
-                          ✓ Tahsilatı Onayla
-                        </button>
+                      {/* İptal edilen kayıtlar için iade durumu */}
+                      {r.status === 0 && (
+                        <>
+                          {/* Ödeme tamamlanmış ve iade var */}
+                          {r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' ? (
+                            <>
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                r.refund_status === 'completed' ? 'bg-green-100 text-green-800' :
+                                r.refund_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {r.refund_status === 'pending' ? '💰 İade Beklemede' :
+                                 r.refund_status === 'completed' ? '✅ İade Tamamlandı' :
+                                 r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
+                                 `💰 ${r.refund_status}`}
+                              </span>
+                              {r.refund_amount && (
+                                <span className="text-xs text-gray-600">
+                                  İade: {formatTurkishCurrency(r.refund_amount)}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            /* Ödeme beklemedeyken iptal veya iade yok */
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                              {r.payment_status === 'completed' ? '💳 Ödeme Alındı' : '⏳ Ödeme Beklemedeyken İptal Edildi'}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                   </td>
