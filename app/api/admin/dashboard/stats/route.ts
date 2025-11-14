@@ -5,28 +5,28 @@ export async function GET() {
   try {
     console.log('📊 Dashboard stats API called')
     
-    // Toplam kayıt sayısı
+    // Toplam kayıt sayısı (sadece aktif kayıtlar)
     const [totalRegistrations] = await pool.execute(
-      'SELECT COUNT(*) as total FROM registrations'
+      'SELECT COUNT(*) as total FROM registrations WHERE status = 1'
     )
     console.log('✅ Total registrations fetched')
     
-    // Bu ayki kayıtlar
+    // Bu ayki kayıtlar (sadece aktif)
     const [thisMonthRegistrations] = await pool.execute(
-      'SELECT COUNT(*) as total FROM registrations WHERE MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())'
+      'SELECT COUNT(*) as total FROM registrations WHERE status = 1 AND MONTH(created_at) = MONTH(CURRENT_DATE()) AND YEAR(created_at) = YEAR(CURRENT_DATE())'
     )
     
-    // Bugünkü kayıtlar
+    // Bugünkü kayıtlar (sadece aktif)
     const [todayRegistrations] = await pool.execute(
-      'SELECT COUNT(*) as total FROM registrations WHERE DATE(created_at) = CURDATE()'
+      'SELECT COUNT(*) as total FROM registrations WHERE status = 1 AND DATE(created_at) = CURDATE()'
     )
     
-    // Ödeme durumu istatistikleri
+    // Ödeme durumu istatistikleri (sadece aktif kayıtlar)
     const [paymentStats] = await pool.execute(
-      'SELECT payment_status, COUNT(*) as count FROM registrations GROUP BY payment_status'
+      'SELECT payment_status, COUNT(*) as count FROM registrations WHERE status = 1 GROUP BY payment_status'
     )
     
-    // Kayıt türü istatistikleri
+    // Kayıt türü istatistikleri (sadece aktif kayıtlar)
     const [registrationTypeStats] = await pool.execute(
       `SELECT 
         r.registration_type, 
@@ -34,42 +34,44 @@ export async function GET() {
         rt.label as type_label
        FROM registrations r
        LEFT JOIN registration_types rt ON r.registration_type = rt.value
+       WHERE r.status = 1
        GROUP BY r.registration_type, rt.label`
     )
     
-    // Ödeme yöntemi istatistikleri
+    // Ödeme yöntemi istatistikleri (sadece aktif kayıtlar)
     const [paymentMethodStats] = await pool.execute(
-      'SELECT payment_method, COUNT(*) as count FROM registrations GROUP BY payment_method'
+      'SELECT payment_method, COUNT(*) as count FROM registrations WHERE status = 1 GROUP BY payment_method'
     )
     
-    // Son 7 günlük kayıt trendi
+    // Son 7 günlük kayıt trendi (sadece aktif kayıtlar)
     const [weeklyTrend] = await pool.execute(
       `SELECT 
         DATE(created_at) as date,
         COUNT(*) as count
        FROM registrations 
-       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+       WHERE status = 1 AND created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
        GROUP BY DATE(created_at)
        ORDER BY date ASC`
     )
     
-    // Toplam gelir (tamamlanan ödemeler)
+    // Toplam gelir (sadece aktif kayıtlar, tamamlanan ödemeler)
     const [totalRevenue] = await pool.execute(
-      'SELECT SUM(fee) as total FROM registrations WHERE payment_status = "completed"'
+      'SELECT SUM(fee) as total FROM registrations WHERE status = 1 AND payment_status = "completed"'
     )
     
-    // Bekleyen ödemeler
+    // Bekleyen ödemeler (sadece aktif kayıtlar)
     const [pendingRevenue] = await pool.execute(
-      'SELECT SUM(fee) as total FROM registrations WHERE payment_status = "pending"'
+      'SELECT SUM(fee) as total FROM registrations WHERE status = 1 AND payment_status = "pending"'
     )
     
-    // Son kayıtlar (5 adet)
+    // Son kayıtlar (5 adet, sadece aktif)
     const [recentRegistrations] = await pool.execute(
       `SELECT 
         r.id, r.full_name, r.email, r.registration_type, r.payment_status, r.fee, r.created_at,
         rt.label as type_label
        FROM registrations r
        LEFT JOIN registration_types rt ON r.registration_type = rt.value
+       WHERE r.status = 1
        ORDER BY r.created_at DESC 
        LIMIT 5`
     )

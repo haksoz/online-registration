@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
         COUNT(*) as totalRegistrations,
         SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as activeRegistrations,
         SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as cancelledRegistrations,
-        SUM(fee) as totalRevenue,
-        SUM(CASE WHEN payment_status = 'completed' THEN fee ELSE 0 END) as completedRevenue,
-        SUM(CASE WHEN payment_status = 'pending' THEN fee ELSE 0 END) as pendingRevenue,
-        SUM(CASE WHEN refund_status IN ('pending', 'completed') THEN refund_amount ELSE 0 END) as refundAmount
+        SUM(CASE WHEN status = 1 THEN fee ELSE 0 END) as totalRevenue,
+        SUM(CASE WHEN status = 1 AND payment_status = 'completed' THEN fee ELSE 0 END) as completedRevenue,
+        SUM(CASE WHEN status = 1 AND payment_status = 'pending' THEN fee ELSE 0 END) as pendingRevenue,
+        SUM(CASE WHEN status = 0 AND refund_status IN ('pending', 'completed') THEN refund_amount ELSE 0 END) as refundAmount
       FROM registrations r
       WHERE 1=1 ${dateFilter}
     `)
