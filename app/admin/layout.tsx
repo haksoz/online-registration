@@ -104,6 +104,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const getMenuItems = (userRole: string) => {
     const allItems = [
       { href: '/admin/dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'manager', 'reporter'] },
+      { href: '/admin/reports', label: 'Raporlar', icon: '📈', roles: ['admin', 'manager', 'reporter'] },
       { href: '/admin/registrations', label: 'Kayıtlar', icon: '📝', roles: ['admin', 'manager', 'reporter'] },
       { href: '/admin/registration-types', label: 'Kayıt Türleri', icon: '🏷️', roles: ['admin', 'manager'] },
       { href: '/admin/settings/exchange-rates', label: 'Döviz Kurları', icon: '💱', roles: ['admin', 'manager'] },
