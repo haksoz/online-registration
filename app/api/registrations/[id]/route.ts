@@ -120,10 +120,21 @@ export async function PATCH(
       
       updateValues.push(id)
       
-      await pool.execute(
-        `UPDATE registrations SET ${updateFields.join(', ')} WHERE id = ?`,
-        updateValues
-      )
+      console.log('UPDATE SQL:', `UPDATE registrations SET ${updateFields.join(', ')} WHERE id = ?`)
+      console.log('UPDATE VALUES:', updateValues)
+      
+      try {
+        await pool.execute(
+          `UPDATE registrations SET ${updateFields.join(', ')} WHERE id = ?`,
+          updateValues
+        )
+      } catch (sqlError: any) {
+        console.error('SQL Error:', sqlError)
+        return NextResponse.json({ 
+          error: 'Veritabanı güncelleme hatası: ' + (sqlError.message || 'Bilinmeyen hata'),
+          details: sqlError.sqlMessage || sqlError.message
+        }, { status: 500 })
+      }
 
       // Create audit log for status change
       try {
