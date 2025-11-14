@@ -99,7 +99,7 @@ export async function PATCH(
       
       // İade bilgileri ile birlikte güncelle
       const updateFields = ['status = ?']
-      const updateValues = [status]
+      const updateValues: any[] = [status]
       
       if (refund_status !== undefined) {
         updateFields.push('refund_status = ?')
@@ -109,13 +109,12 @@ export async function PATCH(
         updateFields.push('refund_amount = ?')
         updateValues.push(refund_amount)
       }
-      if (cancelled_at !== undefined) {
-        updateFields.push('cancelled_at = ?')
-        updateValues.push(cancelled_at)
-      }
-      if (cancelled_by !== undefined) {
+      
+      // İptal ediliyorsa cancelled_at ve cancelled_by otomatik ekle
+      if (status === 0) {
+        updateFields.push('cancelled_at = NOW()')
         updateFields.push('cancelled_by = ?')
-        updateValues.push(cancelled_by)
+        updateValues.push(userId)
       }
       
       updateValues.push(id)
