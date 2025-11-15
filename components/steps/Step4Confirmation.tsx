@@ -24,6 +24,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   const [bankAccounts, setBankAccounts] = useState<any[]>([])
   const [paymentSettings, setPaymentSettings] = useState<any>({})
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
+  const [homepageUrl, setHomepageUrl] = useState<string>('https://example.com')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
 
   useEffect(() => {
@@ -47,6 +48,13 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
         // Sayfa ayarlarını getir
         const pageSettings = await fetchPageSettings()
         setPageSettings(pageSettings)
+
+        // Homepage URL'i getir
+        const formSettingsResponse = await fetch('/api/admin/form-settings')
+        const formSettingsData = await formSettingsResponse.json()
+        if (formSettingsData.success && formSettingsData.homepageUrl) {
+          setHomepageUrl(formSettingsData.homepageUrl)
+        }
       } catch (error) {
         console.error('Error fetching data:', error)
       }
@@ -171,7 +179,6 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   }
 
   const handleGoToHomepage = () => {
-    const homepageUrl = pageSettings?.homepage_url || 'https://example.com'
     window.open(homepageUrl, '_blank')
   }
 
