@@ -69,6 +69,7 @@ export default function PageSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop')
   const { success: showSuccess, error: showError } = useToast()
 
   // Ayarları yükle
@@ -576,9 +577,36 @@ export default function PageSettingsPage() {
         {/* Tam Sayfa Önizleme */}
         <div className="mt-8 pt-6 border-t border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Tam Sayfa Önizleme</h3>
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200">
+          
+          {/* Desktop ve Mobil Görünüm Tabs */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setPreviewMode('desktop')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                previewMode === 'desktop'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              🖥️ Desktop
+            </button>
+            <button
+              onClick={() => setPreviewMode('mobile')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                previewMode === 'mobile'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              📱 Mobil
+            </button>
+          </div>
+
+          <div className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 ${
+            previewMode === 'mobile' ? 'max-w-sm mx-auto' : ''
+          }`}>
             {/* Header Container with Background - Conditional */}
-            {(settings.form_title || settings.form_subtitle || settings.banner_image_url) && (
+            {((settings.show_header === 'true' && settings.form_title) || (settings.show_subtitle === 'true' && settings.form_subtitle) || settings.banner_image_url) && (
               <div 
                 className="relative w-full rounded-lg overflow-hidden shadow-lg mb-4 min-h-[180px] flex items-center justify-center"
                 style={{
@@ -594,18 +622,28 @@ export default function PageSettingsPage() {
                 
                 {/* Content */}
                 <div className="relative z-10 text-center py-6 px-4">
-                  {settings.form_title && (
+                  {settings.show_header === 'true' && settings.form_title && (
                     <h1 
-                      className="font-bold text-white mb-2 drop-shadow-2xl leading-tight"
-                      style={{ fontSize: `${Math.min(parseInt(settings.header_title_font_size) || 48, 40)}px` }}
+                      className="font-bold mb-2 drop-shadow-2xl leading-tight"
+                      style={{ 
+                        fontSize: previewMode === 'mobile' 
+                          ? `${parseInt(settings.header_title_font_size_mobile) || 28}px`
+                          : `${Math.min(parseInt(settings.header_title_font_size) || 48, 40)}px`,
+                        color: settings.header_title_color || '#ffffff'
+                      }}
                     >
                       {settings.form_title}
                     </h1>
                   )}
-                  {settings.form_subtitle && (
+                  {settings.show_subtitle === 'true' && settings.form_subtitle && (
                     <p 
-                      className="text-white/95 max-w-2xl mx-auto drop-shadow-lg font-medium leading-snug"
-                      style={{ fontSize: `${Math.min(parseInt(settings.header_subtitle_font_size) || 24, 20)}px` }}
+                      className="max-w-2xl mx-auto drop-shadow-lg font-medium leading-snug"
+                      style={{ 
+                        fontSize: previewMode === 'mobile'
+                          ? `${parseInt(settings.header_subtitle_font_size_mobile) || 16}px`
+                          : `${Math.min(parseInt(settings.header_subtitle_font_size) || 24, 20)}px`,
+                        color: settings.header_subtitle_color || '#ffffff'
+                      }}
                     >
                       {settings.form_subtitle}
                     </p>
