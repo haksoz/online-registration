@@ -51,8 +51,8 @@ export function validateTCId(tcId: string): boolean {
   // 2. İlk hane 0 olamaz
   if (cleanTcId[0] === '0') return false
   
-  // İstisna: Test numarası 11111111111
-  if (cleanTcId === '11111111111') return true
+  // İstisna: Test numaraları
+  if (cleanTcId === '11111111111' || cleanTcId === '22222222222') return true
   
   // 3. Tüm haneler aynı olamaz
   if (new Set(cleanTcId).size === 1) return false
@@ -98,7 +98,7 @@ export function getTCIdValidationMessage(tcId: string): string {
   }
   
   // Test numarası kontrolü
-  if (cleanTcId === '11111111111') {
+  if (cleanTcId === '11111111111' || cleanTcId === '22222222222') {
     return TC_ID_ERROR_MESSAGES.VALID
   }
   

@@ -28,6 +28,7 @@ export default function FormFieldsSettingsPage() {
   const [fields, setFields] = useState<FormFieldSetting[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSetting[]>([])
   const [step2CurrencyType, setStep2CurrencyType] = useState('TRY')
+  const [homepageUrl, setHomepageUrl] = useState('')
   const [language, setLanguage] = useState('tr')
   const [invoiceIndividualNote, setInvoiceIndividualNote] = useState('')
   const [invoiceCorporateNote, setInvoiceCorporateNote] = useState('')
@@ -50,6 +51,7 @@ export default function FormFieldsSettingsPage() {
         setFields(data.fields || [])
         setPaymentMethods(data.paymentMethods || [])
         setStep2CurrencyType(data.step2Settings?.currency_type || 'TRY')
+        setHomepageUrl(data.homepageUrl || '')
         setLanguage(data.language || 'tr')
         setInvoiceIndividualNote(data.invoiceIndividualNote || '')
         setInvoiceCorporateNote(data.invoiceCorporateNote || '')
@@ -97,6 +99,7 @@ export default function FormFieldsSettingsPage() {
           fields, 
           paymentMethods,
           step2Settings: { currency_type: step2CurrencyType },
+          homepageUrl,
           language,
           invoiceIndividualNote,
           invoiceCorporateNote,
@@ -362,6 +365,32 @@ export default function FormFieldsSettingsPage() {
             </select>
             <p className="text-xs text-gray-500 mt-2">
               Kullanıcılar kayıt türü seçerken bu döviz cinsinden fiyatları görecekler
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Step 4 Settings - Homepage URL */}
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Step 4: Kayıt Tamamlama Ayarları</h2>
+          <p className="text-sm text-gray-600 mt-1">Kayıt tamamlandıktan sonra yönlendirilecek anasayfa URL'i</p>
+        </div>
+        
+        <div className="p-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Anasayfa URL <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="url"
+              value={homepageUrl}
+              onChange={(e) => setHomepageUrl(e.target.value)}
+              className="w-full max-w-2xl px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="https://example.com"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Kayıt tamamlandıktan sonra "Anasayfa" butonunun yönlendireceği adres
             </p>
           </div>
         </div>

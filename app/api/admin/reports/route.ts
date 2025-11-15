@@ -34,7 +34,15 @@ export async function GET(request: NextRequest) {
         COUNT(*) as totalRegistrations,
         SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as activeRegistrations,
         SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as cancelledRegistrations,
-        -- Toplam gelir: Aktif kayıtlar + İadesi reddedilen kayıtlar
+        -- KASA: Tüm tahsil edilen ödemeler (bekleyen iadeler dahil, tamamlanan iadeler hariç)
+        SUM(CASE 
+          WHEN payment_status = 'completed' AND (status = 1 OR (status = 0 AND refund_status != 'completed')) THEN fee 
+          ELSE 0 
+        END) as cashRegister,
+        COUNT(CASE 
+          WHEN payment_status = 'completed' AND (status = 1 OR (status = 0 AND refund_status != 'completed')) THEN 1 
+        END) as cashRegisterCount,
+        -- Kesinleşmemiş Toplam Gelir: Kasa - Bekleyen İadeler (Aktif kayıtlar + İadesi reddedilen kayıtlar)
         SUM(CASE 
           WHEN status = 1 THEN fee 
           WHEN status = 0 AND refund_status = 'rejected' THEN fee 
@@ -44,16 +52,17 @@ export async function GET(request: NextRequest) {
           WHEN status = 1 THEN 1 
           WHEN status = 0 AND refund_status = 'rejected' THEN 1 
         END) as totalRevenueCount,
-        -- Tahsil edilen: Aktif completed + İadesi reddedilen completed
+        -- Tahsil edilen: Ödeme durumu completed olanlar (aktif kayıtlar + iadesi bekleyen iptal edilmiş kayıtlar + reddedilen iadeler)
         SUM(CASE 
           WHEN status = 1 AND payment_status = 'completed' THEN fee 
+          WHEN status = 0 AND refund_status = 'pending' AND payment_status = 'completed' THEN fee 
           WHEN status = 0 AND refund_status = 'rejected' AND payment_status = 'completed' THEN fee 
-          ELSE 0 
         END) as completedRevenue,
         COUNT(CASE 
           WHEN status = 1 AND payment_status = 'completed' THEN 1 
           WHEN status = 0 AND refund_status = 'rejected' AND payment_status = 'completed' THEN 1 
         END) as completedRevenueCount,
+        -- Bekleyen: Ödeme durumu pending olanlar (sadece aktif kayıtlar)
         SUM(CASE WHEN status = 1 AND payment_status = 'pending' THEN fee ELSE 0 END) as pendingRevenue,
         COUNT(CASE WHEN status = 1 AND payment_status = 'pending' THEN 1 END) as pendingRevenueCount,
         SUM(CASE WHEN status = 0 AND refund_status IN ('pending', 'completed') THEN refund_amount ELSE 0 END) as refundAmount,
@@ -81,14 +90,16 @@ export async function GET(request: NextRequest) {
       ORDER BY count DESC
     `)
 
-    // By payment method
+    // By payment method (sadece completed ödemeler: aktif + iadesi beklemede + iadesi reddedilen)
     const [byMethod] = await pool.execute(`
       SELECT 
         payment_method as method,
         COUNT(*) as count,
         SUM(fee) as revenue
       FROM registrations r
-      WHERE status = 1 ${dateFilter}
+      WHERE payment_status = 'completed' 
+        AND (status = 1 OR (status = 0 AND refund_status IN ('pending', 'rejected'))) 
+        ${dateFilter}
       GROUP BY payment_method
     `)
 

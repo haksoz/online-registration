@@ -39,7 +39,9 @@ export default function Home() {
   }
 
   // Check if header should be displayed
-  const hasHeaderContent = pageSettings?.form_title || pageSettings?.form_subtitle || pageSettings?.banner_image_url
+  const shouldShowTitle = pageSettings?.show_header === 'true'
+  const shouldShowSubtitle = pageSettings?.show_subtitle === 'true'
+  const hasHeaderContent = (shouldShowTitle && pageSettings?.form_title) || (shouldShowSubtitle && pageSettings?.form_subtitle) || pageSettings?.banner_image_url
 
   // Get background style
   const getBackgroundStyle = () => {
@@ -86,21 +88,25 @@ export default function Home() {
               
               {/* Content */}
               <div className="relative z-10 text-center py-8 md:py-10 px-4 md:px-8">
-                {pageSettings?.form_title && (
+                {pageSettings?.show_header === 'true' && pageSettings?.form_title && (
                   <h1 
-                    className="font-bold text-white mb-2 md:mb-3 drop-shadow-2xl animate-fade-in leading-tight text-2xl md:text-[var(--title-size)]"
+                    className="font-bold mb-2 md:mb-3 drop-shadow-2xl animate-fade-in leading-tight text-[length:var(--title-size-mobile)] md:text-[length:var(--title-size)]"
                     style={{ 
-                      '--title-size': `${pageSettings.header_title_font_size || 48}px` 
+                      '--title-size': `${pageSettings.header_title_font_size || 48}px`,
+                      '--title-size-mobile': `${pageSettings.header_title_font_size_mobile || 28}px`,
+                      color: pageSettings.header_title_color || '#ffffff'
                     } as React.CSSProperties}
                   >
                     {formData.formLanguage === 'en' ? pageSettings.form_title_en || pageSettings.form_title : pageSettings.form_title}
                   </h1>
                 )}
-                {pageSettings?.form_subtitle && (
+                {pageSettings?.show_subtitle === 'true' && pageSettings?.form_subtitle && (
                   <p 
-                    className="text-white/95 max-w-3xl mx-auto drop-shadow-lg font-medium leading-snug text-base md:text-[var(--subtitle-size)]"
+                    className="max-w-3xl mx-auto drop-shadow-lg font-medium leading-snug text-[length:var(--subtitle-size-mobile)] md:text-[length:var(--subtitle-size)]"
                     style={{ 
-                      '--subtitle-size': `${pageSettings.header_subtitle_font_size || 24}px` 
+                      '--subtitle-size': `${pageSettings.header_subtitle_font_size || 24}px`,
+                      '--subtitle-size-mobile': `${pageSettings.header_subtitle_font_size_mobile || 16}px`,
+                      color: pageSettings.header_subtitle_color || '#ffffff'
                     } as React.CSSProperties}
                   >
                     {formData.formLanguage === 'en' ? pageSettings.form_subtitle_en || pageSettings.form_subtitle : pageSettings.form_subtitle}

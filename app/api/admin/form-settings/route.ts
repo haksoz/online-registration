@@ -59,6 +59,12 @@ export async function GET() {
     )
     const invoiceCorporateNoteEn = (corporateNoteEnRows as any[])[0]?.setting_value || ''
 
+    // Homepage URL
+    const [homepageRows] = await pool.execute(
+      `SELECT setting_value FROM page_settings WHERE setting_key = 'homepage_url'`
+    )
+    const homepageUrl = (homepageRows as any[])[0]?.setting_value || ''
+
     return NextResponse.json({
       success: true,
       fields: fieldRows,
@@ -69,7 +75,8 @@ export async function GET() {
       invoiceIndividualNote: invoiceIndividualNote,
       invoiceCorporateNote: invoiceCorporateNote,
       invoiceIndividualNoteEn: invoiceIndividualNoteEn,
-      invoiceCorporateNoteEn: invoiceCorporateNoteEn
+      invoiceCorporateNoteEn: invoiceCorporateNoteEn,
+      homepageUrl: homepageUrl
     })
   } catch (error) {
     console.error('Error fetching admin form settings:', error)
@@ -84,7 +91,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { fields, paymentMethods, step2Settings, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn } = body
+    const { fields, paymentMethods, step2Settings, homepageUrl, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn } = body
 
     const connection = await pool.getConnection()
     
@@ -180,6 +187,16 @@ export async function PUT(request: NextRequest) {
            VALUES ('invoice_corporate_note_en', ?, 'Kurumsal fatura seçimi için uyarı notu (İngilizce)')
            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
           [invoiceCorporateNoteEn]
+        )
+      }
+
+      // Homepage URL güncelle
+      if (homepageUrl !== undefined) {
+        await connection.execute(
+          `INSERT INTO page_settings (setting_key, setting_value, description) 
+           VALUES ('homepage_url', ?, 'Anasayfa URL adresi')
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+          [homepageUrl]
         )
       }
 

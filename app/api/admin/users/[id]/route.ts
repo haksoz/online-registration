@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { getCurrentUser, checkRole } from '@/lib/auth'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    // Rol kontrolü - sadece admin
+    const currentUser = await getCurrentUser(request)
+    if (!checkRole(currentUser, ['admin'])) {
+      return NextResponse.json(
+        { success: false, error: 'Bu işlem için yetkiniz yok' },
+        { status: 403 }
+      )
+    }
+
     const id = parseInt(params.id)
     if (isNaN(id)) {
       return NextResponse.json(
@@ -46,6 +56,15 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Rol kontrolü - sadece admin
+    const currentUser = await getCurrentUser(request)
+    if (!checkRole(currentUser, ['admin'])) {
+      return NextResponse.json(
+        { success: false, error: 'Bu işlem için yetkiniz yok' },
+        { status: 403 }
+      )
+    }
+
     const id = parseInt(params.id)
     if (isNaN(id)) {
       return NextResponse.json(
@@ -163,6 +182,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Rol kontrolü - sadece admin
+    const currentUser = await getCurrentUser(request)
+    if (!checkRole(currentUser, ['admin'])) {
+      return NextResponse.json(
+        { success: false, error: 'Bu işlem için yetkiniz yok' },
+        { status: 403 }
+      )
+    }
+
     const id = parseInt(params.id)
     if (isNaN(id)) {
       return NextResponse.json(

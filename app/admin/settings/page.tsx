@@ -10,34 +10,6 @@ export default function SettingsPage() {
       href: '/admin/settings/users',
       icon: '👥',
       color: 'bg-blue-500'
-    },
-    {
-      title: 'Sayfa Ayarları',
-      description: 'Ana sayfanın başlık, mesaj ve görünüm ayarlarını yönet',
-      href: '/admin/settings/page',
-      icon: '📝',
-      color: 'bg-indigo-500'
-    },
-    {
-      title: 'Banka Ayarları',
-      description: 'Banka hesap bilgileri ve ödeme ayarlarını yönet',
-      href: '/admin/settings/bank',
-      icon: '🏦',
-      color: 'bg-green-500'
-    },
-    {
-      title: 'Email Ayarları',
-      description: 'Email sunucu ayarları ve şablonları',
-      href: '/admin/settings/email',
-      icon: '📧',
-      color: 'bg-purple-500'
-    },
-    {
-      title: 'Güvenlik',
-      description: 'Güvenlik ayarları ve erişim kontrolleri',
-      href: '/admin/settings/security',
-      icon: '🔒',
-      color: 'bg-red-500'
     }
   ]
 

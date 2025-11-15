@@ -283,36 +283,121 @@ export default function AuditLogsPage() {
                 </div>
               )}
 
-              {/* Values Comparison */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {selectedLog.old_values && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Eski Değerler</label>
-                    <div className="text-xs bg-red-50 p-3 rounded border overflow-auto max-h-64">
-                      <pre className="whitespace-pre-wrap font-mono">
-                        {typeof selectedLog.old_values === 'string' 
-                          ? selectedLog.old_values 
-                          : JSON.stringify(selectedLog.old_values, null, 2)
-                        }
-                      </pre>
+              {/* Values Comparison - Field by Field */}
+              {selectedLog.action === 'UPDATE' && selectedLog.old_values && selectedLog.new_values && (() => {
+                try {
+                  const oldData = typeof selectedLog.old_values === 'string' 
+                    ? JSON.parse(selectedLog.old_values) 
+                    : selectedLog.old_values
+                  const newData = typeof selectedLog.new_values === 'string' 
+                    ? JSON.parse(selectedLog.new_values) 
+                    : selectedLog.new_values
+                  
+                  const changedFields = Object.keys(newData).filter(key => 
+                    JSON.stringify(oldData[key]) !== JSON.stringify(newData[key])
+                  )
+
+                  return (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-3">Değişiklik Detayları</label>
+                      <div className="space-y-4">
+                        {changedFields.map(field => (
+                          <div key={field} className="border border-gray-200 rounded-lg overflow-hidden">
+                            <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
+                              <span className="font-medium text-gray-900">{field}</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-gray-200">
+                              <div className="p-4 bg-red-50">
+                                <p className="text-xs font-medium text-red-700 mb-2">Önceki Değer</p>
+                                <p className="text-sm text-gray-900 break-words">
+                                  {oldData[field] === null || oldData[field] === undefined 
+                                    ? <span className="text-gray-400 italic">boş</span>
+                                    : String(oldData[field])
+                                  }
+                                </p>
+                              </div>
+                              <div className="p-4 bg-green-50">
+                                <p className="text-xs font-medium text-green-700 mb-2">Yeni Değer</p>
+                                <p className="text-sm text-gray-900 break-words">
+                                  {newData[field] === null || newData[field] === undefined 
+                                    ? <span className="text-gray-400 italic">boş</span>
+                                    : String(newData[field])
+                                  }
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                {selectedLog.new_values && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Yeni Değerler</label>
-                    <div className="text-xs bg-green-50 p-3 rounded border overflow-auto max-h-64">
-                      <pre className="whitespace-pre-wrap font-mono">
-                        {typeof selectedLog.new_values === 'string' 
-                          ? selectedLog.new_values 
-                          : JSON.stringify(selectedLog.new_values, null, 2)
-                        }
-                      </pre>
+                  )
+                } catch (e) {
+                  // Fallback to raw JSON if parsing fails
+                  return (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Eski Değerler</label>
+                        <div className="text-xs bg-red-50 p-3 rounded border overflow-auto max-h-64">
+                          <pre className="whitespace-pre-wrap font-mono">
+                            {typeof selectedLog.old_values === 'string' 
+                              ? selectedLog.old_values 
+                              : JSON.stringify(selectedLog.old_values, null, 2)
+                            }
+                          </pre>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Yeni Değerler</label>
+                        <div className="text-xs bg-green-50 p-3 rounded border overflow-auto max-h-64">
+                          <pre className="whitespace-pre-wrap font-mono">
+                            {typeof selectedLog.new_values === 'string' 
+                              ? selectedLog.new_values 
+                              : JSON.stringify(selectedLog.new_values, null, 2)
+                            }
+                          </pre>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )
+                }
+              })()}
+
+              {/* For CREATE and DELETE actions, show full data */}
+              {selectedLog.action !== 'UPDATE' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {selectedLog.old_values && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {selectedLog.action === 'DELETE' ? 'Silinen Veri' : 'Eski Değerler'}
+                      </label>
+                      <div className="text-xs bg-red-50 p-3 rounded border overflow-auto max-h-64">
+                        <pre className="whitespace-pre-wrap font-mono">
+                          {typeof selectedLog.old_values === 'string' 
+                            ? selectedLog.old_values 
+                            : JSON.stringify(selectedLog.old_values, null, 2)
+                          }
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {selectedLog.new_values && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {selectedLog.action === 'CREATE' ? 'Oluşturulan Veri' : 'Yeni Değerler'}
+                      </label>
+                      <div className="text-xs bg-green-50 p-3 rounded border overflow-auto max-h-64">
+                        <pre className="whitespace-pre-wrap font-mono">
+                          {typeof selectedLog.new_values === 'string' 
+                            ? selectedLog.new_values 
+                            : JSON.stringify(selectedLog.new_values, null, 2)
+                          }
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* User Agent */}
               <div>

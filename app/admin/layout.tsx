@@ -70,10 +70,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/logout', { method: 'POST' })
-      router.push('/admin/login')
+      // State'i temizle
+      setCurrentUser(null)
+      // Login sayfasına yönlendir ve sayfayı yenile
+      window.location.href = '/admin/login'
     } catch (error) {
       console.error('Error during logout:', error)
-      router.push('/admin/login')
+      // Hata olsa bile çıkış yap
+      setCurrentUser(null)
+      window.location.href = '/admin/login'
     }
   }
 
@@ -116,7 +121,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       { href: '/admin/registration-logs', label: 'Kayıt Logları', icon: '📜', roles: ['admin', 'manager'] },
       { href: '/admin/pos-logs', label: 'POS Logları', icon: '💳', roles: ['admin', 'manager'] },
       { href: '/admin/audit-logs', label: 'Sistem Logları', icon: '🔍', roles: ['admin'] },
-      { href: '/admin/settings', label: 'Genel Ayarlar', icon: '⚙️', roles: ['admin'] },
+      { href: '/admin/settings/users', label: 'Kullanıcı Yönetimi', icon: '👥', roles: ['admin'] },
     ]
     
     return allItems.filter(item => item.roles.includes(userRole))

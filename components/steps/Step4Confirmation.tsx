@@ -307,7 +307,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
         </head>
         <body>
           <div class="header">
-            <h1>${pageSettings?.organization_name || 'Online Kayıt Sistemi'}</h1>
+            <h1>${pageSettings?.form_title || 'Online Kayıt Sistemi'}</h1>
             <h2>Kayıt Özeti</h2>
             <p><strong>Referans No:</strong> ${formData.referenceNumber}</p>
             <p><strong>Tarih:</strong> ${new Date().toLocaleDateString('tr-TR', { 
@@ -416,8 +416,8 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
           {/* Header */}
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {pageSettings?.organization_name
-                ? (language === 'en' && pageSettings.organization_name_en ? pageSettings.organization_name_en : pageSettings.organization_name)
+              {pageSettings?.form_title
+                ? (language === 'en' && pageSettings.form_title_en ? pageSettings.form_title_en : pageSettings.form_title)
                 : t('step4.title')}
             </h2>
           </div>

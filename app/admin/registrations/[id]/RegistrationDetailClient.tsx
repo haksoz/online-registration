@@ -16,6 +16,7 @@ interface Registration {
   phone: string
   address?: string
   company?: string
+  department?: string
   invoice_type: string
   invoice_full_name?: string
   id_number?: string
@@ -57,6 +58,7 @@ export default function RegistrationDetailClient({ registration }: RegistrationD
   const [isEditing, setIsEditing] = useState(false)
   const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
   const [cancellationDeadline, setCancellationDeadline] = useState<string>('')
+  const [currentUser, setCurrentUser] = useState<any>(null)
   const [formData, setFormData] = useState({
     first_name: registration.first_name || '',
     last_name: registration.last_name || '',
@@ -65,6 +67,7 @@ export default function RegistrationDetailClient({ registration }: RegistrationD
     phone: registration.phone || '',
     address: registration.address || '',
     company: registration.company || '',
+    department: registration.department || '',
     invoice_type: registration.invoice_type || 'bireysel',
     invoice_full_name: registration.invoice_full_name || '',
     id_number: registration.id_number || '',
@@ -105,6 +108,20 @@ export default function RegistrationDetailClient({ registration }: RegistrationD
       }
     }
     fetchCancellationDeadline()
+
+    // Fetch current user
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch('/api/admin/me')
+        const data = await response.json()
+        if (data.success) {
+          setCurrentUser(data.data)
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error)
+      }
+    }
+    fetchCurrentUser()
   }, [])
 
   const getPaymentMethodLabel = (method: string): string => {
@@ -417,6 +434,7 @@ Devam etmek istediğinizden emin misiniz?`
           phone: formData.phone,
           address: formData.address,
           company: formData.company,
+          department: formData.department,
           invoice_type: formData.invoice_type,
           invoice_full_name: formData.invoice_full_name,
           id_number: formData.id_number,
@@ -626,11 +644,21 @@ Devam etmek istediğinizden emin misiniz?`
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Şirket</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Şirket/Kurum</label>
                     <input
                       type="text"
                       value={formData.company}
                       onChange={(e) => setFormData({...formData, company: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Departman</label>
+                    <input
+                      type="text"
+                      value={formData.department}
+                      onChange={(e) => setFormData({...formData, department: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -851,7 +879,15 @@ Devam etmek istediğinizden emin misiniz?`
               {registration.company && (
                 <div>
                   <p className="text-sm text-gray-900">
-                    <span className="font-medium text-gray-600">Şirket:</span> {registration.company}
+                    <span className="font-medium text-gray-600">Şirket/Kurum:</span> {registration.company}
+                  </p>
+                </div>
+              )}
+
+              {registration.department && (
+                <div>
+                  <p className="text-sm text-gray-900">
+                    <span className="font-medium text-gray-600">Departman:</span> {registration.department}
                   </p>
                 </div>
               )}
@@ -1016,8 +1052,8 @@ Devam etmek istediğinizden emin misiniz?`
                   <span className={getPaymentStatusBadge(registration.payment_status)}>
                     {getPaymentStatusLabel(registration.payment_status)}
                   </span>
-                  {/* Tahsilat durumu butonları - sadece aktif kayıtlar için */}
-                  {registration.payment_method === 'bank_transfer' && registration.status === 1 && (
+                  {/* Tahsilat durumu butonları - sadece aktif kayıtlar için ve reporter hariç */}
+                  {registration.payment_method === 'bank_transfer' && registration.status === 1 && currentUser?.role !== 'reporter' && (
                     <div className="flex space-x-2">
                       {registration.payment_status === 'pending' && (
                         <button
@@ -1107,7 +1143,7 @@ Devam etmek istediğinizden emin misiniz?`
                           </svg>
                           <span className="text-gray-600">Henüz dekont yüklenmedi</span>
                         </div>
-                        {registration.status === 1 && (
+                        {registration.status === 1 && currentUser?.role !== 'reporter' && (
                           <button
                             onClick={() => handleReceiptUpload()}
                             className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
@@ -1196,7 +1232,7 @@ Devam etmek istediğinizden emin misiniz?`
                     )}
 
                     {/* İade Yönetim Butonları */}
-                    {registration.refund_status === 'pending' && (
+                    {registration.refund_status === 'pending' && currentUser?.role !== 'reporter' && (
                       <div className="mt-4 pt-3 border-t border-yellow-300">
                         <div className="flex flex-wrap gap-2 mb-3">
                           <button 
@@ -1254,7 +1290,7 @@ Devam etmek istediğinizden emin misiniz?`
       </div>
 
       {/* Alt Butonlar - Tüm İşlemler */}
-      {!isEditing && (
+      {!isEditing && currentUser?.role !== 'reporter' && (
         <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
           {/* Güvenli İşlemler */}
           <button
@@ -1266,16 +1302,6 @@ Devam etmek istediğinizden emin misiniz?`
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             Düzenle
-          </button>
-          
-          <button
-            onClick={() => window.print()}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            Yazdır
           </button>
 
           {/* Tehlikeli İşlemler - Sadece aktif kayıtlar için */}
@@ -1295,8 +1321,8 @@ Devam etmek istediğinizden emin misiniz?`
             </>
           )}
 
-          {/* İptal edilmiş kayıtlar için tekrar aktifleştirme - sadece iadesi tamamlanmayanlar */}
-          {registration.status === 0 && registration.refund_status !== 'completed' && (
+          {/* İptal edilmiş kayıtlar için tekrar aktifleştirme - sadece iadesi tamamlanmayanlar ve reporter hariç */}
+          {registration.status === 0 && registration.refund_status !== 'completed' && currentUser?.role !== 'reporter' && (
             <button
               onClick={() => {
                 if (confirm('Bu kaydı tekrar aktifleştirmek istediğinizden emin misiniz?')) {

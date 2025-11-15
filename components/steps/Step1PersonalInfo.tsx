@@ -166,56 +166,6 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
             </div>
           )}
 
-          {/* Gender */}
-          {isFieldVisible('gender') && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('step1.gender')} {isFieldRequired('gender') && <span className="text-red-500">*</span>}
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
-                  <input
-                    type="radio"
-                    value="male"
-                    {...register('gender')}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">{t('step1.male')}</span>
-                </label>
-                <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
-                  <input
-                    type="radio"
-                    value="female"
-                    {...register('gender')}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">{t('step1.female')}</span>
-                </label>
-                <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
-                  <input
-                    type="radio"
-                    value="other"
-                    {...register('gender')}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">{t('step1.other')}</span>
-                </label>
-                <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
-                  <input
-                    type="radio"
-                    value="prefer_not_to_say"
-                    {...register('gender')}
-                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">{t('step1.preferNotToSay')}</span>
-                </label>
-              </div>
-              {errors.gender && (
-                <p className="mt-1.5 text-sm text-red-600">{errors.gender.message}</p>
-              )}
-            </div>
-          )}
-
           {/* Email and Phone */}
           {(isFieldVisible('email') || isFieldVisible('phone')) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -257,6 +207,38 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
                     placeholder={t('step1.placeholders.phone')}
                   />
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Gender */}
+          {isFieldVisible('gender') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('step1.gender')} {isFieldRequired('gender') && <span className="text-red-500">*</span>}
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
+                  <input
+                    type="radio"
+                    value="male"
+                    {...register('gender')}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{t('step1.male')}</span>
+                </label>
+                <label className="flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
+                  <input
+                    type="radio"
+                    value="female"
+                    {...register('gender')}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{t('step1.female')}</span>
+                </label>
+              </div>
+              {errors.gender && (
+                <p className="mt-1.5 text-sm text-red-600">{errors.gender.message}</p>
               )}
             </div>
           )}

@@ -13,14 +13,16 @@ export interface PageSettings {
   banner_image_url?: string
   header_title_font_size: string
   header_subtitle_font_size: string
+  header_title_font_size_mobile: string
+  header_subtitle_font_size_mobile: string
+  header_title_color: string
+  header_subtitle_color: string
   header_background_color: string
-  currency_type: string
-  organization_name: string
-  organization_name_en: string
   page_title?: string
   contact_email: string
   contact_phone: string
-  homepage_url: string
+  show_header: string
+  show_subtitle: string
 }
 
 // Varsayılan değerler (API başarısız olursa kullanılır)
@@ -34,14 +36,16 @@ const DEFAULT_PAGE_SETTINGS: PageSettings = {
   banner_image_url: '',
   header_title_font_size: '48',
   header_subtitle_font_size: '24',
+  header_title_font_size_mobile: '28',
+  header_subtitle_font_size_mobile: '16',
+  header_title_color: '#ffffff',
+  header_subtitle_color: '#ffffff',
   header_background_color: '#667eea',
-  currency_type: 'TRY',
-  organization_name: 'Online Kayıt Sistemi',
-  organization_name_en: 'Online Registration System',
   page_title: '',
   contact_email: 'info@example.com',
   contact_phone: '+90 (212) 123 45 67',
-  homepage_url: 'https://example.com'
+  show_header: 'true',
+  show_subtitle: 'true'
 }
 
 // Cache için
@@ -73,14 +77,16 @@ export async function fetchPageSettings(): Promise<PageSettings> {
         banner_image_url: data.data.banner_image_url || DEFAULT_PAGE_SETTINGS.banner_image_url,
         header_title_font_size: data.data.header_title_font_size || DEFAULT_PAGE_SETTINGS.header_title_font_size,
         header_subtitle_font_size: data.data.header_subtitle_font_size || DEFAULT_PAGE_SETTINGS.header_subtitle_font_size,
+        header_title_font_size_mobile: data.data.header_title_font_size_mobile || DEFAULT_PAGE_SETTINGS.header_title_font_size_mobile,
+        header_subtitle_font_size_mobile: data.data.header_subtitle_font_size_mobile || DEFAULT_PAGE_SETTINGS.header_subtitle_font_size_mobile,
+        header_title_color: data.data.header_title_color || DEFAULT_PAGE_SETTINGS.header_title_color,
+        header_subtitle_color: data.data.header_subtitle_color || DEFAULT_PAGE_SETTINGS.header_subtitle_color,
         header_background_color: data.data.header_background_color || DEFAULT_PAGE_SETTINGS.header_background_color,
-        currency_type: data.data.currency_type || DEFAULT_PAGE_SETTINGS.currency_type,
-        organization_name: data.data.organization_name || DEFAULT_PAGE_SETTINGS.organization_name,
-        organization_name_en: data.data.organization_name_en || DEFAULT_PAGE_SETTINGS.organization_name_en,
         page_title: data.data.page_title || DEFAULT_PAGE_SETTINGS.page_title,
         contact_email: data.data.contact_email || DEFAULT_PAGE_SETTINGS.contact_email,
         contact_phone: data.data.contact_phone || DEFAULT_PAGE_SETTINGS.contact_phone,
-        homepage_url: data.data.homepage_url || DEFAULT_PAGE_SETTINGS.homepage_url
+        show_header: data.data.show_header || DEFAULT_PAGE_SETTINGS.show_header,
+        show_subtitle: data.data.show_subtitle || DEFAULT_PAGE_SETTINGS.show_subtitle
       }
       
       cachedPageSettings = settings

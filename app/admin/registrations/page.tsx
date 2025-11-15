@@ -498,6 +498,13 @@ export default function RegistrationsPage() {
                           {/* Ödeme tamamlanmış ve iade var */}
                           {r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' ? (
                             <>
+                              {/* Ödeme yöntemi bilgisi - sadece iade beklemede ise göster */}
+                              {r.refund_status === 'pending' && (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                  {r.payment_method === 'online' ? 'Online Ödeme Tamamlandı' : 'Banka Transferi Tamamlandı'}
+                                </span>
+                              )}
+                              
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                 r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                 r.refund_status === 'completed' ? 'bg-green-100 text-green-800' :
@@ -509,11 +516,6 @@ export default function RegistrationsPage() {
                                  r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
                                  `💰 ${r.refund_status}`}
                               </span>
-                              {r.refund_amount && (
-                                <span className="text-xs text-gray-600">
-                                  İade: {formatTurkishCurrency(r.refund_amount)}
-                                </span>
-                              )}
                             </>
                           ) : (
                             /* Ödeme beklemedeyken iptal veya iade yok */

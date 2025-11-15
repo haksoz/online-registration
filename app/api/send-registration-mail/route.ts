@@ -13,22 +13,22 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Organizasyon adını al
+    // Sayfa başlığını al
     const { pool } = require('@/lib/db')
-    const [orgRows] = await pool.execute(
-      "SELECT setting_value FROM page_settings WHERE setting_key = 'organization_name'"
+    const [titleRows] = await pool.execute(
+      "SELECT setting_value FROM page_settings WHERE setting_key = 'form_title'"
     )
-    const [orgEnRows] = await pool.execute(
-      "SELECT setting_value FROM page_settings WHERE setting_key = 'organization_name_en'"
+    const [titleEnRows] = await pool.execute(
+      "SELECT setting_value FROM page_settings WHERE setting_key = 'form_title_en'"
     )
-    const organizationName = (orgRows as any[])[0]?.setting_value || 'Online Kayıt Sistemi'
-    const organizationNameEn = (orgEnRows as any[])[0]?.setting_value || 'Online Registration System'
+    const formTitle = (titleRows as any[])[0]?.setting_value || 'Online Kayıt Sistemi'
+    const formTitleEn = (titleEnRows as any[])[0]?.setting_value || 'Online Registration System'
     
     const isEnglish = language === 'en'
-    const orgName = isEnglish ? organizationNameEn : organizationName
+    const pageTitle = isEnglish ? formTitleEn : formTitle
     
     console.log('📧 Mail language:', language, 'isEnglish:', isEnglish)
-    console.log('📧 Organization name:', orgName)
+    console.log('📧 Page title:', pageTitle)
     
     // Mail HTML içeriği - Step4'teki içeriği kullan
     const mailHtml = `
@@ -127,8 +127,8 @@ export async function POST(request: NextRequest) {
     
     // Kullanıcıya mail gönder
     const userSubject = isEnglish 
-      ? `${orgName} - Registration Received`
-      : `${orgName} - Kaydınız Alındı`
+      ? `${pageTitle} - Registration Received`
+      : `${pageTitle} - Kaydınız Alındı`
     
     const userResult = await sendMail({
       to: email,
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       await sendMail({
         to: notificationEmail,
         toName: 'Kayıt Bildirimi',
-        subject: `${organizationName} - Yeni Kayıt - ${name} - ${referenceNumber}`,
+        subject: `${formTitle} - Yeni Kayıt - ${name} - ${referenceNumber}`,
         html: mailHtml,
         mailType: 'admin_notification',
         registrationId

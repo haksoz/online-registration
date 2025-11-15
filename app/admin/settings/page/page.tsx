@@ -13,6 +13,10 @@ interface PageSettings {
   banner_image_url: string
   header_title_font_size: string
   header_subtitle_font_size: string
+  header_title_font_size_mobile: string
+  header_subtitle_font_size_mobile: string
+  header_title_color: string
+  header_subtitle_color: string
   header_background_color: string
   currency_type: string
   organization_name: string
@@ -20,6 +24,8 @@ interface PageSettings {
   contact_email: string
   contact_phone: string
   homepage_url: string
+  show_header: string
+  show_subtitle: string
 }
 
 // Helper to darken color for gradient
@@ -37,8 +43,8 @@ const adjustColorForPreview = (color: string, percent: number) => {
 
 export default function PageSettingsPage() {
   const [settings, setSettings] = useState<PageSettings>({
-    form_title: '',
-    form_title_en: '',
+    form_title: 'Online Kayıt Sistemi',
+    form_title_en: 'Online Registration System',
     form_subtitle: '',
     form_subtitle_en: '',
     form_general_warning: '',
@@ -46,13 +52,19 @@ export default function PageSettingsPage() {
     banner_image_url: '',
     header_title_font_size: '48',
     header_subtitle_font_size: '24',
+    header_title_font_size_mobile: '28',
+    header_subtitle_font_size_mobile: '16',
+    header_title_color: '#ffffff',
+    header_subtitle_color: '#ffffff',
     header_background_color: '#667eea',
     currency_type: 'TRY',
     organization_name: '',
     organization_name_en: '',
     contact_email: '',
     contact_phone: '',
-    homepage_url: ''
+    homepage_url: '',
+    show_header: 'true',
+    show_subtitle: 'true'
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -175,72 +187,47 @@ export default function PageSettingsPage() {
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="space-y-6">
-          {/* Organizasyon Adı - EN ÜSTTE */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Organizasyon Adı (Türkçe) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={settings.organization_name}
-                onChange={(e) => handleInputChange('organization_name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="II. Uluslararası Onkoloji Hemşireliği Derneği Kongresi"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Etkinlik/organizasyon adı - Sayfa başlığında ve kayıt tamamlama ekranında kullanılır
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Organizasyon Adı (İngilizce) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={settings.organization_name_en}
-                onChange={(e) => handleInputChange('organization_name_en', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="2nd International Oncology Nursing Association Congress"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Event/organization name - Used in page title and registration completion screen
-              </p>
-            </div>
-          </div>
-
           {/* Form Başlığı */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sayfa Başlığı (Türkçe)
+                Sayfa Başlığı (Türkçe) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={settings.form_title}
                 onChange={(e) => handleInputChange('form_title', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Hoş Geldiniz! 👋"
+                placeholder="Online Kayıt Sistemi"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Ana sayfada görünen başlık metni (opsiyonel - boş bırakılabilir, görselde kullanılabilir)
-              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sayfa Başlığı (İngilizce)
+                Sayfa Başlığı (İngilizce) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={settings.form_title_en}
                 onChange={(e) => handleInputChange('form_title_en', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Welcome! 👋"
+                placeholder="Online Registration System"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Page title text (optional - can be left empty, can be used in banner image)
-              </p>
             </div>
+          </div>
+
+          {/* Form Başlığı Göster/Gizle */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.show_header === 'true'}
+                onChange={(e) => handleInputChange('show_header', e.target.checked ? 'true' : 'false')}
+                className="w-5 h-5 text-primary-600 focus:ring-primary-500 rounded"
+              />
+              <span className="ml-3 text-sm font-medium text-gray-900">
+                Sayfa başlığını header'da göster
+              </span>
+            </label>
           </div>
 
           {/* Form Alt Başlığı */}
@@ -277,6 +264,21 @@ export default function PageSettingsPage() {
             </div>
           </div>
 
+          {/* Alt Başlık Göster/Gizle */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.show_subtitle === 'true'}
+                onChange={(e) => handleInputChange('show_subtitle', e.target.checked ? 'true' : 'false')}
+                className="w-5 h-5 text-primary-600 focus:ring-primary-500 rounded"
+              />
+              <span className="ml-3 text-sm font-medium text-gray-900">
+                Sayfa alt başlığını header'da göster
+              </span>
+            </label>
+          </div>
+
           {/* Form Genel Uyarı Mesajı */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -311,61 +313,131 @@ export default function PageSettingsPage() {
             </div>
           </div>
 
-          {/* Döviz Türü Seçimi */}
+          {/* Header Stil Ayarları - Desktop */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Döviz Türü <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={settings.currency_type}
-              onChange={(e) => handleInputChange('currency_type', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="TRY">Türk Lirası (TRY)</option>
-              <option value="USD">Amerikan Doları (USD)</option>
-              <option value="EUR">Euro (EUR)</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              Kayıt formunda gösterilecek döviz türü (Step 2 - Kayıt Türü)
-            </p>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">Desktop Font Boyutları</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Başlık Font Boyutu (px)
+                </label>
+                <input
+                  type="number"
+                  min="12"
+                  max="120"
+                  value={settings.header_title_font_size}
+                  onChange={(e) => handleInputChange('header_title_font_size', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="48"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Alt Başlık Font Boyutu (px)
+                </label>
+                <input
+                  type="number"
+                  min="12"
+                  max="80"
+                  value={settings.header_subtitle_font_size}
+                  onChange={(e) => handleInputChange('header_subtitle_font_size', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="24"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Header Stil Ayarları */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Başlık Font Boyutu (px)
-              </label>
-              <input
-                type="number"
-                min="12"
-                max="120"
-                value={settings.header_title_font_size}
-                onChange={(e) => handleInputChange('header_title_font_size', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="48"
-              />
-            </div>
+          {/* Header Stil Ayarları - Mobile */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">Mobil Font Boyutları</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Başlık Font Boyutu (px)
+                </label>
+                <input
+                  type="number"
+                  min="12"
+                  max="80"
+                  value={settings.header_title_font_size_mobile}
+                  onChange={(e) => handleInputChange('header_title_font_size_mobile', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="28"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Alt Başlık Font Boyutu (px)
-              </label>
-              <input
-                type="number"
-                min="12"
-                max="80"
-                value={settings.header_subtitle_font_size}
-                onChange={(e) => handleInputChange('header_subtitle_font_size', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="24"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Alt Başlık Font Boyutu (px)
+                </label>
+                <input
+                  type="number"
+                  min="12"
+                  max="40"
+                  value={settings.header_subtitle_font_size_mobile}
+                  onChange={(e) => handleInputChange('header_subtitle_font_size_mobile', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="16"
+                />
+              </div>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Arka Plan Rengi
-              </label>
+          {/* Font Renkleri */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">Font Renkleri</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Başlık Rengi
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={settings.header_title_color}
+                    onChange={(e) => handleInputChange('header_title_color', e.target.value)}
+                    className="h-10 w-16 border border-gray-300 rounded-md cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={settings.header_title_color}
+                    onChange={(e) => handleInputChange('header_title_color', e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="#ffffff"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Alt Başlık Rengi
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={settings.header_subtitle_color}
+                    onChange={(e) => handleInputChange('header_subtitle_color', e.target.value)}
+                    className="h-10 w-16 border border-gray-300 rounded-md cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={settings.header_subtitle_color}
+                    onChange={(e) => handleInputChange('header_subtitle_color', e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="#ffffff"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Arka Plan Rengi */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Arka Plan Rengi
+            </label>
               <div className="flex gap-2">
                 <input
                   type="color"
@@ -381,10 +453,9 @@ export default function PageSettingsPage() {
                   placeholder="#667eea"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Görsel yoksa bu renk kullanılır
-              </p>
-            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Görsel yoksa bu renk kullanılır
+            </p>
           </div>
 
           {/* Arka Plan Görseli */}
@@ -500,22 +571,6 @@ export default function PageSettingsPage() {
             </div>
           </div>
 
-          {/* Anasayfa URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Anasayfa URL <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="url"
-              value={settings.homepage_url}
-              onChange={(e) => handleInputChange('homepage_url', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="https://example.com"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Kayıt tamamlandıktan sonra "Anasayfa" butonunun yönlendireceği adres
-            </p>
-          </div>
         </div>
 
         {/* Tam Sayfa Önizleme */}
