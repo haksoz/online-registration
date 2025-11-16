@@ -41,10 +41,11 @@ INSERT INTO payment_method_settings (method_name, method_label, is_enabled, disp
 ('online', 'Online Ödeme', 0, 2, NOW(), NOW())
 ON DUPLICATE KEY UPDATE updated_at=NOW();
 
--- 6. Default Banka Hesabı (örnek)
-INSERT INTO bank_accounts (account_name, bank_name, account_holder, iban, currency, is_active, display_order, created_at, updated_at) VALUES
-('Türk Lirası Hesabı', 'Örnek Banka', 'Şirket Adı', 'TR00 0000 0000 0000 0000 0000 00', 'TRY', 1, 1, NOW(), NOW())
+-- 6. Default Banka Hesabı (örnek - müşteriye göre düzenlenmelidir)
+INSERT INTO bank_accounts (account_name, bank_name, account_holder, iban, currency, is_active, created_at, updated_at) VALUES
+('Türk Lirası Hesabı', 'Örnek Banka', 'Şirket Adı', 'TR00 0000 0000 0000 0000 0000 00', 'TRY', 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE updated_at=NOW();
+-- Not: Gerçek banka bilgilerini admin panelden giriniz
 
 -- 7. Default Mail Ayarları
 INSERT INTO mail_settings (setting_key, setting_value, created_at, updated_at) VALUES
