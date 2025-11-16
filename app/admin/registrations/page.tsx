@@ -209,7 +209,8 @@ export default function RegistrationsPage() {
       const notes = notesInput?.value.trim()
       
       try {
-        let paymentData: any = {
+        // Önce tahsilat durumunu güncelle
+        const paymentData: any = {
           payment_status: 'completed',
           payment_confirmed_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
         }
@@ -219,13 +220,29 @@ export default function RegistrationsPage() {
           paymentData.payment_notes = notes
         }
         
-        // Dekont varsa ekle
+        // Dekont varsa önce yükle
         if (file) {
-          paymentData.payment_receipt_filename = file.name
-          paymentData.payment_receipt_url = `/uploads/receipts/${Date.now()}_${file.name}` // Simulated URL
-          paymentData.payment_receipt_uploaded_at = new Date().toISOString().slice(0, 19).replace('T', ' ')
+          const formData = new FormData()
+          formData.append('file', file)
+          
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          })
+          
+          const uploadData = await uploadResponse.json()
+          
+          if (uploadData.success) {
+            paymentData.payment_receipt_filename = file.name
+            paymentData.payment_receipt_url = uploadData.url
+            paymentData.payment_receipt_uploaded_at = new Date().toISOString().slice(0, 19).replace('T', ' ')
+          } else {
+            alert('Dosya yüklenemedi: ' + (uploadData.error || 'Bilinmeyen hata'))
+            return
+          }
         }
         
+        // Tahsilat durumunu güncelle (dosya yükleme başarılı veya dosya yoksa)
         const response = await fetch(`/api/registrations/${id}`, {
           method: 'PATCH',
           headers: {
@@ -237,13 +254,12 @@ export default function RegistrationsPage() {
         const data = await response.json()
 
         if (response.ok) {
+          modal.remove()
           alert('Tahsilat başarıyla onaylandı')
-          window.location.reload() // Refresh the page
+          window.location.reload()
         } else {
           alert(data.error || 'Onay başarısız oldu')
         }
-        
-        modal.remove()
       } catch (error) {
         console.error('Error:', error)
         alert('Bir hata oluştu')

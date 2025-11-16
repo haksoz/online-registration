@@ -572,6 +572,77 @@ Devam etmek istediğinizden emin misiniz?`
           {isEditing ? (
             /* Edit Form */
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Tahsilat Durumu Bilgileri - En Üstte */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="text-md font-semibold text-gray-900 mb-3">
+                  💳 Tahsilat Durumu
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-900 mb-2">
+                      <span className="font-medium text-gray-600">Ödeme Yöntemi:</span> {getPaymentMethodLabel(registration.payment_method)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-900 mb-2">
+                      <span className="font-medium text-gray-600">Tahsilat Durumu:</span>
+                    </p>
+                    <div className="flex items-center space-x-3">
+                      <span className={getPaymentStatusBadge(registration.payment_status)}>
+                        {getPaymentStatusLabel(registration.payment_status)}
+                      </span>
+                      {/* Tahsilat durumu butonları - sadece banka transferi için */}
+                      {registration.payment_method === 'bank_transfer' && registration.status === 1 && (
+                        <div className="flex space-x-2">
+                          {registration.payment_status === 'completed' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm('Tahsilat durumu "Beklemede" olarak değiştirilecek. Devam etmek istediğinizden emin misiniz?')) {
+                                  updatePaymentStatus('pending')
+                                }
+                              }}
+                              className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+                            >
+                              ⏳ Tahsilatı Beklemeye Al
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dekont Bilgileri */}
+                {registration.payment_method === 'bank_transfer' && registration.payment_receipt_filename && (
+                  <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-medium text-green-800 text-sm">Dekont Yüklendi</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-green-700">
+                      <p><strong>Dosya:</strong> {registration.payment_receipt_filename}</p>
+                      {registration.payment_confirmed_at && (
+                        <p><strong>Onay Tarihi:</strong> {new Date(registration.payment_confirmed_at).toLocaleDateString('tr-TR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}</p>
+                      )}
+                      {registration.payment_notes && (
+                        <p><strong>Açıklama:</strong> {registration.payment_notes}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Personal Information */}
                 <div className="space-y-4">
@@ -820,13 +891,141 @@ Devam etmek istediğinizden emin misiniz?`
             </form>
           ) : (
             /* Display Mode */
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Personal Information */}
-            <div className="space-y-4">
-              <h3 className="text-md font-medium text-gray-800 border-b border-gray-200 pb-2">
-                Kişisel Bilgiler
+          <>
+            {/* Ödeme Bilgileri - En Üstte */}
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-md font-semibold text-gray-900 mb-4">
+                💳 Ödeme Bilgileri
               </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-900">
+                    <span className="font-medium text-gray-600">Ödeme Yöntemi:</span> {getPaymentMethodLabel(registration.payment_method)}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-900 mb-2">
+                    <span className="font-medium text-gray-600">Tahsilat Durumu:</span>
+                  </p>
+                  <div className="flex items-center space-x-3">
+                    <span className={getPaymentStatusBadge(registration.payment_status)}>
+                      {getPaymentStatusLabel(registration.payment_status)}
+                    </span>
+                    {/* Tahsilat onay butonu - sadece beklemedeki kayıtlar için */}
+                    {registration.payment_method === 'bank_transfer' && registration.status === 1 && registration.payment_status === 'pending' && currentUser?.role !== 'reporter' && (
+                      <button
+                        onClick={() => handlePaymentConfirmation()}
+                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      >
+                        ✓ Tahsilatı Onayla
+                      </button>
+                    )}
+                    {/* İptal edilmiş kayıtlar için uyarı */}
+                    {registration.status === 0 && (
+                      <span className="text-xs text-orange-600 font-medium">
+                        ⚠️ İptal edilmiş kayıtlarda tahsilat durumu değiştirilemez
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Dekont Bilgileri */}
+              {registration.payment_method === 'bank_transfer' && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-gray-800 mb-3">📄 Dekont Bilgileri</h4>
+                  
+                  {registration.payment_receipt_filename ? (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="font-medium text-green-800">Dekont Yüklendi</span>
+                          </div>
+                          <div className="space-y-1 text-sm text-green-700">
+                            <p><strong>Dosya Adı:</strong> {registration.payment_receipt_filename}</p>
+                            {registration.payment_receipt_uploaded_at && (
+                              <p><strong>Yüklenme Tarihi:</strong> {new Date(registration.payment_receipt_uploaded_at).toLocaleDateString('tr-TR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}</p>
+                            )}
+                            {registration.payment_confirmed_at && (
+                              <p><strong>Tahsilat Onay Tarihi:</strong> {new Date(registration.payment_confirmed_at).toLocaleDateString('tr-TR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}</p>
+                            )}
+                            {registration.payment_notes && (
+                              <p><strong>Tahsilat Açıklaması:</strong> {registration.payment_notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        {registration.payment_receipt_url && (
+                          <a 
+                            href={registration.payment_receipt_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-3 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                          >
+                            📄 Görüntüle
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="text-gray-600">Henüz dekont yüklenmedi</span>
+                        </div>
+                        {registration.status === 1 && currentUser?.role !== 'reporter' && (
+                          <button
+                            onClick={() => handleReceiptUpload()}
+                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                          >
+                            📤 Dekont Yükle
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4">
+                <p className="text-sm text-gray-900">
+                  <span className="font-medium text-gray-600">Kayıt Tarihi:</span> {new Date(registration.created_at).toLocaleString('tr-TR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Personal Information */}
+              <div className="space-y-4">
+                <h3 className="text-md font-medium text-gray-800 border-b border-gray-200 pb-2">
+                  Kişisel Bilgiler
+                </h3>
               
               {registration.first_name && registration.last_name ? (
                 <>
@@ -1031,146 +1230,9 @@ Devam etmek istediğinizden emin misiniz?`
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Payment Information */}
-            <div className="space-y-4">
-              <h3 className="text-md font-medium text-gray-800 border-b border-gray-200 pb-2">
-                Ödeme Bilgileri
-              </h3>
-              
-              <div>
-                <p className="text-sm text-gray-900">
-                  <span className="font-medium text-gray-600">Ödeme Yöntemi:</span> {getPaymentMethodLabel(registration.payment_method)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-900 mb-2">
-                  <span className="font-medium text-gray-600">Tahsilat Durumu:</span>
-                </p>
-                <div className="flex items-center space-x-3">
-                  <span className={getPaymentStatusBadge(registration.payment_status)}>
-                    {getPaymentStatusLabel(registration.payment_status)}
-                  </span>
-                  {/* Tahsilat durumu butonları - sadece aktif kayıtlar için ve reporter hariç */}
-                  {registration.payment_method === 'bank_transfer' && registration.status === 1 && currentUser?.role !== 'reporter' && (
-                    <div className="flex space-x-2">
-                      {registration.payment_status === 'pending' && (
-                        <button
-                          onClick={() => handlePaymentConfirmation()}
-                          className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                        >
-                          ✓ Tahsilatı Onayla
-                        </button>
-                      )}
-                      {registration.payment_status === 'completed' && (
-                        <button
-                          onClick={() => updatePaymentStatus('pending')}
-                          className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
-                        >
-                          ⏳ Tahsilat Beklemede
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  {/* İptal edilmiş kayıtlar için uyarı - tüm ödeme durumları için */}
-                  {registration.status === 0 && (
-                    <span className="text-xs text-orange-600 font-medium">
-                      ⚠️ İptal edilmiş kayıtlarda tahsilat durumu değiştirilemez
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Dekont Bilgileri */}
-              {registration.payment_method === 'bank_transfer' && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-800 mb-3">📄 Dekont Bilgileri</h4>
-                  
-                  {registration.payment_receipt_filename ? (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span className="font-medium text-green-800">Dekont Yüklendi</span>
-                          </div>
-                          <div className="space-y-1 text-sm text-green-700">
-                            <p><strong>Dosya Adı:</strong> {registration.payment_receipt_filename}</p>
-                            {registration.payment_receipt_uploaded_at && (
-                              <p><strong>Yüklenme Tarihi:</strong> {new Date(registration.payment_receipt_uploaded_at).toLocaleDateString('tr-TR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}</p>
-                            )}
-                            {registration.payment_confirmed_at && (
-                              <p><strong>Tahsilat Onay Tarihi:</strong> {new Date(registration.payment_confirmed_at).toLocaleDateString('tr-TR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}</p>
-                            )}
-                            {registration.payment_notes && (
-                              <p><strong>Tahsilat Açıklaması:</strong> {registration.payment_notes}</p>
-                            )}
-                          </div>
-                        </div>
-                        {registration.payment_receipt_url && (
-                          <a 
-                            href={registration.payment_receipt_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-3 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-                          >
-                            📄 Görüntüle
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <span className="text-gray-600">Henüz dekont yüklenmedi</span>
-                        </div>
-                        {registration.status === 1 && currentUser?.role !== 'reporter' && (
-                          <button
-                            onClick={() => handleReceiptUpload()}
-                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                          >
-                            📤 Dekont Yükle
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm text-gray-900">
-                  <span className="font-medium text-gray-600">Kayıt Tarihi:</span> {new Date(registration.created_at).toLocaleString('tr-TR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            </div>
-
-            {/* İade Bilgileri - Sadece iptal edilmiş ve ödeme tamamlanmış kayıtlar için */}
+          {/* İade Bilgileri - Sadece iptal edilmiş ve ödeme tamamlanmış kayıtlar için */}
             {registration.status === 0 && registration.payment_status === 'completed' && (
               <div className="space-y-4 mt-6 pt-6 border-t border-gray-200">
                 <h3 className="text-md font-medium text-gray-800 border-b border-gray-200 pb-2">
@@ -1284,7 +1346,7 @@ Devam etmek istediğinizden emin misiniz?`
                 </div>
               </div>
             )}
-          </div>
+          </>
           )}
         </div>
       </div>

@@ -149,8 +149,8 @@ export async function PATCH(
       }, { status: 200 })
     }
 
-    // Eğer sadece dekont bilgileri güncellenmek isteniyorsa
-    if (payment_receipt_url !== undefined || payment_receipt_filename !== undefined) {
+    // Eğer sadece dekont bilgileri güncellenmek isteniyorsa (payment_status olmadan)
+    if ((payment_receipt_url !== undefined || payment_receipt_filename !== undefined) && payment_status === undefined) {
       const updateFields = []
       const updateValues = []
       
