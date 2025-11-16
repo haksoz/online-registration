@@ -45,6 +45,15 @@ ON DUPLICATE KEY UPDATE updated_at=NOW();
 INSERT INTO bank_accounts (account_name, bank_name, account_holder, iban, currency, is_active, created_at, updated_at) VALUES
 ('Türk Lirası Hesabı', 'Örnek Banka', 'Şirket Adı', 'TR00 0000 0000 0000 0000 0000 00', 'TRY', 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE updated_at=NOW();
+
+-- 6b. Banka Ayarları (dekont e-posta vs.)
+INSERT INTO bank_settings (setting_key, setting_value, description, created_at, updated_at) VALUES
+('bank_name', 'Örnek Banka A.Ş.', 'Banka adı', NOW(), NOW()),
+('account_holder', 'Şirket Adı', 'Hesap sahibi', NOW(), NOW()),
+('iban', 'TR00 0000 0000 0000 0000 0000 00', 'IBAN numarası', NOW(), NOW()),
+('dekont_email', 'dekont@example.com', 'Dekont gönderilecek e-posta adresi', NOW(), NOW()),
+('dekont_message', 'Lütfen dekontunuzu {email} adresine iletiniz.', 'Dekont mesajı', NOW(), NOW())
+ON DUPLICATE KEY UPDATE updated_at=NOW();
 -- Not: Gerçek banka bilgilerini admin panelden giriniz
 
 -- 7. Default Mail Ayarları
