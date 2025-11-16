@@ -149,6 +149,46 @@ export async function PATCH(
       }, { status: 200 })
     }
 
+    // Eğer dekont silinmek isteniyorsa
+    if (body.delete_receipt === true) {
+      const newValues = {
+        ...oldValues,
+        payment_receipt_url: null,
+        payment_receipt_filename: null,
+        payment_receipt_uploaded_at: null,
+        payment_receipt_uploaded_by: null
+      }
+      const changedFields = compareObjects(oldValues, newValues)
+
+      await pool.execute(
+        `UPDATE registrations 
+         SET payment_receipt_url = NULL,
+             payment_receipt_filename = NULL,
+             payment_receipt_uploaded_at = NULL,
+             payment_receipt_uploaded_by = NULL
+         WHERE id = ?`,
+        [id]
+      )
+
+      // Create audit log for receipt deletion
+      await createAuditLog({
+        userId,
+        tableName: 'registrations',
+        recordId: id,
+        action: 'UPDATE',
+        oldValues,
+        newValues,
+        changedFields,
+        ipAddress,
+        userAgent
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Dekont başarıyla silindi'
+      }, { status: 200 })
+    }
+
     // Eğer sadece dekont bilgileri güncellenmek isteniyorsa (payment_status olmadan)
     if ((payment_receipt_url !== undefined || payment_receipt_filename !== undefined) && payment_status === undefined) {
       const updateFields = []
@@ -166,6 +206,10 @@ export async function PATCH(
         updateFields.push('payment_receipt_uploaded_at = ?')
         updateValues.push(payment_receipt_uploaded_at)
       }
+      if (payment_receipt_uploaded_by !== undefined) {
+        updateFields.push('payment_receipt_uploaded_by = ?')
+        updateValues.push(payment_receipt_uploaded_by)
+      }
       
       updateValues.push(id)
       
@@ -173,7 +217,8 @@ export async function PATCH(
         ...oldValues, 
         payment_receipt_url, 
         payment_receipt_filename, 
-        payment_receipt_uploaded_at 
+        payment_receipt_uploaded_at,
+        payment_receipt_uploaded_by
       }
       const changedFields = compareObjects(oldValues, newValues)
 

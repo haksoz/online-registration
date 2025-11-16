@@ -6,6 +6,17 @@ import { registrationTypeLabels } from '@/constants/registrationFees'
 import { formatTurkishCurrency } from '@/lib/currencyUtils'
 import { RegistrationType } from '@/types/registration'
 
+interface PaymentReceipt {
+  id: number
+  registration_id: number
+  filename: string
+  file_url: string
+  uploaded_at: string
+  uploaded_by?: number
+  uploaded_by_username?: string
+  notes?: string
+}
+
 interface Registration {
   id: number
   reference_number: string
@@ -49,6 +60,17 @@ interface Registration {
   created_at: string
 }
 
+interface PaymentReceipt {
+  id: number
+  registration_id: number
+  filename: string
+  file_url: string
+  uploaded_at: string
+  uploaded_by?: number
+  uploaded_by_username?: string
+  notes?: string
+}
+
 interface RegistrationDetailClientProps {
   registration: Registration
 }
@@ -59,6 +81,7 @@ export default function RegistrationDetailClient({ registration }: RegistrationD
   const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
   const [cancellationDeadline, setCancellationDeadline] = useState<string>('')
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [receipts, setReceipts] = useState<PaymentReceipt[]>([])
   const [formData, setFormData] = useState({
     first_name: registration.first_name || '',
     last_name: registration.last_name || '',
@@ -296,6 +319,25 @@ Devam etmek istediğinizden emin misiniz?`
   }
 
   const handleReceiptUpload = () => {
+    // Mevcut dekont varsa uyarı göster
+    const hasExistingReceipt = registration.payment_receipt_filename
+    const warningMessage = hasExistingReceipt 
+      ? `<div class="mb-4 bg-amber-50 border border-amber-300 rounded-lg p-3">
+           <div class="flex items-start gap-2">
+             <svg class="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-1.964-1.333-2.732 0L3.732 16c-.77 1.333.192 3 1.732 3z" />
+             </svg>
+             <div class="flex-1">
+               <p class="text-sm font-semibold text-amber-800">⚠️ Dikkat!</p>
+               <p class="text-xs text-amber-700 mt-1">
+                 Mevcut dekont var: <strong>${registration.payment_receipt_filename}</strong><br/>
+                 Yeni dekont yüklenirse mevcut dekont silinecektir.
+               </p>
+             </div>
+           </div>
+         </div>`
+      : ''
+
     // Sadece dekont yükleme modal'ı
     const modal = document.createElement('div')
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
@@ -305,6 +347,8 @@ Devam etmek istediğinizden emin misiniz?`
         <p class="text-gray-600 mb-4">
           Ödeme dekontunu yükleyebilirsiniz.
         </p>
+        
+        ${warningMessage}
         
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -352,10 +396,26 @@ Devam etmek istediğinizden emin misiniz?`
       }
       
       try {
+        // Dosya yükleme (gerçek upload API'si kullanılmalı)
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+        
+        const uploadData = await uploadResponse.json()
+        
+        if (!uploadData.success) {
+          alert('Dosya yüklenemedi: ' + (uploadData.error || 'Bilinmeyen hata'))
+          return
+        }
+        
         // Dekont bilgilerini güncelle
         const receiptData = {
           payment_receipt_filename: file.name,
-          payment_receipt_url: `/uploads/receipts/${Date.now()}_${file.name}`, // Simulated URL
+          payment_receipt_url: uploadData.url,
           payment_receipt_uploaded_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
         }
         
@@ -381,6 +441,34 @@ Devam etmek istediğinizden emin misiniz?`
         console.error('Error:', error)
         alert('Bir hata oluştu')
       }
+    }
+  }
+
+  const handleReceiptDelete = async () => {
+    if (!confirm('Dekont silinecek. Devam etmek istediğinizden emin misiniz?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/registrations/${registration.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ delete_receipt: true }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert('Dekont başarıyla silindi')
+        window.location.reload()
+      } else {
+        alert(data.error || 'Silme başarısız oldu')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Bir hata oluştu')
     }
   }
 
@@ -616,29 +704,84 @@ Devam etmek istediğinizden emin misiniz?`
                 </div>
 
                 {/* Dekont Bilgileri */}
-                {registration.payment_method === 'bank_transfer' && registration.payment_receipt_filename && (
-                  <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <span className="font-medium text-green-800 text-sm">Dekont Yüklendi</span>
-                    </div>
-                    <div className="space-y-1 text-xs text-green-700">
-                      <p><strong>Dosya:</strong> {registration.payment_receipt_filename}</p>
-                      {registration.payment_confirmed_at && (
-                        <p><strong>Onay Tarihi:</strong> {new Date(registration.payment_confirmed_at).toLocaleDateString('tr-TR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}</p>
-                      )}
-                      {registration.payment_notes && (
-                        <p><strong>Açıklama:</strong> {registration.payment_notes}</p>
-                      )}
-                    </div>
+                {registration.payment_method === 'bank_transfer' && (
+                  <div className="mt-4">
+                    {registration.payment_receipt_filename ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="font-medium text-green-800 text-sm">Dekont Yüklendi</span>
+                            </div>
+                            <div className="space-y-1 text-xs text-green-700">
+                              <p><strong>Dosya:</strong> {registration.payment_receipt_filename}</p>
+                              {registration.payment_confirmed_at && (
+                                <p><strong>Onay Tarihi:</strong> {new Date(registration.payment_confirmed_at).toLocaleDateString('tr-TR', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}</p>
+                              )}
+                              {registration.payment_notes && (
+                                <p><strong>Açıklama:</strong> {registration.payment_notes}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="ml-3 flex flex-col gap-1">
+                            {registration.payment_receipt_url && (
+                              <a 
+                                href={registration.payment_receipt_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors text-center"
+                              >
+                                📄 Görüntüle
+                              </a>
+                            )}
+                            {registration.status === 1 && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReceiptUpload()}
+                                  className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                  title="Yeni dekont yükle"
+                                >
+                                  🔄 Yeni Yükle
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReceiptDelete()}
+                                  className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                  title="Dekont sil"
+                                >
+                                  🗑️ Sil
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600">Henüz dekont yüklenmedi</span>
+                          {registration.status === 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleReceiptUpload()}
+                              className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                            >
+                              📤 Dekont Yükle
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -972,16 +1115,36 @@ Devam etmek istediğinizden emin misiniz?`
                             )}
                           </div>
                         </div>
-                        {registration.payment_receipt_url && (
-                          <a 
-                            href={registration.payment_receipt_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-3 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-                          >
-                            📄 Görüntüle
-                          </a>
-                        )}
+                        <div className="ml-3 flex flex-col gap-2">
+                          {registration.payment_receipt_url && (
+                            <a 
+                              href={registration.payment_receipt_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors text-center"
+                            >
+                              📄 Görüntüle
+                            </a>
+                          )}
+                          {registration.status === 1 && currentUser?.role !== 'reporter' && (
+                            <>
+                              <button
+                                onClick={() => handleReceiptUpload()}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                title="Yeni dekont yükle (mevcut dekont silinecek)"
+                              >
+                                🔄 Yeni Yükle
+                              </button>
+                              <button
+                                onClick={() => handleReceiptDelete()}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                                title="Dekont sil"
+                              >
+                                🗑️ Sil
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ) : (
