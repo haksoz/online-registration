@@ -85,7 +85,7 @@ export async function PATCH(
       registration_type, registration_type_label_en, fee, payment_status, status,
       refund_status, refund_amount, refund_date, refund_notes, refund_method,
       cancelled_at, cancelled_by,
-      payment_receipt_url, payment_receipt_filename, payment_receipt_uploaded_at,
+      payment_receipt_url, payment_receipt_filename, payment_receipt_uploaded_at, payment_receipt_uploaded_by,
       payment_confirmed_at, payment_confirmed_by, payment_notes
     } = body
 
@@ -206,10 +206,10 @@ export async function PATCH(
         updateFields.push('payment_receipt_uploaded_at = ?')
         updateValues.push(payment_receipt_uploaded_at)
       }
-      if (payment_receipt_uploaded_by !== undefined) {
-        updateFields.push('payment_receipt_uploaded_by = ?')
-        updateValues.push(payment_receipt_uploaded_by)
-      }
+      
+      // uploaded_by otomatik ekle
+      updateFields.push('payment_receipt_uploaded_by = ?')
+      updateValues.push(userId)
       
       updateValues.push(id)
       
