@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Public endpoint - Form render için
 export async function GET() {
   try {
