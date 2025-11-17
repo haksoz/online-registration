@@ -111,8 +111,9 @@ export default function FormFieldsSettingsPage() {
       const data = await response.json()
 
       if (data.success) {
-        setMessage({ type: 'success', text: 'Ayarlar başarıyla kaydedildi!' })
-        setTimeout(() => setMessage(null), 3000)
+        const successMessage = 'Ayarlar başarıyla kaydedildi! Form sayfasını yenileyerek değişiklikleri görebilirsiniz.'
+        setMessage({ type: 'success', text: successMessage })
+        setTimeout(() => setMessage(null), 5000)
       } else {
         setMessage({ type: 'error', text: data.error || 'Bir hata oluştu' })
       }
