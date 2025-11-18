@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { accommodationSchema, type AccommodationFormData } from '@/schemas/validationSchemas'
 import { useFormStore } from '@/store/formStore'
+import { useDataStore } from '@/store/dataStore'
 import { useEffect, useState } from 'react'
 
 import { RegistrationType } from '@/types/registration'
@@ -17,59 +18,34 @@ interface Step2AccommodationProps {
 
 export default function Step2Accommodation({ onNext, onBack }: Step2AccommodationProps) {
   const { formData, updateAccommodation } = useFormStore()
+  const { 
+    registrationTypes, 
+    registrationTypesLoading,
+    exchangeRates, 
+    currencyType,
+    setCurrencyType
+  } = useDataStore()
   const { t, language, loading: translationLoading } = useTranslation()
-  const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
-  const [currencyType, setCurrencyType] = useState('TRY')
-  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({})
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  const loading = registrationTypesLoading || translationLoading
 
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      
-      // Fetch registration types
-      const typesResponse = await fetch('/api/registration-types')
-      const typesData = await typesResponse.json()
-      
-      if (!typesData.success) {
-        setError('Kayıt türleri yüklenirken hata oluştu')
-        return
-      }
-      
-      setRegistrationTypes(typesData.data)
-      
-      // Fetch form settings (currency type)
-      const settingsResponse = await fetch('/api/form-settings')
-      const settingsData = await settingsResponse.json()
-      
-      if (settingsData.success && settingsData.step2Settings) {
-        setCurrencyType(settingsData.step2Settings.currency_type || 'TRY')
-      }
-      
-      // Fetch exchange rates
-      const ratesResponse = await fetch('/api/admin/exchange-rates')
-      const ratesData = await ratesResponse.json()
-      
-      if (ratesData.success) {
-        const rates: Record<string, number> = {}
-        ratesData.rates.forEach((rate: any) => {
-          rates[rate.currency_code] = rate.rate_to_try
-        })
-        setExchangeRates(rates)
-      }
-      
-      setError(null)
-    } catch (err) {
-      setError('Bağlantı hatası oluştu')
-      console.error('Error fetching data:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // Currency type'ı form settings'den al (sadece bir kere)
   useEffect(() => {
-    fetchData()
+    const fetchCurrencyType = async () => {
+      try {
+        const settingsResponse = await fetch('/api/form-settings')
+        const settingsData = await settingsResponse.json()
+        
+        if (settingsData.success && settingsData.step2Settings) {
+          setCurrencyType(settingsData.step2Settings.currency_type || 'TRY')
+        }
+      } catch (error) {
+        console.error('Error fetching currency type:', error)
+      }
+    }
+    
+    fetchCurrencyType()
   }, [])
 
   const {
@@ -177,7 +153,7 @@ export default function Step2Accommodation({ onNext, onBack }: Step2Accommodatio
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-red-800">{error}</p>
             <button
-              onClick={fetchData}
+              onClick={() => window.location.reload()}
               className="mt-2 text-red-600 hover:text-red-800 underline"
             >
               Tekrar Dene

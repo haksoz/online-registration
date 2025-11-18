@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { paymentSchema, type PaymentFormData } from '@/schemas/validationSchemas'
 import { useFormStore } from '@/store/formStore'
+import { useDataStore } from '@/store/dataStore'
 import { useEffect, useState } from 'react'
 
 import { RegistrationType } from '@/types/registration'
@@ -21,35 +22,13 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
   const { formData, updatePayment, setReferenceNumber } = useFormStore()
   const { getEnabledPaymentMethods, loading: settingsLoading } = useFormSettings()
   const { t, language } = useTranslation()
-  const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
-  const [bankAccounts, setBankAccounts] = useState<any[]>([])
-  const [paymentSettings, setPaymentSettings] = useState<any>({})
+  const { 
+    registrationTypes, 
+    bankAccounts, 
+    paymentSettings 
+  } = useDataStore()
   
   const enabledPaymentMethods = getEnabledPaymentMethods()
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Kayıt türlerini getir
-        const regResponse = await fetch('/api/registration-types')
-        const regData = await regResponse.json()
-        if (regData.success) {
-          setRegistrationTypes(regData.data)
-        }
-
-        // Banka hesaplarını getir
-        const accounts = await getFormattedBankAccounts()
-        setBankAccounts(accounts)
-
-        // Ödeme ayarlarını getir
-        const settings = await getPaymentSettings()
-        setPaymentSettings(settings)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      }
-    }
-    fetchData()
-  }, [])
 
   // Eğer sadece 1 ödeme yöntemi aktifse, otomatik seç
   useEffect(() => {

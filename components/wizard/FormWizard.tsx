@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useFormStore } from '@/store/formStore'
+import { useDataStore } from '@/store/dataStore'
 import { useFormSettings } from '@/hooks/useFormSettings'
 import { useTranslation } from '@/hooks/useTranslation'
 import Step1PersonalInfo from '@/components/steps/Step1PersonalInfo'
@@ -11,9 +12,15 @@ import Step4Confirmation from '@/components/steps/Step4Confirmation'
 
 export default function FormWizard() {
   const { currentStep, setCurrentStep, resetForm } = useFormStore()
+  const { fetchAllData } = useDataStore()
   const { isRegistrationOpen, isRegistrationNotStarted, registrationStartDate, registrationDeadline, loading } = useFormSettings()
   const { t, language } = useTranslation()
   const [isTransitioning, setIsTransitioning] = useState(false)
+  
+  // Tüm verileri ilk yüklemede çek (prefetch)
+  useEffect(() => {
+    fetchAllData()
+  }, [])
 
   const steps = useMemo(() => [
     { number: 1, title: t('steps.step1') },

@@ -1,6 +1,7 @@
 'use client'
 
 import { useFormStore } from '@/store/formStore'
+import { useDataStore } from '@/store/dataStore'
 import { useEffect, useState, useRef } from 'react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -20,9 +21,11 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   const { formData } = formStore
   const { t, language } = useTranslation()
   const paymentMethod = formData.payment.paymentMethod
-  const [registrationTypes, setRegistrationTypes] = useState<RegistrationType[]>([])
-  const [bankAccounts, setBankAccounts] = useState<any[]>([])
-  const [paymentSettings, setPaymentSettings] = useState<any>({})
+  const { 
+    registrationTypes, 
+    bankAccounts, 
+    paymentSettings 
+  } = useDataStore()
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
   const [homepageUrl, setHomepageUrl] = useState<string>('https://example.com')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
@@ -32,21 +35,6 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Kayıt türlerini getir
-        const regResponse = await fetch('/api/registration-types')
-        const regData = await regResponse.json()
-        if (regData.success) {
-          setRegistrationTypes(regData.data)
-        }
-
-        // Banka hesaplarını getir
-        const accounts = await getFormattedBankAccounts()
-        setBankAccounts(accounts)
-
-        // Ödeme ayarlarını getir
-        const settings = await getPaymentSettings()
-        setPaymentSettings(settings)
-
         // Sayfa ayarlarını getir
         const pageSettings = await fetchPageSettings()
         setPageSettings(pageSettings)
