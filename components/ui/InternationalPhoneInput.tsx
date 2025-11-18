@@ -26,6 +26,7 @@ export function InternationalPhoneInput({
       <PhoneInput
         id={id}
         international
+        countryCallingCodeEditable={false}
         defaultCountry="TR"
         value={value as E164Number}
         onChange={(value) => onChange(value || '')}
@@ -33,7 +34,7 @@ export function InternationalPhoneInput({
         placeholder={placeholder}
         className={`phone-input-container ${error ? 'phone-input-error' : ''}`}
         numberInputProps={{
-          className: `w-full px-4 py-3 border rounded-lg transition-colors focus:outline-none focus:ring-2 ${
+          className: `w-full px-4 py-3 border rounded-r-lg transition-colors focus:outline-none focus:ring-2 ${
             error
               ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
               : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
@@ -50,18 +51,20 @@ export function InternationalPhoneInput({
       <style jsx global>{`
         .phone-input-container {
           display: flex;
-          align-items: center;
-          gap: 0.5rem;
+          align-items: stretch;
+          gap: 0;
         }
         
         .phone-input-container .PhoneInputCountry {
           display: flex;
           align-items: center;
-          padding: 0.75rem;
+          padding: 0.75rem 0.5rem;
           border: 1px solid #d1d5db;
-          border-radius: 0.5rem;
-          background: white;
+          border-right: none;
+          border-radius: 0.5rem 0 0 0.5rem;
+          background: #f9fafb;
           transition: all 0.2s;
+          min-width: 80px;
         }
         
         .phone-input-container .PhoneInputCountry:hover {
@@ -99,6 +102,13 @@ export function InternationalPhoneInput({
         
         .phone-input-container .PhoneInputInput {
           flex: 1;
+          border-top-left-radius: 0 !important;
+          border-bottom-left-radius: 0 !important;
+        }
+        
+        /* Alan kodu input içinde görünmesin */
+        .phone-input-container input[type="tel"] {
+          padding-left: 1rem !important;
         }
         
         .phone-input-error .PhoneInputCountry {

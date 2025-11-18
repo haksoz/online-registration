@@ -26,6 +26,8 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
   const [homepageUrl, setHomepageUrl] = useState<string>('https://example.com')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [emailCopied, setEmailCopied] = useState(false)
+  const [refNumberCopied, setRefNumberCopied] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -441,10 +443,33 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                   {language === 'en' ? 'Your payment and registration have been received.' : 'Ödemeniz ve Kaydınız alınmıştır.'}
                 </p>
                 {formData.referenceNumber && (
-                  <p className="text-sm text-green-700">
-                    <span className="font-medium">{language === 'en' ? 'Your Reference Number:' : 'Referans Numaranız:'}</span> 
-                    <span className="font-bold ml-1">{formData.referenceNumber}</span>
-                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <p className="text-sm text-green-700">
+                      <span className="font-medium">{language === 'en' ? 'Your Reference Number:' : 'Referans Numaranız:'}</span> 
+                      <span className="font-bold ml-1">{formData.referenceNumber}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(formData.referenceNumber || '')
+                        setRefNumberCopied(true)
+                        setTimeout(() => setRefNumberCopied(false), 2000)
+                      }}
+                      className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                      title={language === 'en' ? 'Copy reference number' : 'Referans numarasını kopyala'}
+                    >
+                      {refNumberCopied ? (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          {language === 'en' ? 'Copied!' : 'Kopyalandı!'}
+                        </span>
+                      ) : (
+                        <>{language === 'en' ? '📋 Copy' : '📋 Kopyala'}</>
+                      )}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -462,10 +487,33 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                 <div className="flex-1">
                   <p className="text-lg font-semibold text-green-800 mb-2">{t('step4.bankTransferNote')}</p>
                   {formData.referenceNumber && (
-                    <p className="text-sm text-green-700">
-                      <span className="font-medium">{language === 'en' ? 'Your Reference Number:' : 'Referans Numaranız:'}</span> 
-                      <span className="font-bold ml-1">{formData.referenceNumber}</span>
-                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <p className="text-sm text-green-700">
+                        <span className="font-medium">{language === 'en' ? 'Your Reference Number:' : 'Referans Numaranız:'}</span> 
+                        <span className="font-bold ml-1">{formData.referenceNumber}</span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(formData.referenceNumber || '')
+                          setRefNumberCopied(true)
+                          setTimeout(() => setRefNumberCopied(false), 2000)
+                        }}
+                        className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                        title={language === 'en' ? 'Copy reference number' : 'Referans numarasını kopyala'}
+                      >
+                        {refNumberCopied ? (
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {language === 'en' ? 'Copied!' : 'Kopyalandı!'}
+                          </span>
+                        ) : (
+                          <>{language === 'en' ? '📋 Copy' : '📋 Kopyala'}</>
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -477,15 +525,62 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                 <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-sm text-yellow-800">
-                  <span className="font-medium">
-                    {language === 'en' 
-                      ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.replace('{email}', paymentSettings.dekontEmail || 'dekont@ko.com.tr') || 
-                        `Please send your receipt to ${paymentSettings.dekontEmail || 'dekont@ko.com.tr'}.`
-                      : paymentSettings.dekontMessage?.replace('{email}', paymentSettings.dekontEmail || 'dekont@ko.com.tr') || 
-                        'Lütfen dekontunuzu dekont@ko.com.tr adresine iletiniz.'}
-                  </span>
-                </p>
+                <div className="text-sm text-yellow-800">
+                  {/* Dekont mesajı - ayarlardan gelen */}
+                  {(language === 'en' ? paymentSettings.dekontMessageEn : paymentSettings.dekontMessage) && (
+                    <p className="font-medium mb-2">
+                      {language === 'en' 
+                        ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.split('{email}')[0]
+                        : paymentSettings.dekontMessage?.split('{email}')[0]}
+                    </p>
+                  )}
+                  
+                  {/* E-posta adresi - vurgulu */}
+                  <div className="flex items-center gap-2 bg-yellow-100 border border-yellow-300 rounded-lg p-3">
+                    <svg className="w-5 h-5 text-yellow-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <a 
+                      href={`mailto:${paymentSettings.dekontEmail || 'dekont@example.com'}`}
+                      className="text-base font-bold text-yellow-900 hover:text-yellow-700 underline transition-colors"
+                      title={language === 'en' ? 'Click to send email' : 'E-posta göndermek için tıklayın'}
+                    >
+                      {paymentSettings.dekontEmail || 'dekont@example.com'}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(paymentSettings.dekontEmail || 'dekont@example.com')
+                        setEmailCopied(true)
+                        setTimeout(() => setEmailCopied(false), 2000)
+                      }}
+                      className="ml-auto px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors relative"
+                      title={language === 'en' ? 'Copy email address' : 'E-posta adresini kopyala'}
+                    >
+                      {emailCopied ? (
+                        <>
+                          <span className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            {language === 'en' ? 'Copied!' : 'Kopyalandı!'}
+                          </span>
+                        </>
+                      ) : (
+                        <>{language === 'en' ? '📋 Copy' : '📋 Kopyala'}</>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {/* Mesajın devamı - eğer varsa */}
+                  {(language === 'en' ? paymentSettings.dekontMessageEn : paymentSettings.dekontMessage)?.split('{email}')[1] && (
+                    <p className="font-medium mt-2">
+                      {language === 'en' 
+                        ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.split('{email}')[1]
+                        : paymentSettings.dekontMessage?.split('{email}')[1]}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
