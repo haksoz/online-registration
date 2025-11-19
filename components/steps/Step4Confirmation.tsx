@@ -29,11 +29,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   
   // Ensure arrays
   const bankAccounts = Array.isArray(storeBankAccounts) ? storeBankAccounts : []
-  const [paymentSettings, setPaymentSettings] = useState<any>(storePaymentSettings || {})
-  
-  // Debug log
-  console.log('📄 Step4 - Bank Accounts:', bankAccounts)
-  console.log('📄 Step4 - Payment Settings:', paymentSettings)
+  const [paymentSettings, setPaymentSettings] = useState<any>({})
   
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
   const [homepageUrl, setHomepageUrl] = useState<string>('https://example.com')
@@ -55,11 +51,20 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
           setHomepageUrl(formSettingsData.homepageUrl)
         }
         
-        // Payment settings boşsa yeniden yükle
-        if (!storePaymentSettings || Object.keys(storePaymentSettings).length === 0) {
-          console.log('📄 Step4 - Payment settings boş, yeniden yükleniyor...')
+        // Payment settings'i yükle
+        console.log('📄 Step4 - Store Payment Settings:', storePaymentSettings)
+        
+        // Önce store'dan kontrol et
+        if (storePaymentSettings && Object.keys(storePaymentSettings).length > 0 && storePaymentSettings.dekontEmail) {
+          console.log('📄 Step4 - Payment settings store\'dan alındı')
+          setPaymentSettings(storePaymentSettings)
+        } else {
+          // Store'da yoksa API'den çek
+          console.log('📄 Step4 - Payment settings boş, API\'den yükleniyor...')
           const bankResponse = await fetch('/api/bank-accounts/active')
           const bankData = await bankResponse.json()
+          console.log('📄 Step4 - Bank API Response:', bankData)
+          
           if (bankData.success && bankData.data?.settings) {
             const settings = bankData.data.settings
             const camelCaseSettings = {
@@ -76,7 +81,12 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
       }
     }
     fetchData()
-  }, [])
+  }, [storePaymentSettings])
+  
+  // Debug log - her render'da
+  console.log('📄 Step4 - Bank Accounts:', bankAccounts)
+  console.log('📄 Step4 - Payment Settings (state):', paymentSettings)
+  console.log('📄 Step4 - Payment Settings (store):', storePaymentSettings)
 
   // Kayıt tamamlandığında mail gönder (sadece 1 kere)
   const mailSentRef = useRef(false)
