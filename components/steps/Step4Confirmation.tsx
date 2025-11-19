@@ -101,6 +101,14 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
       if (!formData.referenceNumber || !formData.personalInfo.email) {
         return
       }
+      
+      // Payment settings yüklenene kadar bekle (banka havalesi için gerekli)
+      if (paymentMethod === 'bank_transfer' && (!paymentSettings || !paymentSettings.dekontEmail)) {
+        console.log('📧 Payment settings henüz yüklenmedi, bekleniyor...', paymentSettings)
+        return
+      }
+      
+      console.log('📧 Payment settings yüklendi, mail gönderiliyor...', paymentSettings)
 
       // Mail gönderildiğini işaretle
       mailSentRef.current = true
@@ -166,7 +174,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
     }
 
     sendRegistrationMail()
-  }, [formData.referenceNumber, formData.personalInfo.email, language])
+  }, [formData.referenceNumber, formData.personalInfo.email, language, paymentSettings, paymentMethod])
 
   const selectedRegistrationType = registrationTypes.find(
     type => type.value === formData.accommodation.registrationType
