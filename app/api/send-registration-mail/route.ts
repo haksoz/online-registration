@@ -42,29 +42,31 @@ export async function POST(request: NextRequest) {
             line-height: 1.6; 
             color: #333; 
             margin: 0;
-            padding: 10px;
+            padding: 5px;
             background-color: #f3f4f6;
           }
           .container { 
             max-width: 800px; 
             margin: 0 auto; 
             background: white;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
           }
-
           
-          /* Tailwind class'ları için stiller */
-          .mb-6 { margin-bottom: 24px; }
-          .mb-4 { margin-bottom: 16px; }
-          .mb-2 { margin-bottom: 8px; }
-          .mb-3 { margin-bottom: 12px; }
-          .mt-2 { margin-top: 8px; }
-          .mt-4 { margin-top: 16px; }
-          .p-4 { padding: 16px; }
-          .p-6 { padding: 24px; }
-          .space-y-2 > * + * { margin-top: 8px; }
-          .space-y-4 > * + * { margin-top: 16px; }
+          /* Kopyala butonlarını gizle */
+          .no-pdf { display: none !important; }
+          
+          /* Tailwind class'ları için stiller - Küçültülmüş padding'ler */
+          .mb-6 { margin-bottom: 12px; }
+          .mb-4 { margin-bottom: 8px; }
+          .mb-2 { margin-bottom: 4px; }
+          .mb-3 { margin-bottom: 6px; }
+          .mt-2 { margin-top: 4px; }
+          .mt-4 { margin-top: 8px; }
+          .p-4 { padding: 8px; }
+          .p-6 { padding: 12px; }
+          .space-y-2 > * + * { margin-top: 4px; }
+          .space-y-4 > * + * { margin-top: 8px; }
           
           .text-center { text-align: center; }
           .text-2xl { font-size: 24px; line-height: 32px; }

@@ -130,8 +130,8 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
           }
         })
         
-        // Gizli elementleri kaldır (hidden, display:none vb.)
-        const hiddenElements = clonedContent.querySelectorAll('[style*="display: none"], [style*="display:none"], .hidden')
+        // Gizli elementleri kaldır (hidden, display:none, no-pdf vb.)
+        const hiddenElements = clonedContent.querySelectorAll('[style*="display: none"], [style*="display:none"], .hidden, .no-pdf')
         hiddenElements.forEach(element => element.remove())
         
         registrationInfoHtml = clonedContent.innerHTML
