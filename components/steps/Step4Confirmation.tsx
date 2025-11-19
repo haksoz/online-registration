@@ -528,7 +528,8 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
             </div>
           </div>
         )}
-
+        
+        {/* Bank Transfer Section - PDF içinde olmalı */}
         {paymentMethod === 'bank_transfer' && (
           <div className="space-y-4 mb-6">
             {/* Success Message */}
@@ -805,6 +806,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
             </div>
           )}
         </div>
+        
         </div>
         {/* PDF Content Wrapper END */}
 
