@@ -146,8 +146,8 @@ export const useDataStore = create<DataStore>((set, get) => ({
   fetchAllData: async () => {
     await Promise.all([
       get().fetchRegistrationTypes(),
-      get().fetchBankAccounts(),
-      get().fetchPaymentSettings(),
+      get().fetchBankAccounts(), // Bu zaten paymentSettings'i yüklüyor
+      // get().fetchPaymentSettings(), // Gereksiz - fetchBankAccounts zaten yüklüyor
       get().fetchExchangeRates(),
     ])
   },

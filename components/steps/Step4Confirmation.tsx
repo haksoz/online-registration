@@ -29,7 +29,8 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   
   // Ensure arrays
   const bankAccounts = Array.isArray(storeBankAccounts) ? storeBankAccounts : []
-  const [paymentSettings, setPaymentSettings] = useState<any>({})
+  // Store'dan direkt kullan - state'e gerek yok
+  const paymentSettings = storePaymentSettings || {}
   
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
   const [homepageUrl, setHomepageUrl] = useState<string>('https://example.com')
@@ -50,43 +51,18 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
         if (formSettingsData.success && formSettingsData.homepageUrl) {
           setHomepageUrl(formSettingsData.homepageUrl)
         }
-        
-        // Payment settings'i yükle
-        console.log('📄 Step4 - Store Payment Settings:', storePaymentSettings)
-        
-        // Önce store'dan kontrol et
-        if (storePaymentSettings && Object.keys(storePaymentSettings).length > 0 && storePaymentSettings.dekontEmail) {
-          console.log('📄 Step4 - Payment settings store\'dan alındı')
-          setPaymentSettings(storePaymentSettings)
-        } else {
-          // Store'da yoksa API'den çek
-          console.log('📄 Step4 - Payment settings boş, API\'den yükleniyor...')
-          const bankResponse = await fetch('/api/bank-accounts/active')
-          const bankData = await bankResponse.json()
-          console.log('📄 Step4 - Bank API Response:', bankData)
-          
-          if (bankData.success && bankData.data?.settings) {
-            const settings = bankData.data.settings
-            const camelCaseSettings = {
-              dekontEmail: settings.dekont_email || settings.dekontEmail,
-              dekontMessage: settings.dekont_message || settings.dekontMessage,
-              dekontMessageEn: settings.dekont_message_en || settings.dekontMessageEn,
-            }
-            console.log('📄 Step4 - Payment settings yüklendi:', camelCaseSettings)
-            setPaymentSettings(camelCaseSettings)
-          }
-        }
       } catch (error) {
         console.error('Error fetching data:', error)
       }
     }
     fetchData()
-  }, [storePaymentSettings])
+  }, [])
   
-  // Debug log - her render'da
-  console.log('📄 Step4 - Bank Accounts:', bankAccounts)
-  console.log('📄 Step4 - Payment Settings (state):', paymentSettings)
-  console.log('📄 Step4 - Payment Settings (store):', storePaymentSettings)
+  // Debug log - sadece geliştirme için
+  useEffect(() => {
+    console.log('📄 Step4 - Bank Accounts:', bankAccounts.length, 'items')
+    console.log('📄 Step4 - Payment Settings:', paymentSettings)
+  }, [bankAccounts, paymentSettings])
 
   // Kayıt tamamlandığında mail gönder (sadece 1 kere)
   const mailSentRef = useRef(false)
@@ -104,11 +80,9 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
       
       // Payment settings yüklenene kadar bekle (banka havalesi için gerekli)
       if (paymentMethod === 'bank_transfer' && (!paymentSettings || !paymentSettings.dekontEmail)) {
-        console.log('📧 Payment settings henüz yüklenmedi, bekleniyor...', paymentSettings)
+        console.log('📧 Payment settings henüz yüklenmedi, bekleniyor...')
         return
       }
-      
-      console.log('📧 Payment settings yüklendi, mail gönderiliyor...', paymentSettings)
 
       // Mail gönderildiğini işaretle
       mailSentRef.current = true
@@ -174,7 +148,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
     }
 
     sendRegistrationMail()
-  }, [formData.referenceNumber, formData.personalInfo.email, language, paymentSettings, paymentMethod])
+  }, [formData.referenceNumber, formData.personalInfo.email, language, paymentSettings.dekontEmail, paymentMethod])
 
   const selectedRegistrationType = registrationTypes.find(
     type => type.value === formData.accommodation.registrationType
