@@ -29,7 +29,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   
   // Ensure arrays
   const bankAccounts = Array.isArray(storeBankAccounts) ? storeBankAccounts : []
-  const paymentSettings = storePaymentSettings || {}
+  const [paymentSettings, setPaymentSettings] = useState<any>(storePaymentSettings || {})
   
   // Debug log
   console.log('📄 Step4 - Bank Accounts:', bankAccounts)
@@ -53,6 +53,23 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
         const formSettingsData = await formSettingsResponse.json()
         if (formSettingsData.success && formSettingsData.homepageUrl) {
           setHomepageUrl(formSettingsData.homepageUrl)
+        }
+        
+        // Payment settings boşsa yeniden yükle
+        if (!storePaymentSettings || Object.keys(storePaymentSettings).length === 0) {
+          console.log('📄 Step4 - Payment settings boş, yeniden yükleniyor...')
+          const bankResponse = await fetch('/api/bank-accounts/active')
+          const bankData = await bankResponse.json()
+          if (bankData.success && bankData.data?.settings) {
+            const settings = bankData.data.settings
+            const camelCaseSettings = {
+              dekontEmail: settings.dekont_email || settings.dekontEmail,
+              dekontMessage: settings.dekont_message || settings.dekontMessage,
+              dekontMessageEn: settings.dekont_message_en || settings.dekontMessageEn,
+            }
+            console.log('📄 Step4 - Payment settings yüklendi:', camelCaseSettings)
+            setPaymentSettings(camelCaseSettings)
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error)

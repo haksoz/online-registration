@@ -78,14 +78,14 @@ export const useDataStore = create<DataStore>((set, get) => ({
         // Settings'i camelCase'e çevir
         const settings = data.data?.settings || {}
         const camelCaseSettings = {
-          dekontEmail: settings.dekont_email,
-          dekontMessage: settings.dekont_message,
-          dekontMessageEn: settings.dekont_message_en,
+          dekontEmail: settings.dekont_email || settings.dekontEmail,
+          dekontMessage: settings.dekont_message || settings.dekontMessage,
+          dekontMessageEn: settings.dekont_message_en || settings.dekontMessageEn,
         }
         
         set({ 
           bankAccounts: data.data?.accounts || data.data || [],
-          paymentSettings: Object.keys(camelCaseSettings).length > 0 ? camelCaseSettings : get().paymentSettings
+          paymentSettings: camelCaseSettings.dekontEmail ? camelCaseSettings : get().paymentSettings
         })
       }
     } catch (error) {
@@ -103,7 +103,14 @@ export const useDataStore = create<DataStore>((set, get) => ({
       const response = await fetch('/api/admin/bank-settings')
       const data = await response.json()
       if (data.success) {
-        set({ paymentSettings: data.settings })
+        // Settings'i camelCase'e çevir
+        const settings = data.settings || {}
+        const camelCaseSettings = {
+          dekontEmail: settings.dekont_email || settings.dekontEmail,
+          dekontMessage: settings.dekont_message || settings.dekontMessage,
+          dekontMessageEn: settings.dekont_message_en || settings.dekontMessageEn,
+        }
+        set({ paymentSettings: camelCaseSettings })
       }
     } catch (error) {
       console.error('Error fetching payment settings:', error)
