@@ -74,7 +74,19 @@ export const useDataStore = create<DataStore>((set, get) => ({
       const response = await fetch('/api/bank-accounts/active')
       const data = await response.json()
       if (data.success) {
-        set({ bankAccounts: data.data })
+        // API data.accounts ve data.settings döndürüyor
+        // Settings'i camelCase'e çevir
+        const settings = data.data?.settings || {}
+        const camelCaseSettings = {
+          dekontEmail: settings.dekont_email,
+          dekontMessage: settings.dekont_message,
+          dekontMessageEn: settings.dekont_message_en,
+        }
+        
+        set({ 
+          bankAccounts: data.data?.accounts || data.data || [],
+          paymentSettings: Object.keys(camelCaseSettings).length > 0 ? camelCaseSettings : get().paymentSettings
+        })
       }
     } catch (error) {
       console.error('Error fetching bank accounts:', error)
@@ -107,9 +119,9 @@ export const useDataStore = create<DataStore>((set, get) => ({
     try {
       const response = await fetch('/api/admin/exchange-rates')
       const data = await response.json()
-      if (data.success) {
+      if (data.success && data.rates) {
         const rates: Record<string, number> = {}
-        data.data.forEach((rate: any) => {
+        data.rates.forEach((rate: any) => {
           rates[rate.currency_code] = rate.rate_to_try
         })
         set({ exchangeRates: rates })

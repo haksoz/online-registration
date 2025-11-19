@@ -24,9 +24,17 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
   const { t, language } = useTranslation()
   const { 
     registrationTypes, 
-    bankAccounts, 
-    paymentSettings 
+    bankAccounts: storeBankAccounts, 
+    paymentSettings: storePaymentSettings 
   } = useDataStore()
+  
+  // Ensure arrays
+  const bankAccounts = Array.isArray(storeBankAccounts) ? storeBankAccounts : []
+  const paymentSettings = storePaymentSettings || {}
+  
+  // Debug log
+  console.log('💳 Step3 - Bank Accounts:', bankAccounts)
+  console.log('⚙️ Step3 - Payment Settings:', paymentSettings)
   
   const enabledPaymentMethods = getEnabledPaymentMethods()
 
@@ -275,16 +283,21 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
               </div>
               
               {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
-                <div className="text-sm bg-blue-50 border border-blue-200 rounded p-2">
-                  <div className="flex items-center justify-between">
+                <div className="text-sm bg-blue-50 border border-blue-200 rounded p-3">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="text-gray-600">{t('step3.selectedCurrencyFee')}:</span>
-                    <span className="font-bold text-blue-600">
+                    <span className="font-bold text-blue-600 text-lg">
                       {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-gray-600">{t('step3.tryEquivalent')}:</span>
-                    <span className="font-bold text-primary-600">
+                  <div className="flex items-center justify-between py-2 border-t border-blue-200">
+                    <span className="text-gray-600 text-xs">
+                      {t('step3.exchangeRate')} (1 {registrationInfo.currency} = {Number(accommodationData.exchangeRate || 1).toFixed(2)} ₺)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-blue-300">
+                    <span className="text-gray-700 font-medium">{t('step3.tryEquivalent')}:</span>
+                    <span className="font-bold text-primary-600 text-lg">
                       {formatTurkishCurrency(Number(registrationInfo.feeInTRY))}
                     </span>
                   </div>
@@ -585,7 +598,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                   <div key={account.id} className={`${index > 0 ? 'pt-4 border-t border-blue-200' : ''}`}>
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-gray-800">
-                        {language === 'en' ? (account as any).accountNameEn || account.accountName : account.accountName}
+                        {language === 'en' ? account.account_name_en || account.account_name : account.account_name}
                       </h4>
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                         {account.currency}
@@ -594,11 +607,11 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                     <div className="space-y-2 text-sm">
                       <div className="flex flex-col sm:flex-row">
                         <span className="font-medium text-gray-700 sm:w-32">{t('step3.bank')}:</span>
-                        <span className="text-gray-900">{account.bankName}</span>
+                        <span className="text-gray-900">{account.bank_name}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row">
                         <span className="font-medium text-gray-700 sm:w-32">{t('step3.accountHolder')}:</span>
-                        <span className="text-gray-900">{account.accountHolder}</span>
+                        <span className="text-gray-900">{account.account_holder}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row">
                         <span className="font-medium text-gray-700 sm:w-32">IBAN:</span>
@@ -625,10 +638,10 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                 <p className="text-sm text-yellow-800">
                   <span className="font-medium">
                     {language === 'en' 
-                      ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.replace('{email}', paymentSettings.dekontEmail) || 
-                        `Please send your receipt to ${paymentSettings.dekontEmail}.`
-                      : paymentSettings.dekontMessage?.replace('{email}', paymentSettings.dekontEmail) || 
-                        'Lütfen dekontunuzu dekont@ko.com.tr adresine iletiniz.'}
+                      ? ((paymentSettings as any).dekontMessageEn || (paymentSettings as any).dekontMessage)?.replace('{email}', (paymentSettings as any).dekontEmail) || 
+                        `Please send your receipt to ${(paymentSettings as any).dekontEmail || 'dekont@example.com'}.`
+                      : (paymentSettings as any).dekontMessage?.replace('{email}', (paymentSettings as any).dekontEmail) || 
+                        'Lütfen dekontunuzu dekont@example.com adresine iletiniz.'}
                   </span>
                 </p>
               </div>

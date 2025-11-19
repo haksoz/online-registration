@@ -23,9 +23,18 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
   const paymentMethod = formData.payment.paymentMethod
   const { 
     registrationTypes, 
-    bankAccounts, 
-    paymentSettings 
+    bankAccounts: storeBankAccounts, 
+    paymentSettings: storePaymentSettings 
   } = useDataStore()
+  
+  // Ensure arrays
+  const bankAccounts = Array.isArray(storeBankAccounts) ? storeBankAccounts : []
+  const paymentSettings = storePaymentSettings || {}
+  
+  // Debug log
+  console.log('📄 Step4 - Bank Accounts:', bankAccounts)
+  console.log('📄 Step4 - Payment Settings:', paymentSettings)
+  
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
   const [homepageUrl, setHomepageUrl] = useState<string>('https://example.com')
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
@@ -188,6 +197,12 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
         throw new Error('PDF içeriği bulunamadı')
       }
 
+      // Kopyala butonlarını geçici olarak gizle
+      const noPdfElements = fullContentElement.querySelectorAll('.no-pdf')
+      noPdfElements.forEach((el) => {
+        (el as HTMLElement).style.display = 'none'
+      })
+
       // Canvas'a çevir
       const canvas = await html2canvas(fullContentElement, {
         scale: 2,
@@ -195,6 +210,11 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
         allowTaint: false,
         backgroundColor: '#ffffff',
         logging: false
+      })
+
+      // Kopyala butonlarını tekrar göster
+      noPdfElements.forEach((el) => {
+        (el as HTMLElement).style.display = ''
       })
 
       // PDF oluştur
@@ -231,6 +251,16 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
       
     } catch (error) {
       console.error('PDF oluşturma hatası:', error)
+      
+      // Kopyala butonlarını tekrar göster (hata durumunda)
+      const fullContentElement = document.getElementById('pdf-full-content')
+      if (fullContentElement) {
+        const noPdfElements = fullContentElement.querySelectorAll('.no-pdf')
+        noPdfElements.forEach((el) => {
+          (el as HTMLElement).style.display = ''
+        })
+      }
+      
       // Fallback olarak print dialog'u aç
       handlePrintPDF()
     } finally {
@@ -443,7 +473,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                         setRefNumberCopied(true)
                         setTimeout(() => setRefNumberCopied(false), 2000)
                       }}
-                      className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                      className="no-pdf px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
                       title={language === 'en' ? 'Copy reference number' : 'Referans numarasını kopyala'}
                     >
                       {refNumberCopied ? (
@@ -487,7 +517,7 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                           setRefNumberCopied(true)
                           setTimeout(() => setRefNumberCopied(false), 2000)
                         }}
-                        className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                        className="no-pdf px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
                         title={language === 'en' ? 'Copy reference number' : 'Referans numarasını kopyala'}
                       >
                         {refNumberCopied ? (
@@ -513,14 +543,17 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                 <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <div className="text-sm text-yellow-800">
-                  {/* Dekont mesajı - ayarlardan gelen */}
-                  {(language === 'en' ? paymentSettings.dekontMessageEn : paymentSettings.dekontMessage) && (
-                    <p className="font-medium mb-2">
-                      {language === 'en' 
-                        ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.split('{email}')[0]
-                        : paymentSettings.dekontMessage?.split('{email}')[0]}
-                    </p>
+                <div className="text-sm text-yellow-800 w-full">
+                  {/* Tam dekont mesajı */}
+                  {(language === 'en' ? (paymentSettings as any).dekontMessageEn || (paymentSettings as any).dekontMessage : (paymentSettings as any).dekontMessage) && (
+                    <div className="mb-3">
+                      <p className="font-medium leading-relaxed">
+                        {(language === 'en' 
+                          ? ((paymentSettings as any).dekontMessageEn || (paymentSettings as any).dekontMessage)
+                          : (paymentSettings as any).dekontMessage
+                        )?.replace('{email}', '')}
+                      </p>
+                    </div>
                   )}
                   
                   {/* E-posta adresi - vurgulu */}
@@ -529,20 +562,20 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     <a 
-                      href={`mailto:${paymentSettings.dekontEmail || 'dekont@example.com'}`}
+                      href={`mailto:${(paymentSettings as any).dekontEmail || 'dekont@example.com'}`}
                       className="text-base font-bold text-yellow-900 hover:text-yellow-700 underline transition-colors"
                       title={language === 'en' ? 'Click to send email' : 'E-posta göndermek için tıklayın'}
                     >
-                      {paymentSettings.dekontEmail || 'dekont@example.com'}
+                      {(paymentSettings as any).dekontEmail || 'dekont@example.com'}
                     </a>
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard.writeText(paymentSettings.dekontEmail || 'dekont@example.com')
+                        navigator.clipboard.writeText((paymentSettings as any).dekontEmail || 'dekont@example.com')
                         setEmailCopied(true)
                         setTimeout(() => setEmailCopied(false), 2000)
                       }}
-                      className="ml-auto px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors relative"
+                      className="no-pdf ml-auto px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700 transition-colors relative"
                       title={language === 'en' ? 'Copy email address' : 'E-posta adresini kopyala'}
                     >
                       {emailCopied ? (
@@ -559,15 +592,6 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                       )}
                     </button>
                   </div>
-                  
-                  {/* Mesajın devamı - eğer varsa */}
-                  {(language === 'en' ? paymentSettings.dekontMessageEn : paymentSettings.dekontMessage)?.split('{email}')[1] && (
-                    <p className="font-medium mt-2">
-                      {language === 'en' 
-                        ? (paymentSettings.dekontMessageEn || paymentSettings.dekontMessage)?.split('{email}')[1]
-                        : paymentSettings.dekontMessage?.split('{email}')[1]}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -596,15 +620,15 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                   <div key={account.id} className={`${index > 0 ? 'pt-3 border-t border-blue-200' : ''}`}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-medium text-blue-800">
-                        {language === 'en' ? account.accountNameEn || account.accountName : account.accountName}
+                        {language === 'en' ? account.account_name_en || account.account_name : account.account_name}
                       </span>
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
                         {account.currency}
                       </span>
                     </div>
                     <div className="text-sm text-blue-700 space-y-1">
-                      <p><span className="font-medium">{t('step3.bank')}:</span> {account.bankName}</p>
-                      <p><span className="font-medium">{t('step3.accountHolder')}:</span> {account.accountHolder}</p>
+                      <p><span className="font-medium">{t('step3.bank')}:</span> {account.bank_name}</p>
+                      <p><span className="font-medium">{t('step3.accountHolder')}:</span> {account.account_holder}</p>
                       <p><span className="font-medium">IBAN:</span> <span className="font-mono">{account.iban}</span></p>
                       {account.description && (
                         <p><span className="font-medium">{t('step3.description')}:</span> {account.description}</p>
@@ -655,6 +679,12 @@ export default function Step4Confirmation({}: Step4ConfirmationProps) {
                     <span className="text-gray-600">{t('step3.selectedCurrencyFee')}: </span>
                     <span className="font-bold text-blue-600">
                       {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">{t('step3.exchangeRate')}: </span>
+                    <span className="font-semibold text-gray-700">
+                      1 {registrationInfo.currency} = {Number(accommodationData.exchangeRate || 1).toFixed(2)} ₺
                     </span>
                   </div>
                   <div>
