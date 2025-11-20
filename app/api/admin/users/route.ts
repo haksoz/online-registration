@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { getCurrentUser, checkRole } from '@/lib/auth'
 
 // Force dynamic rendering
