@@ -21,6 +21,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [userLoading, setUserLoading] = useState(true)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const pathname = usePathname()
   const router = useRouter()
   
@@ -117,10 +118,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       { href: '/admin/settings/form-fields', label: 'Form Ayarları', icon: '📋', roles: ['admin', 'manager'] },
       { href: '/admin/settings/bank', label: 'Banka Ayarları', icon: '🏦', roles: ['admin', 'manager'] },
       { href: '/admin/settings/mail', label: 'Mail Ayarları', icon: '📧', roles: ['admin', 'manager'] },
-      { href: '/admin/mail-logs', label: 'Mail Logları', icon: '📬', roles: ['admin', 'manager'] },
-      { href: '/admin/registration-logs', label: 'Kayıt Logları', icon: '📜', roles: ['admin', 'manager'] },
-      { href: '/admin/pos-logs', label: 'POS Logları', icon: '💳', roles: ['admin', 'manager'] },
-      { href: '/admin/audit-logs', label: 'Sistem Logları', icon: '🔍', roles: ['admin'] },
+      { 
+        label: 'Loglar', 
+        icon: '📋', 
+        roles: ['admin', 'manager'],
+        isGroup: true,
+        items: [
+          { href: '/admin/registration-logs', label: 'Kayıt Logları', icon: '📜', roles: ['admin', 'manager'] },
+          { href: '/admin/mail-logs', label: 'Mail Logları', icon: '📬', roles: ['admin', 'manager'] },
+          { href: '/admin/pos-logs', label: 'POS Logları', icon: '💳', roles: ['admin', 'manager'] },
+          { href: '/admin/audit-logs', label: 'Sistem Logları', icon: '🔍', roles: ['admin'] },
+        ]
+      },
       { href: '/admin/settings/users', label: 'Kullanıcı Yönetimi', icon: '👥', roles: ['admin'] },
     ]
     
@@ -193,23 +202,71 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
           {/* Menu Items */}
           <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-primary-50 text-primary-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  } ${!sidebarOpen && 'justify-center'}`}
-                  onClick={() => isMobile && setSidebarOpen(false)}
-                >
-                  <span className="text-xl mr-3">{item.icon}</span>
-                  {sidebarOpen && <span>{item.label}</span>}
-                </Link>
-              )
+            {menuItems.map((item: any, index: number) => {
+              if (item.isGroup && item.items) {
+                // Grup menü
+                const groupKey = item.label.toLowerCase().replace(/\s+/g, '-')
+                const isOpen = openGroups[groupKey] === true
+                
+                return (
+                  <div key={`group-${index}`}>
+                    <button
+                      onClick={() => setOpenGroups(prev => ({ ...prev, [groupKey]: !isOpen }))}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-gray-100 ${!sidebarOpen && 'justify-center'}`}
+                    >
+                      <div className="flex items-center">
+                        <span className="text-xl mr-3">{item.icon}</span>
+                        {sidebarOpen && <span>{item.label}</span>}
+                      </div>
+                      {sidebarOpen && (
+                        <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      )}
+                    </button>
+                    {isOpen && sidebarOpen && (
+                      <div className="ml-4 mt-1 space-y-1">
+                        {item.items.filter((child: any) => child.roles.includes(currentUser?.role || 'reporter')).map((child: any) => {
+                          const isActive = pathname === child.href
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
+                                isActive
+                                  ? 'bg-primary-50 text-primary-700 font-medium'
+                                  : 'text-gray-600 hover:bg-gray-100'
+                              }`}
+                              onClick={() => isMobile && setSidebarOpen(false)}
+                            >
+                              <span className="text-base mr-2">{child.icon}</span>
+                              <span>{child.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              } else {
+                // Normal menü
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-primary-50 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    } ${!sidebarOpen && 'justify-center'}`}
+                    onClick={() => isMobile && setSidebarOpen(false)}
+                  >
+                    <span className="text-xl mr-3">{item.icon}</span>
+                    {sidebarOpen && <span>{item.label}</span>}
+                  </Link>
+                )
+              }
             })}
           </nav>
 
