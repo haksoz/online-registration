@@ -85,13 +85,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const saltRounds = 12
+    const saltRounds = 10 // Vercel için optimize edildi
     const passwordHash = await bcrypt.hash(password, saltRounds)
 
-    // Insert user
+    // Insert user (username = email'in @ öncesi kısmı)
+    const username = email.split('@')[0]
     const [result] = await pool.execute(
-      'INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)',
-      [email, passwordHash, name || null, role]
+      'INSERT INTO users (email, username, password_hash, name, role) VALUES (?, ?, ?, ?, ?)',
+      [email, username, passwordHash, name || null, role]
     )
 
     return NextResponse.json({
