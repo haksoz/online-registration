@@ -196,6 +196,22 @@ export async function POST(request: NextRequest) {
 
     const registrationId = (result as any).insertId
 
+    // Log kaydı oluştur
+    try {
+      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+      const userAgent = request.headers.get('user-agent') || 'unknown'
+      
+      await pool.execute(
+        `INSERT INTO registration_logs (
+          registration_id, ip_address, user_agent, action, details
+        ) VALUES (?, ?, ?, ?, ?)`,
+        [registrationId, ipAddress, userAgent, 'registration_created', 'Kayıt oluşturuldu']
+      )
+    } catch (logError) {
+      console.error('Error creating registration log:', logError)
+      // Log hatası kayıt işlemini engellemez
+    }
+
     // Online ödeme seçildiyse başarılı ödeme için registration_id'yi güncelle
     if (payment.paymentMethod === 'online' && payment.cardNumber) {
       try {
