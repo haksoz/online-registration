@@ -111,7 +111,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const allItems = [
       { href: '/admin/dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'manager', 'reporter'] },
       { href: '/admin/registrations', label: 'Kayıtlar', icon: '📝', roles: ['admin', 'manager', 'reporter'] },
-      { href: '/admin/registration-types', label: 'Kayıt Türleri', icon: '🏷️', roles: ['admin', 'manager'] },
+      { 
+        label: 'Kayıt Yönetimi', 
+        icon: '⚙️', 
+        roles: ['admin', 'manager'],
+        isGroup: true,
+        items: [
+          { href: '/admin/categories', label: 'Kayıt Kategorileri', icon: '📂', roles: ['admin', 'manager'] },
+          { href: '/admin/registration-types', label: 'Kayıt Türleri', icon: '🏷️', roles: ['admin', 'manager'] },
+        ]
+      },
       { href: '/admin/settings/exchange-rates', label: 'Döviz Kurları', icon: '💱', roles: ['admin', 'manager'] },
       { href: '/admin/settings/page', label: 'Sayfa Ayarları', icon: '🎨', roles: ['admin', 'manager'] },
       { href: '/admin/settings/registration', label: 'Kayıt Ayarları', icon: '📅', roles: ['admin', 'manager'] },
