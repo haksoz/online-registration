@@ -8,6 +8,19 @@ import Pagination from '@/components/ui/Pagination'
 import { registrationTypeLabels } from '@/constants/registrationFees'
 
 
+interface RegistrationSelection {
+  id: number
+  registration_type_id: number
+  category_id: number
+  category_name: string
+  type_label: string
+  applied_fee_try: number
+  applied_currency: string
+  applied_fee_amount: number
+  vat_amount_try: number
+  total_try: number
+}
+
 interface Registration {
   id: number
   reference_number: string
@@ -30,6 +43,11 @@ interface Registration {
   // Kayıt bilgileri
   registration_type: string
   fee: number
+  currency?: string
+  total_fee?: number
+  vat_amount?: number
+  grand_total?: number
+  selections?: RegistrationSelection[]
   payment_method: string
   payment_status: 'pending' | 'completed'
   status: number
@@ -450,21 +468,7 @@ export default function RegistrationsPage() {
                   <td className="px-6 py-4">
                     <div className="text-sm">
                       <div className="font-medium text-gray-900">{r.full_name}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        {r.status === 1 ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            ✅ Kayıtlı
-                          </span>
-                        ) : r.status === 0 ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
-                            ❌ İptal Edildi
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                            ❓ Bilinmiyor
-                          </span>
-                        )}
-                      </div>
+                      <div className="text-xs text-gray-500 mt-1">{r.email}</div>
                       {r.reference_number && (
                         <div className="text-xs text-gray-400 mt-1">Ref: {r.reference_number}</div>
                       )}
@@ -473,11 +477,34 @@ export default function RegistrationsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
                     {getInvoiceTypeLabel(r.invoice_type)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {getRegistrationTypeLabel(r.registration_type)}
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {r.selections && r.selections.length > 0 ? (
+                      <div className="space-y-1">
+                        {r.selections.map((sel: any) => (
+                          <div key={sel.id} className="flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
+                              {sel.category_name}
+                            </span>
+                            <span className="text-xs text-gray-600">{sel.type_label}</span>
+                            <span className="text-xs font-semibold text-gray-900">{formatTurkishCurrency(sel.total_try)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">{getRegistrationTypeLabel(r.registration_type)}</span>
+                    )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-primary-600">
-                    {r.fee ? formatTurkishCurrency(r.fee) : '-'}
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    {r.grand_total ? (
+                      <div>
+                        <div className="font-semibold text-primary-600">{formatTurkishCurrency(r.grand_total)}</div>
+                        <div className="text-xs text-gray-500">KDV Dahil</div>
+                      </div>
+                    ) : r.fee ? (
+                      <div className="font-semibold text-primary-600">{formatTurkishCurrency(r.fee)}</div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex flex-col gap-1">

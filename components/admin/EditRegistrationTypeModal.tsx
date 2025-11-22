@@ -18,6 +18,7 @@ interface FormData {
   fee_try: string
   fee_usd: string
   fee_eur: string
+  vat_rate: string
   description: string
   description_en: string
 }
@@ -42,6 +43,7 @@ export default function EditRegistrationTypeModal({
     fee_try: '',
     fee_usd: '',
     fee_eur: '',
+    vat_rate: '20',
     description: '',
     description_en: ''
   })
@@ -63,6 +65,7 @@ export default function EditRegistrationTypeModal({
         fee_try: registrationType.fee_try?.toString() || '0',
         fee_usd: registrationType.fee_usd?.toString() || '0',
         fee_eur: registrationType.fee_eur?.toString() || '0',
+        vat_rate: ((registrationType as any).vat_rate * 100)?.toString() || '20',
         description: registrationType.description || '',
         description_en: (registrationType as any).description_en || ''
       })
@@ -128,6 +131,7 @@ export default function EditRegistrationTypeModal({
           fee_try: formData.fee_try.trim() ? Number(formData.fee_try) : 0,
           fee_usd: formData.fee_usd.trim() ? Number(formData.fee_usd) : 0,
           fee_eur: formData.fee_eur.trim() ? Number(formData.fee_eur) : 0,
+          vat_rate: formData.vat_rate.trim() ? Number(formData.vat_rate) / 100 : 0.20,
           description: formData.description.trim() || undefined,
           description_en: formData.description_en.trim() || undefined
         })
@@ -149,7 +153,7 @@ export default function EditRegistrationTypeModal({
   }
 
   const handleClose = () => {
-    setFormData({ label: '', label_en: '', category_id: '', fee_try: '', fee_usd: '', fee_eur: '', description: '', description_en: '' })
+    setFormData({ label: '', label_en: '', category_id: '', fee_try: '', fee_usd: '', fee_eur: '', vat_rate: '20', description: '', description_en: '' })
     setErrors({})
     setSubmitting(false)
     onClose()
@@ -218,7 +222,7 @@ export default function EditRegistrationTypeModal({
               {errors.category_id && <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>}
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <label htmlFor="edit-fee-try" className="block text-sm font-medium text-gray-700 mb-2">
                   Ücret (TRY)
@@ -268,6 +272,24 @@ export default function EditRegistrationTypeModal({
                   disabled={submitting}
                 />
                 {errors.fee_eur && <p className="mt-1 text-sm text-red-600">{errors.fee_eur}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="edit-vat-rate" className="block text-sm font-medium text-gray-700 mb-2">
+                  KDV (%)
+                </label>
+                <input
+                  type="number"
+                  id="edit-vat-rate"
+                  value={formData.vat_rate}
+                  onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  disabled={submitting}
+                />
+                {errors.vat_rate && <p className="mt-1 text-sm text-red-600">{errors.vat_rate}</p>}
               </div>
             </div>
 

@@ -21,7 +21,7 @@ export async function PUT(
 
     const body = await request.json()
     
-    const { label, label_en, category_id, fee_try, fee_usd, fee_eur, description, description_en } = body
+    const { label, label_en, category_id, fee_try, fee_usd, fee_eur, vat_rate, description, description_en } = body
 
     // Required fields check
     if (!label || !category_id) {
@@ -83,14 +83,15 @@ export async function PUT(
 
     // Update registration type
     await pool.execute(
-      'UPDATE registration_types SET label = ?, label_en = ?, category_id = ?, fee_try = ?, fee_usd = ?, fee_eur = ?, description = ?, description_en = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE registration_types SET label = ?, label_en = ?, category_id = ?, fee_try = ?, fee_usd = ?, fee_eur = ?, vat_rate = ?, description = ?, description_en = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [
         label, 
         label_en || null,
         Number(category_id),
         fee_try ? Number(fee_try) : 0, 
         fee_usd ? Number(fee_usd) : 0, 
-        fee_eur ? Number(fee_eur) : 0, 
+        fee_eur ? Number(fee_eur) : 0,
+        vat_rate !== undefined ? Number(vat_rate) : 0.20,
         description || null, 
         description_en || null,
         idValidation.numericId

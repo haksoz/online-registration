@@ -39,12 +39,13 @@ export async function createRegistrationType(data: {
   fee_try: number;
   fee_usd: number;
   fee_eur: number;
+  vat_rate: number;
   description: string | null;
   description_en: string | null;
 }) {
   const [result] = await pool.execute(
-    'INSERT INTO registration_types (value, label, label_en, category_id, fee_try, fee_usd, fee_eur, description, description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [data.value, data.label, data.label_en, data.category_id, data.fee_try, data.fee_usd, data.fee_eur, data.description, data.description_en]
+    'INSERT INTO registration_types (value, label, label_en, category_id, fee_try, fee_usd, fee_eur, vat_rate, description, description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [data.value, data.label, data.label_en, data.category_id, data.fee_try, data.fee_usd, data.fee_eur, data.vat_rate, data.description, data.description_en]
   );
   return result;
 }

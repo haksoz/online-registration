@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    const { value, label, label_en, category_id, fee_try, fee_usd, fee_eur, description, description_en } = body
+    const { value, label, label_en, category_id, fee_try, fee_usd, fee_eur, vat_rate, description, description_en } = body
 
     // Required fields check
     if (!value || !label || !category_id) {
@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       fee_try: fee_try ? Number(fee_try) : 0,
       fee_usd: fee_usd ? Number(fee_usd) : 0,
       fee_eur: fee_eur ? Number(fee_eur) : 0,
+      vat_rate: vat_rate !== undefined ? Number(vat_rate) : 0.20,
       description: description || null,
       description_en: description_en || null
     })

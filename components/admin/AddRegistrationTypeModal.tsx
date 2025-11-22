@@ -16,6 +16,7 @@ interface FormData {
   fee_try: string
   fee_usd: string
   fee_eur: string
+  vat_rate: string
   description: string
   description_en: string
 }
@@ -36,6 +37,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
     fee_try: '',
     fee_usd: '',
     fee_eur: '',
+    vat_rate: '20',
     description: '',
     description_en: ''
   })
@@ -137,6 +139,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
           fee_try: formData.fee_try.trim() ? Number(formData.fee_try) : 0,
           fee_usd: formData.fee_usd.trim() ? Number(formData.fee_usd) : 0,
           fee_eur: formData.fee_eur.trim() ? Number(formData.fee_eur) : 0,
+          vat_rate: formData.vat_rate.trim() ? Number(formData.vat_rate) / 100 : 0.20,
           description: formData.description.trim() || undefined,
           description_en: formData.description_en.trim() || undefined
         })
@@ -158,7 +161,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
   }
 
   const handleClose = () => {
-    setFormData({ value: '', label: '', label_en: '', category_id: '', fee_try: '', fee_usd: '', fee_eur: '', description: '', description_en: '' })
+    setFormData({ value: '', label: '', label_en: '', category_id: '', fee_try: '', fee_usd: '', fee_eur: '', vat_rate: '20', description: '', description_en: '' })
     setErrors({})
     setSubmitting(false)
     onClose()
@@ -240,7 +243,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div>
                 <label htmlFor="fee_try" className="block text-sm font-medium text-gray-700 mb-2">
                   Ücret (TRY)
@@ -293,6 +296,25 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                   disabled={submitting}
                 />
                 {errors.fee_eur && <p className="mt-1 text-sm text-red-600">{errors.fee_eur}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="vat_rate" className="block text-sm font-medium text-gray-700 mb-2">
+                  KDV (%)
+                </label>
+                <input
+                  type="number"
+                  id="vat_rate"
+                  value={formData.vat_rate}
+                  onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="20"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  disabled={submitting}
+                />
+                {errors.vat_rate && <p className="mt-1 text-sm text-red-600">{errors.vat_rate}</p>}
               </div>
             </div>
 

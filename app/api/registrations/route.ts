@@ -23,8 +23,28 @@ export async function GET(request: NextRequest) {
       `SELECT * FROM registrations WHERE status >= 0 ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
     )
 
+    // Her kayıt için selections'ları çek
+    const registrations = rows as any[]
+    for (const registration of registrations) {
+      const [selections] = await pool.execute(
+        `SELECT 
+          rs.*,
+          rt.label as type_label,
+          rt.label_en as type_label_en,
+          rc.label_tr as category_name,
+          rc.label_en as category_name_en
+         FROM registration_selections rs
+         LEFT JOIN registration_types rt ON rs.registration_type_id = rt.id
+         LEFT JOIN registration_categories rc ON rs.category_id = rc.id
+         WHERE rs.registration_id = ?
+         ORDER BY rc.display_order, rt.id`,
+        [registration.id]
+      )
+      registration.selections = selections
+    }
+
     return NextResponse.json({
-      data: rows,
+      data: registrations,
       pagination: {
         currentPage: page,
         totalPages,
