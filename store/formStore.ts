@@ -39,6 +39,7 @@ export interface FormData {
   personalInfo: PersonalInfo
   accommodation: AccommodationInfo
   payment: PaymentInfo
+  registrationSelections?: Record<number, number[]> // category_id -> [type_ids]
   referenceNumber?: string
   formLanguage?: 'tr' | 'en'
 }
@@ -50,6 +51,7 @@ interface FormStore {
   updatePersonalInfo: (data: Partial<PersonalInfo>) => void
   updateAccommodation: (data: Partial<AccommodationInfo>) => void
   updatePayment: (data: Partial<PaymentInfo>) => void
+  updateRegistrationSelections: (selections: Record<number, number[]>) => void
   setReferenceNumber: (referenceNumber: string) => void
   setFormLanguage: (language: 'tr' | 'en') => void
   resetForm: () => void
@@ -119,6 +121,13 @@ export const useFormStore = create<FormStore>((set) => ({
       formData: {
         ...state.formData,
         payment: { ...state.formData.payment, ...data },
+      },
+    })),
+  updateRegistrationSelections: (selections) =>
+    set((state) => ({
+      formData: {
+        ...state.formData,
+        registrationSelections: selections,
       },
     })),
   setReferenceNumber: (referenceNumber) =>

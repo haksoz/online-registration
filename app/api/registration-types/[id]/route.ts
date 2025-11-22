@@ -154,33 +154,29 @@ export async function DELETE(
 
     const registrationType = (existingRows as any[])[0]
 
-    // Check if registration type is being used in registrations
+    // Check if registration type is being used in registration_selections
     const [usageRows] = await pool.execute(
-      'SELECT COUNT(*) as count FROM registrations WHERE registration_type = ?',
-      [registrationType.value]
+      'SELECT COUNT(*) as count FROM registration_selections WHERE registration_type_id = ?',
+      [idValidation.numericId]
     )
 
     const usageCount = (usageRows as any[])[0].count
-    if (usageCount > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Bu kayıt türü ${usageCount} kayıtta kullanılmaktadır. Kullanımda olan kayıt türleri silinemez.`
-        },
-        { status: 409 }
-      )
-    }
 
-    // Soft delete - set is_active to false instead of hard delete
+    // Soft delete - set is_active to false
+    // Kullanımda olsa bile pasif yapabiliriz (geçmiş kayıtlar etkilenmez)
     await pool.execute(
       'UPDATE registration_types SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [idValidation.numericId]
     )
 
+    const message = usageCount > 0 
+      ? `Kayıt türü pasif yapıldı (${usageCount} kayıtta kullanılmaktadır, geçmiş kayıtlar etkilenmez)`
+      : 'Kayıt türü pasif yapıldı'
+
     return NextResponse.json(
       {
         success: true,
-        message: 'Kayıt türü başarıyla silindi'
+        message
       },
       { status: 200 }
     )

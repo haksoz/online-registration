@@ -6,7 +6,7 @@ import { useDataStore } from '@/store/dataStore'
 import { useFormSettings } from '@/hooks/useFormSettings'
 import { useTranslation } from '@/hooks/useTranslation'
 import Step1PersonalInfo from '@/components/steps/Step1PersonalInfo'
-import Step2Accommodation from '@/components/steps/Step2Accommodation'
+import Step2RegistrationSelection from '@/components/steps/Step2RegistrationSelection'
 import Step3Payment from '@/components/steps/Step3Payment'
 import Step4Confirmation from '@/components/steps/Step4Confirmation'
 
@@ -56,7 +56,7 @@ export default function FormWizard() {
       case 1:
         return <Step1PersonalInfo onNext={handleNext} />
       case 2:
-        return <Step2Accommodation onNext={handleNext} onBack={handleBack} />
+        return <Step2RegistrationSelection onNext={handleNext} onBack={handleBack} />
       case 3:
         return <Step3Payment onNext={handleNext} onBack={handleBack} />
       case 4:
