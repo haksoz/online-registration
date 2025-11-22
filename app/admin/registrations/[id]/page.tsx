@@ -107,6 +107,39 @@ export default function RegistrationDetailPage() {
     }
   }
 
+  const handleRefundAction = async (selectionId: number, action: 'approve' | 'reject') => {
+    let confirmMessage = ''
+    let notes = ''
+    
+    if (action === 'approve') {
+      confirmMessage = 'Para iadesi yapılacak. Emin misiniz?'
+    } else if (action === 'reject') {
+      notes = prompt('İade reddetme nedeni:') || ''
+      if (!notes) return
+      confirmMessage = 'İadeyi reddetmek istediğinizden emin misiniz?'
+    }
+
+    if (!confirm(confirmMessage)) return
+
+    try {
+      const response = await fetch(`/api/registrations/${params.id}/selections/${selectionId}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, notes })
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        alert(data.message)
+        fetchRegistration()
+      } else {
+        alert(data.error || 'İşlem başarısız')
+      }
+    } catch (error) {
+      alert('Bir hata oluştu')
+    }
+  }
+
   if (loading) {
     return <div className="p-6">Yükleniyor...</div>
   }
@@ -346,68 +379,33 @@ export default function RegistrationDetailPage() {
                             </div>
                             
                             {/* İade Durumu */}
-                            {selection.refund_status === 'none' && (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => alert('İade onaylama özelliği yakında eklenecek')}
-                                  className="flex-1 text-xs bg-green-600 text-white hover:bg-green-700 px-3 py-2 rounded transition-colors"
-                                >
-                                  ✓ İadeyi Onayla
-                                </button>
-                                <button
-                                  onClick={() => alert('İade reddetme özelliği yakında eklenecek')}
-                                  className="flex-1 text-xs bg-red-600 text-white hover:bg-red-700 px-3 py-2 rounded transition-colors"
-                                >
-                                  ✗ İadeyi Reddet
-                                </button>
-                              </div>
-                            )}
-                            
-                            {selection.refund_status === 'pending' && (
+                            {(selection.refund_status === 'none' || selection.refund_status === 'pending') && (
                               <div className="space-y-2">
-                                <div className="text-xs text-yellow-700 bg-yellow-50 rounded p-2 flex items-center gap-2">
-                                  <span className="text-base">⏳</span>
-                                  <div>
-                                    <div className="font-medium">İade Talebi Beklemede</div>
-                                    <div className="text-yellow-600 mt-1">
-                                      Talep: {selection.refund_requested_at ? new Date(selection.refund_requested_at).toLocaleString('tr-TR') : '-'}
+                                {selection.refund_status === 'pending' && (
+                                  <div className="text-xs text-yellow-700 bg-yellow-50 rounded p-2 flex items-center gap-2">
+                                    <span className="text-base">⏳</span>
+                                    <div>
+                                      <div className="font-medium">İade Talebi Beklemede</div>
+                                      <div className="text-yellow-600 mt-1">
+                                        Talep: {selection.refund_requested_at ? new Date(selection.refund_requested_at).toLocaleString('tr-TR') : '-'}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                )}
                                 <div className="flex gap-2">
                                   <button
-                                    onClick={() => alert('İade onaylama özelliği yakında eklenecek')}
+                                    onClick={() => handleRefundAction(selection.id, 'approve')}
                                     className="flex-1 text-xs bg-green-600 text-white hover:bg-green-700 px-3 py-2 rounded transition-colors"
                                   >
-                                    ✓ İadeyi Onayla
+                                    💰 Para İadesini Yap
                                   </button>
                                   <button
-                                    onClick={() => alert('İade reddetme özelliği yakında eklenecek')}
+                                    onClick={() => handleRefundAction(selection.id, 'reject')}
                                     className="flex-1 text-xs bg-red-600 text-white hover:bg-red-700 px-3 py-2 rounded transition-colors"
                                   >
                                     ✗ İadeyi Reddet
                                   </button>
                                 </div>
-                              </div>
-                            )}
-                            
-                            {selection.refund_status === 'approved' && (
-                              <div className="space-y-2">
-                                <div className="text-xs text-blue-700 bg-blue-50 rounded p-2">
-                                  <div className="font-medium">✓ İade Onaylandı</div>
-                                  <div className="text-blue-600 mt-1">
-                                    Onay: {selection.refund_approved_at ? new Date(selection.refund_approved_at).toLocaleString('tr-TR') : '-'}
-                                  </div>
-                                  <div className="text-blue-600">
-                                    Tutar: {formatTurkishCurrency(selection.refund_amount || selection.total_try)}
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => alert('İade tamamlama özelliği yakında eklenecek')}
-                                  className="w-full text-xs bg-green-600 text-white hover:bg-green-700 px-3 py-2 rounded transition-colors"
-                                >
-                                  İadeyi Tamamla
-                                </button>
                               </div>
                             )}
                             

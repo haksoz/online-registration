@@ -480,15 +480,37 @@ export default function RegistrationsPage() {
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {r.selections && r.selections.length > 0 ? (
                       <div className="space-y-1">
-                        {r.selections.map((sel: any) => (
-                          <div key={sel.id} className="flex items-center gap-2">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
-                              {sel.category_name}
-                            </span>
-                            <span className="text-xs text-gray-600">{sel.type_label}</span>
-                            <span className="text-xs font-semibold text-gray-900">{formatTurkishCurrency(sel.total_try)}</span>
-                          </div>
-                        ))}
+                        {r.selections.map((sel: any) => {
+                          // İade onaylandı veya tamamlandı mı?
+                          const refundApproved = sel.refund_status === 'approved' || sel.refund_status === 'completed'
+                          
+                          return (
+                            <div key={sel.id} className="flex items-center gap-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                sel.is_cancelled 
+                                  ? 'bg-red-100 text-red-800' 
+                                  : 'bg-primary-100 text-primary-800'
+                              }`}>
+                                {sel.category_name}
+                              </span>
+                              <span className={`text-xs font-semibold ${
+                                refundApproved 
+                                  ? 'text-gray-400 line-through' 
+                                  : sel.is_cancelled 
+                                    ? 'text-orange-600' 
+                                    : 'text-gray-900'
+                              }`}>
+                                {formatTurkishCurrency(sel.total_try)}
+                              </span>
+                              {sel.is_cancelled && !refundApproved && (
+                                <span className="text-xs text-orange-600">⏳</span>
+                              )}
+                              {refundApproved && (
+                                <span className="text-xs text-green-600">✓</span>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     ) : (
                       <span className="text-gray-400">{getRegistrationTypeLabel(r.registration_type)}</span>

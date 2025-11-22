@@ -19,6 +19,11 @@ interface FormData {
   vat_rate: string
   description: string
   description_en: string
+  requires_document: boolean
+  document_label: string
+  document_label_en: string
+  document_description: string
+  document_description_en: string
 }
 
 interface Category {
@@ -39,7 +44,12 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
     fee_eur: '',
     vat_rate: '20',
     description: '',
-    description_en: ''
+    description_en: '',
+    requires_document: false,
+    document_label: '',
+    document_label_en: '',
+    document_description: '',
+    document_description_en: ''
   })
 
   useEffect(() => {
@@ -141,7 +151,12 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
           fee_eur: formData.fee_eur.trim() ? Number(formData.fee_eur) : 0,
           vat_rate: formData.vat_rate.trim() ? Number(formData.vat_rate) / 100 : 0.20,
           description: formData.description.trim() || undefined,
-          description_en: formData.description_en.trim() || undefined
+          description_en: formData.description_en.trim() || undefined,
+          requires_document: formData.requires_document,
+          document_label: formData.requires_document ? formData.document_label.trim() || undefined : undefined,
+          document_label_en: formData.requires_document ? formData.document_label_en.trim() || undefined : undefined,
+          document_description: formData.requires_document ? formData.document_description.trim() || undefined : undefined,
+          document_description_en: formData.requires_document ? formData.document_description_en.trim() || undefined : undefined
         })
       })
 
@@ -161,7 +176,13 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
   }
 
   const handleClose = () => {
-    setFormData({ value: '', label: '', label_en: '', category_id: '', fee_try: '', fee_usd: '', fee_eur: '', vat_rate: '20', description: '', description_en: '' })
+    setFormData({ 
+      value: '', label: '', label_en: '', category_id: '', 
+      fee_try: '', fee_usd: '', fee_eur: '', vat_rate: '20', 
+      description: '', description_en: '',
+      requires_document: false, document_label: '', document_label_en: '',
+      document_description: '', document_description_en: ''
+    })
     setErrors({})
     setSubmitting(false)
     onClose()
@@ -346,6 +367,91 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                 rows={2}
                 disabled={submitting}
               />
+            </div>
+
+            {/* Belge Gereksinimleri */}
+            <div className="col-span-2 border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3">Belge Gereksinimleri</h4>
+              
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="requires_document"
+                  checked={formData.requires_document}
+                  onChange={(e) => setFormData({ ...formData, requires_document: e.target.checked })}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
+                  disabled={submitting}
+                />
+                <label htmlFor="requires_document" className="ml-2 text-sm font-medium text-gray-700">
+                  Bu kayıt türü için belge yükleme zorunlu
+                </label>
+              </div>
+
+              {formData.requires_document && (
+                <div className="space-y-4 pl-6 border-l-2 border-primary-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="document_label" className="block text-sm font-medium text-gray-700 mb-2">
+                        Belge Etiketi (Türkçe)
+                      </label>
+                      <input
+                        type="text"
+                        id="document_label"
+                        value={formData.document_label}
+                        onChange={(e) => setFormData({ ...formData, document_label: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="Örn: Öğrenci Belgesi"
+                        disabled={submitting}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="document_label_en" className="block text-sm font-medium text-gray-700 mb-2">
+                        Belge Etiketi (İngilizce)
+                      </label>
+                      <input
+                        type="text"
+                        id="document_label_en"
+                        value={formData.document_label_en}
+                        onChange={(e) => setFormData({ ...formData, document_label_en: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="Ex: Student Certificate"
+                        disabled={submitting}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="document_description" className="block text-sm font-medium text-gray-700 mb-2">
+                        Belge Açıklaması (Türkçe)
+                      </label>
+                      <textarea
+                        id="document_description"
+                        value={formData.document_description}
+                        onChange={(e) => setFormData({ ...formData, document_description: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="Örn: Öğrenci olduğunuzu kanıtlayan belgeyi yükleyin"
+                        rows={2}
+                        disabled={submitting}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="document_description_en" className="block text-sm font-medium text-gray-700 mb-2">
+                        Belge Açıklaması (İngilizce)
+                      </label>
+                      <textarea
+                        id="document_description_en"
+                        value={formData.document_description_en}
+                        onChange={(e) => setFormData({ ...formData, document_description_en: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="Ex: Upload document proving your student status"
+                        rows={2}
+                        disabled={submitting}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
