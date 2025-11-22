@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    const { value, label, label_en, fee_try, fee_usd, fee_eur, description, description_en } = body
+    const { value, label, label_en, category_id, fee_try, fee_usd, fee_eur, description, description_en } = body
 
     // Required fields check
-    if (!value || !label) {
+    if (!value || !label || !category_id) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Eksik alanlar: value ve label zorunludur'
+          error: 'Eksik alanlar: value, label ve category_id zorunludur'
         },
         { status: 400 }
       )
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
       value,
       label,
       label_en: label_en || null,
+      category_id: Number(category_id),
       fee_try: fee_try ? Number(fee_try) : 0,
       fee_usd: fee_usd ? Number(fee_usd) : 0,
       fee_eur: fee_eur ? Number(fee_eur) : 0,

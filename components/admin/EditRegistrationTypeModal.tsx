@@ -14,11 +14,18 @@ interface EditRegistrationTypeModalProps {
 interface FormData {
   label: string
   label_en: string
+  category_id: string
   fee_try: string
   fee_usd: string
   fee_eur: string
   description: string
   description_en: string
+}
+
+interface Category {
+  id: number
+  name: string
+  name_en: string
 }
 
 export default function EditRegistrationTypeModal({ 
@@ -27,9 +34,11 @@ export default function EditRegistrationTypeModal({
   onClose, 
   onSuccess 
 }: EditRegistrationTypeModalProps) {
+  const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState<FormData>({
     label: '',
     label_en: '',
+    category_id: '',
     fee_try: '',
     fee_usd: '',
     fee_eur: '',
@@ -40,10 +49,17 @@ export default function EditRegistrationTypeModal({
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
+    if (isOpen) {
+      fetchCategories()
+    }
+  }, [isOpen])
+
+  useEffect(() => {
     if (registrationType) {
       setFormData({
         label: registrationType.label,
         label_en: (registrationType as any).label_en || '',
+        category_id: (registrationType as any).category_id?.toString() || '',
         fee_try: registrationType.fee_try?.toString() || '0',
         fee_usd: registrationType.fee_usd?.toString() || '0',
         fee_eur: registrationType.fee_eur?.toString() || '0',
@@ -53,11 +69,27 @@ export default function EditRegistrationTypeModal({
     }
   }, [registrationType])
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/categories')
+      const data = await response.json()
+      if (data.success) {
+        setCategories(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {}
 
     if (!formData.label.trim()) {
       newErrors.label = 'Label alanı zorunludur'
+    }
+
+    if (!formData.category_id) {
+      newErrors.category_id = 'Kategori seçimi zorunludur'
     }
 
     // Sayı validasyonları (boş olabilir)
@@ -92,6 +124,7 @@ export default function EditRegistrationTypeModal({
         body: JSON.stringify({
           label: formData.label.trim(),
           label_en: formData.label_en.trim() || undefined,
+          category_id: Number(formData.category_id),
           fee_try: formData.fee_try.trim() ? Number(formData.fee_try) : 0,
           fee_usd: formData.fee_usd.trim() ? Number(formData.fee_usd) : 0,
           fee_eur: formData.fee_eur.trim() ? Number(formData.fee_eur) : 0,
@@ -116,7 +149,7 @@ export default function EditRegistrationTypeModal({
   }
 
   const handleClose = () => {
-    setFormData({ label: '', label_en: '', fee_try: '', fee_usd: '', fee_eur: '', description: '', description_en: '' })
+    setFormData({ label: '', label_en: '', category_id: '', fee_try: '', fee_usd: '', fee_eur: '', description: '', description_en: '' })
     setErrors({})
     setSubmitting(false)
     onClose()
@@ -162,6 +195,27 @@ export default function EditRegistrationTypeModal({
                 disabled={submitting}
               />
               {errors.label_en && <p className="mt-1 text-sm text-red-600">{errors.label_en}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="edit-category" className="block text-sm font-medium text-gray-700 mb-2">
+                Kategori <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="edit-category"
+                value={formData.category_id}
+                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                disabled={submitting}
+              >
+                <option value="">Kategori Seçin</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {errors.category_id && <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>}
             </div>
 
             <div className="grid grid-cols-3 gap-4">

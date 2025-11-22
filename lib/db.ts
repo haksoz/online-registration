@@ -35,6 +35,7 @@ export async function createRegistrationType(data: {
   value: string;
   label: string;
   label_en: string | null;
+  category_id: number;
   fee_try: number;
   fee_usd: number;
   fee_eur: number;
@@ -42,8 +43,8 @@ export async function createRegistrationType(data: {
   description_en: string | null;
 }) {
   const [result] = await pool.execute(
-    'INSERT INTO registration_types (value, label, label_en, fee_try, fee_usd, fee_eur, description, description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [data.value, data.label, data.label_en, data.fee_try, data.fee_usd, data.fee_eur, data.description, data.description_en]
+    'INSERT INTO registration_types (value, label, label_en, category_id, fee_try, fee_usd, fee_eur, description, description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [data.value, data.label, data.label_en, data.category_id, data.fee_try, data.fee_usd, data.fee_eur, data.description, data.description_en]
   );
   return result;
 }

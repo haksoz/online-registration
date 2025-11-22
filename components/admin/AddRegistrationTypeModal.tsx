@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface AddRegistrationTypeModalProps {
   isOpen: boolean
@@ -12,6 +12,7 @@ interface FormData {
   value: string
   label: string
   label_en: string
+  category_id: string
   fee_try: string
   fee_usd: string
   fee_eur: string
@@ -19,17 +20,43 @@ interface FormData {
   description_en: string
 }
 
+interface Category {
+  id: number
+  name: string
+  name_en: string
+}
+
 export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }: AddRegistrationTypeModalProps) {
+  const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState<FormData>({
     value: '',
     label: '',
     label_en: '',
+    category_id: '',
     fee_try: '',
     fee_usd: '',
     fee_eur: '',
     description: '',
     description_en: ''
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories()
+    }
+  }, [isOpen])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/categories')
+      const data = await response.json()
+      if (data.success) {
+        setCategories(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
 
   // Label'dan otomatik value oluştur
   const generateValue = (label: string): string => {
@@ -69,6 +96,10 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
       newErrors.label = 'Geçerli bir kayıt türü adı girin'
     }
 
+    if (!formData.category_id) {
+      newErrors.category_id = 'Kategori seçimi zorunludur'
+    }
+
     // Sayı validasyonları (boş olabilir)
     if (formData.fee_try.trim() && (isNaN(Number(formData.fee_try)) || Number(formData.fee_try) < 0)) {
       newErrors.fee_try = 'TL ücreti geçerli bir sayı olmalıdır'
@@ -102,6 +133,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
           value: formData.value.trim(),
           label: formData.label.trim(),
           label_en: formData.label_en.trim() || undefined,
+          category_id: Number(formData.category_id),
           fee_try: formData.fee_try.trim() ? Number(formData.fee_try) : 0,
           fee_usd: formData.fee_usd.trim() ? Number(formData.fee_usd) : 0,
           fee_eur: formData.fee_eur.trim() ? Number(formData.fee_eur) : 0,
@@ -126,7 +158,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
   }
 
   const handleClose = () => {
-    setFormData({ value: '', label: '', label_en: '', fee_try: '', fee_usd: '', fee_eur: '', description: '', description_en: '' })
+    setFormData({ value: '', label: '', label_en: '', category_id: '', fee_try: '', fee_usd: '', fee_eur: '', description: '', description_en: '' })
     setErrors({})
     setSubmitting(false)
     onClose()
@@ -173,6 +205,27 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                 disabled={submitting}
               />
               {errors.label_en && <p className="mt-1 text-sm text-red-600">{errors.label_en}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-2">
+                Kategori <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="category_id"
+                value={formData.category_id}
+                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                disabled={submitting}
+              >
+                <option value="">Kategori Seçin</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+              {errors.category_id && <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>}
             </div>
 
             {formData.value && (

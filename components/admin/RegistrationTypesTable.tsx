@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { RegistrationType } from '@/types/registration'
 import { formatTurkishCurrency } from '@/lib/currencyUtils'
 
@@ -9,6 +9,12 @@ interface RegistrationTypesTableProps {
   loading: boolean
   onEdit: (type: RegistrationType) => void
   onDelete: (type: RegistrationType) => void
+}
+
+interface Category {
+  id: number
+  name: string
+  name_en: string
 }
 
 const ITEMS_PER_PAGE = 10
@@ -20,16 +26,44 @@ export default function RegistrationTypesTable({
   onDelete
 }: RegistrationTypesTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/categories')
+      const data = await response.json()
+      if (data.success) {
+        setCategories(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
+  const getCategoryName = (categoryId: number) => {
+    const category = categories.find(c => c.id === categoryId)
+    return category?.name || '-'
+  }
+
+  // Kategori filtreleme
+  const filteredTypes = selectedCategory
+    ? registrationTypes.filter(type => (type as any).category_id?.toString() === selectedCategory)
+    : registrationTypes
 
   const formatFee = (fee: number): string => {
     return formatTurkishCurrency(fee)
   }
 
   // Pagination logic
-  const totalPages = Math.ceil(registrationTypes.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(filteredTypes.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
-  const currentItems = registrationTypes.slice(startIndex, endIndex)
+  const currentItems = filteredTypes.slice(startIndex, endIndex)
 
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)))
@@ -52,6 +86,9 @@ export default function RegistrationTypesTable({
                 Label
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Kategori
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ücret (TRY)
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -60,7 +97,7 @@ export default function RegistrationTypesTable({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ücret (EUR)
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                 Açıklama
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -81,7 +118,7 @@ export default function RegistrationTypesTable({
                   <div className="h-4 bg-gray-200 rounded w-32"></div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="h-4 bg-gray-200 rounded w-16"></div>
@@ -89,7 +126,7 @@ export default function RegistrationTypesTable({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="h-4 bg-gray-200 rounded w-16"></div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                   <div className="h-4 bg-gray-200 rounded w-48"></div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -108,6 +145,42 @@ export default function RegistrationTypesTable({
 
   return (
     <div className="space-y-4">
+      {/* Kategori Filtresi */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="flex items-center gap-4">
+          <label htmlFor="category-filter" className="text-sm font-medium text-gray-700">
+            Kategori Filtresi:
+          </label>
+          <select
+            id="category-filter"
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">Tüm Kategoriler</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          {selectedCategory && (
+            <button
+              onClick={() => {
+                setSelectedCategory('')
+                setCurrentPage(1)
+              }}
+              className="text-sm text-primary-600 hover:text-primary-800"
+            >
+              Filtreyi Temizle
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -122,6 +195,9 @@ export default function RegistrationTypesTable({
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Label
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Kategori
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ücret (TRY)
@@ -163,6 +239,11 @@ export default function RegistrationTypesTable({
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {type.label}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                        {getCategoryName((type as any).category_id)}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                       {formatFee(type.fee_try)}
@@ -213,7 +294,15 @@ export default function RegistrationTypesTable({
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
           {/* Info */}
           <div className="text-sm text-gray-500">
-            Toplam {registrationTypes.length} kayıt türü
+            {selectedCategory ? (
+              <>
+                Filtrelenmiş: {filteredTypes.length} kayıt türü (Toplam: {registrationTypes.length})
+              </>
+            ) : (
+              <>
+                Toplam {registrationTypes.length} kayıt türü
+              </>
+            )}
             {totalPages > 1 && (
               <span className="ml-2">
                 (Sayfa {currentPage} / {totalPages})

@@ -21,14 +21,14 @@ export async function PUT(
 
     const body = await request.json()
     
-    const { label, label_en, fee_try, fee_usd, fee_eur, description, description_en } = body
+    const { label, label_en, category_id, fee_try, fee_usd, fee_eur, description, description_en } = body
 
     // Required fields check
-    if (!label) {
+    if (!label || !category_id) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Eksik alanlar: label zorunludur'
+          error: 'Eksik alanlar: label ve category_id zorunludur'
         },
         { status: 400 }
       )
@@ -83,10 +83,11 @@ export async function PUT(
 
     // Update registration type
     await pool.execute(
-      'UPDATE registration_types SET label = ?, label_en = ?, fee_try = ?, fee_usd = ?, fee_eur = ?, description = ?, description_en = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE registration_types SET label = ?, label_en = ?, category_id = ?, fee_try = ?, fee_usd = ?, fee_eur = ?, description = ?, description_en = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [
         label, 
-        label_en || null, 
+        label_en || null,
+        Number(category_id),
         fee_try ? Number(fee_try) : 0, 
         fee_usd ? Number(fee_usd) : 0, 
         fee_eur ? Number(fee_eur) : 0, 
