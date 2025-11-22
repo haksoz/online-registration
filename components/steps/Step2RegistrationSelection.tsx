@@ -134,9 +134,11 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
       typeIds.forEach(typeId => {
         const type = registrationTypes.find((t: any) => t.id === typeId)
         if (type) {
-          const fee = currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try
-          const vat = fee * (type.vat_rate || 0.20)
-          total += fee + vat
+          const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+          const vatRate = Number(type.vat_rate) || 0.20
+          const vat = fee * vatRate
+          const itemTotal = fee + vat
+          total += itemTotal
         }
       })
     })
@@ -214,13 +216,14 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                 className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  {category.icon && <span className="text-2xl">{category.icon}</span>}
+                  {category.icon && category.icon !== '0' && <span className="text-2xl">{category.icon}</span>}
                   <div className="text-left">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-gray-900 uppercase">
                       {language === 'en' ? category.label_en : category.label_tr}
-                      {category.is_required && <span className="text-red-500 ml-1">*</span>}
+                      {(category.is_required === true || category.is_required === 1) && <span className="text-red-500 ml-1">*</span>}
                     </h3>
-                    {(language === 'en' ? category.description_en : category.description_tr) && (
+                    {((language === 'en' ? category.description_en : category.description_tr) && 
+                      (language === 'en' ? category.description_en : category.description_tr) !== '0') && (
                       <p className="text-sm text-gray-500">
                         {language === 'en' ? category.description_en : category.description_tr}
                       </p>
@@ -286,15 +289,16 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                                 {language === 'en' ? type.description_en : type.description}
                               </p>
                             )}
-                            <div className="text-sm text-gray-500">
-                              <div>Ücret: {formatTurkishCurrency(fee)}</div>
-                              <div>KDV: {formatTurkishCurrency(vat)}</div>
-                              <div className="font-semibold text-gray-900 mt-1">
-                                Toplam: {formatTurkishCurrency(total)}
-                              </div>
+                            <div className={`flex items-baseline gap-2 ${type.requires_document ? 'mb-2' : ''}`}>
+                              <span className="text-lg font-semibold text-gray-900">
+                                {formatTurkishCurrency(fee)}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                + %{((type.vat_rate || 0.20) * 100).toFixed(0)} KDV
+                              </span>
                             </div>
-                            {type.requires_document && (
-                              <div className="mt-2 text-xs text-orange-600 flex items-center gap-1">
+                            {(type.requires_document === true || type.requires_document === 1) && (
+                              <div className="text-xs text-orange-600 flex items-center gap-1">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
@@ -313,14 +317,89 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
         })}
       </div>
 
-      {/* Toplam */}
+      {/* Seçimler Özeti */}
       {Object.values(selections).flat().length > 0 && (
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-900">Genel Toplam (KDV Dahil):</span>
-            <span className="text-2xl font-bold text-primary-600">
-              {formatTurkishCurrency(calculateTotal())}
-            </span>
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            {language === 'en' ? 'Your Selections' : 'Seçimleriniz'}
+          </h3>
+          
+          <div className="space-y-4">
+            {Object.entries(selections).map(([categoryId, typeIds]) => {
+              if (typeIds.length === 0) return null
+              
+              const category = categories.find(c => c.id === Number(categoryId))
+              if (!category) return null
+              
+              return (
+                <div key={categoryId} className="border-b border-gray-100 pb-4 last:border-0">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2 uppercase">
+                    {language === 'en' ? category.label_en : category.label_tr}
+                  </h4>
+                  <div className="space-y-3">
+                    {typeIds.map(typeId => {
+                      const type = registrationTypes.find((t: any) => t.id === typeId)
+                      if (!type) return null
+                      
+                      const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+                      const vatRate = Number(type.vat_rate) || 0.20
+                      const vat = fee * vatRate
+                      const total = fee + vat
+                      
+                      return (
+                        <div key={typeId} className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">
+                                {language === 'en' ? type.label_en : type.label}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {formatTurkishCurrency(fee)} + %{((type.vat_rate || 0.20) * 100).toFixed(0)} KDV
+                              </p>
+                            </div>
+                            <p className="font-semibold text-gray-900 whitespace-nowrap">
+                              {formatTurkishCurrency(total)}
+                            </p>
+                          </div>
+                          
+                          {/* Belge Yükleme */}
+                          {(type.requires_document === true || type.requires_document === 1) && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                {language === 'en' ? type.document_label_en || 'Required Document' : type.document_label || 'Gerekli Belge'}
+                                <span className="text-red-500 ml-1">*</span>
+                              </label>
+                              {(language === 'en' ? type.document_description_en : type.document_description) && (
+                                <p className="text-xs text-gray-500 mb-2">
+                                  {language === 'en' ? type.document_description_en : type.document_description}
+                                </p>
+                              )}
+                              <input
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Toplam */}
+          <div className="mt-6 pt-4 border-t-2 border-gray-300">
+            <div className="flex justify-between items-center">
+              <span className="text-lg font-semibold text-gray-900">
+                {language === 'en' ? 'Total (VAT Included):' : 'Genel Toplam (KDV Dahil):'}
+              </span>
+              <span className="text-2xl font-bold text-primary-600">
+                {formatTurkishCurrency(calculateTotal())}
+              </span>
+            </div>
           </div>
         </div>
       )}
