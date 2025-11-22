@@ -232,6 +232,7 @@ export default function CategoriesPage() {
                     value={formData.label_tr}
                     onChange={(e) => setFormData({...formData, label_tr: e.target.value})}
                     className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="Kongre Kayıtları"
                     required
                   />
                 </div>
@@ -242,6 +243,7 @@ export default function CategoriesPage() {
                     value={formData.label_en}
                     onChange={(e) => setFormData({...formData, label_en: e.target.value})}
                     className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="Congress Registration"
                     required
                   />
                 </div>
