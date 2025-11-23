@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 // Toplam hesaplama fonksiyonu
 async function updateRegistrationTotals(registrationId: string) {
-  // İade tamamlanmadıysa para hala sistemde, toplama dahil
+  // Sadece iade tamamlananları hariç tut
   const [totals] = await pool.execute(
     `SELECT 
       COALESCE(SUM(CASE WHEN is_cancelled = FALSE OR (is_cancelled = TRUE AND refund_status != 'completed') THEN applied_fee_try ELSE 0 END), 0) as total_fee,
@@ -23,8 +23,7 @@ async function updateRegistrationTotals(registrationId: string) {
     `UPDATE registrations 
      SET total_fee = ?, 
          vat_amount = ?, 
-         grand_total = ?,
-         updated_at = CURRENT_TIMESTAMP
+         grand_total = ?
      WHERE id = ?`,
     [totalsData.total_fee, totalsData.vat_amount, totalsData.grand_total, registrationId]
   )
@@ -104,6 +103,27 @@ export async function POST(
       return NextResponse.json({
         success: true,
         message: 'İade reddedildi'
+      })
+    } else if (action === 'undo_reject') {
+      // İade reddini geri al - tekrar pending yap
+      if (selection.refund_status !== 'rejected') {
+        return NextResponse.json(
+          { success: false, error: 'Bu seçimin iadesi reddedilmemiş' },
+          { status: 400 }
+        )
+      }
+
+      await pool.execute(
+        `UPDATE registration_selections 
+         SET refund_status = 'pending',
+             refund_notes = NULL
+         WHERE id = ?`,
+        [params.selectionId]
+      )
+
+      return NextResponse.json({
+        success: true,
+        message: 'İade reddi geri alındı, iade talebi tekrar beklemede'
       })
     } else {
       return NextResponse.json(

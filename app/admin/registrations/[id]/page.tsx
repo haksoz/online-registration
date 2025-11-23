@@ -55,6 +55,11 @@ interface Registration {
   grand_total: number
   payment_method: string
   payment_status: string
+  payment_notes?: string
+  payment_receipt_url?: string
+  payment_receipt_filename?: string
+  payment_receipt_uploaded_at?: string
+  payment_confirmed_at?: string
   status: number
   selections: RegistrationSelection[]
   created_at: string
@@ -101,6 +106,48 @@ export default function RegistrationDetailPage() {
         fetchRegistration()
       } else {
         alert(data.error || 'İptal işlemi başarısız')
+      }
+    } catch (error) {
+      alert('Bir hata oluştu')
+    }
+  }
+
+  const handleUndoCancel = async (selectionId: number) => {
+    if (!confirm('İptali geri almak istediğinizden emin misiniz?')) return
+
+    try {
+      const response = await fetch(`/api/registrations/${params.id}/selections/${selectionId}/undo`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        alert('İptal geri alındı')
+        fetchRegistration()
+      } else {
+        alert(data.error || 'İşlem başarısız')
+      }
+    } catch (error) {
+      alert('Bir hata oluştu')
+    }
+  }
+
+  const handleUndoRefundRejection = async (selectionId: number) => {
+    if (!confirm('İade reddini geri almak istediğinizden emin misiniz? İade talebi tekrar beklemede durumuna geçecek.')) return
+
+    try {
+      const response = await fetch(`/api/registrations/${params.id}/selections/${selectionId}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'undo_reject' })
+      })
+      const data = await response.json()
+      
+      if (data.success) {
+        alert('İade reddi geri alındı, iade talebi tekrar beklemede')
+        fetchRegistration()
+      } else {
+        alert(data.error || 'İşlem başarısız')
       }
     } catch (error) {
       alert('Bir hata oluştu')
@@ -291,6 +338,318 @@ export default function RegistrationDetailPage() {
                   {registration.payment_status === 'completed' ? 'Tamamlandı' : 'Beklemede'}
                 </p>
               </div>
+
+              {/* Ödeme Notları */}
+              {registration.payment_notes && (
+                <div>
+                  <label className="text-xs text-gray-500">Ödeme Notları</label>
+                  <p className="text-sm text-gray-700 bg-gray-50 rounded p-2">{registration.payment_notes}</p>
+                </div>
+              )}
+
+              {/* Dekont Bilgisi */}
+              {registration.payment_receipt_url ? (
+                <div>
+                  <label className="text-xs text-gray-500">Dekont</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <a
+                      href={registration.payment_receipt_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary-600 hover:text-primary-700 underline"
+                    >
+                      📄 {registration.payment_receipt_filename || 'Dekont Görüntüle'}
+                    </a>
+                    <button
+                      onClick={async () => {
+                        if (!confirm('Dekont silinecek. Emin misiniz?')) return
+                        
+                        try {
+                          const response = await fetch(`/api/registrations/${params.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              payment_receipt_url: null,
+                              payment_receipt_filename: null,
+                              payment_receipt_uploaded_at: null
+                            })
+                          })
+                          
+                          if (response.ok) {
+                            alert('Dekont silindi')
+                            fetchRegistration()
+                          }
+                        } catch (error) {
+                          alert('Bir hata oluştu')
+                        }
+                      }}
+                      className="text-xs text-red-600 hover:text-red-700"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                  {registration.payment_receipt_uploaded_at && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Yükleme: {new Date(registration.payment_receipt_uploaded_at).toLocaleString('tr-TR')}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs text-gray-500">Dekont</label>
+                  <button
+                    onClick={() => {
+                      // Dekont yükleme modal'ı
+                      const modal = document.createElement('div')
+                      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
+                      modal.innerHTML = `
+                        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                          <h3 class="text-xl font-bold text-gray-900 mb-4">📄 Dekont Yükle</h3>
+                          
+                          <div class="space-y-4">
+                            <div>
+                              <label class="block text-sm font-medium text-gray-700 mb-2">Dekont Dosyası</label>
+                              <input
+                                type="file"
+                                id="receipt-file-upload"
+                                accept="image/*,.pdf"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                              />
+                              <p class="text-xs text-gray-500 mt-1">JPG, PNG veya PDF formatında</p>
+                            </div>
+                            
+                            <div>
+                              <label class="block text-sm font-medium text-gray-700 mb-2">Not (Opsiyonel)</label>
+                              <textarea
+                                id="receipt-notes"
+                                rows="2"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                placeholder="Dekont ile ilgili notlar..."
+                              ></textarea>
+                            </div>
+                          </div>
+                          
+                          <div class="flex gap-3 mt-6">
+                            <button
+                              id="cancel-upload-btn"
+                              class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                              İptal
+                            </button>
+                            <button
+                              id="upload-btn"
+                              class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                            >
+                              📤 Yükle
+                            </button>
+                          </div>
+                        </div>
+                      `
+                      document.body.appendChild(modal)
+
+                      modal.querySelector('#cancel-upload-btn')?.addEventListener('click', () => {
+                        modal.remove()
+                      })
+
+                      modal.querySelector('#upload-btn')?.addEventListener('click', async () => {
+                        const fileInput = document.getElementById('receipt-file-upload') as HTMLInputElement
+                        const notes = (document.getElementById('receipt-notes') as HTMLTextAreaElement)?.value
+                        const file = fileInput?.files?.[0]
+
+                        if (!file) {
+                          alert('Lütfen bir dosya seçin')
+                          return
+                        }
+
+                        try {
+                          const formData = new FormData()
+                          formData.append('file', file)
+
+                          const uploadResponse = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData
+                          })
+
+                          const uploadData = await uploadResponse.json()
+
+                          if (!uploadData.success) {
+                            alert('Dosya yüklenemedi: ' + (uploadData.error || 'Bilinmeyen hata'))
+                            return
+                          }
+
+                          const updateData: any = {
+                            payment_receipt_filename: file.name,
+                            payment_receipt_url: uploadData.url,
+                            payment_receipt_uploaded_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+                          }
+
+                          if (notes) {
+                            updateData.payment_notes = notes
+                          }
+
+                          const response = await fetch(`/api/registrations/${params.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updateData)
+                          })
+
+                          if (response.ok) {
+                            modal.remove()
+                            alert('Dekont başarıyla yüklendi')
+                            fetchRegistration()
+                          } else {
+                            alert('Güncelleme başarısız oldu')
+                          }
+                        } catch (error) {
+                          console.error('Error:', error)
+                          alert('Bir hata oluştu')
+                        }
+                      })
+
+                      modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                          modal.remove()
+                        }
+                      })
+                    }}
+                    className="text-sm text-primary-600 hover:text-primary-700 underline"
+                  >
+                    + Dekont Yükle
+                  </button>
+                </div>
+              )}
+              
+              {/* Tahsilat Onay Butonu */}
+              {registration.payment_status === 'pending' && (
+                <div className="pt-3 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      // Modal oluştur
+                      const modal = document.createElement('div')
+                      modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
+                      modal.innerHTML = `
+                        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                          <h3 class="text-xl font-bold text-gray-900 mb-4">✅ Tahsilatı Onayla</h3>
+                          <p class="text-gray-600 mb-4">
+                            Tahsilat onaylanacak. İsteğe bağlı olarak açıklama ve dekont ekleyebilirsiniz.
+                          </p>
+                          
+                          <div class="space-y-4">
+                            <div>
+                              <label class="block text-sm font-medium text-gray-700 mb-2">Açıklama (Opsiyonel)</label>
+                              <textarea
+                                id="payment-notes"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                placeholder="Tahsilat ile ilgili notlar..."
+                              ></textarea>
+                            </div>
+                            
+                            <div>
+                              <label class="block text-sm font-medium text-gray-700 mb-2">Dekont Yükle (Opsiyonel)</label>
+                              <input
+                                type="file"
+                                id="receipt-file"
+                                accept="image/*,.pdf"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                              />
+                              <p class="text-xs text-gray-500 mt-1">JPG, PNG veya PDF formatında</p>
+                            </div>
+                          </div>
+                          
+                          <div class="flex gap-3 mt-6">
+                            <button
+                              id="cancel-btn"
+                              class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                              İptal
+                            </button>
+                            <button
+                              id="confirm-btn"
+                              class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              ✅ Tahsilatı Onayla
+                            </button>
+                          </div>
+                        </div>
+                      `
+                      document.body.appendChild(modal)
+
+                      // İptal butonu
+                      modal.querySelector('#cancel-btn')?.addEventListener('click', () => {
+                        modal.remove()
+                      })
+
+                      // Onay butonu
+                      modal.querySelector('#confirm-btn')?.addEventListener('click', async () => {
+                        const notes = (document.getElementById('payment-notes') as HTMLTextAreaElement)?.value
+                        const fileInput = document.getElementById('receipt-file') as HTMLInputElement
+                        const file = fileInput?.files?.[0]
+
+                        try {
+                          const paymentData: any = {
+                            payment_status: 'completed',
+                            payment_confirmed_at: new Date().toISOString().slice(0, 19).replace('T', ' ')
+                          }
+
+                          if (notes) {
+                            paymentData.payment_notes = notes
+                          }
+
+                          // Dosya varsa önce yükle
+                          if (file) {
+                            const formData = new FormData()
+                            formData.append('file', file)
+
+                            const uploadResponse = await fetch('/api/upload', {
+                              method: 'POST',
+                              body: formData
+                            })
+
+                            const uploadData = await uploadResponse.json()
+
+                            if (uploadData.success) {
+                              paymentData.payment_receipt_filename = file.name
+                              paymentData.payment_receipt_url = uploadData.url
+                              paymentData.payment_receipt_uploaded_at = new Date().toISOString().slice(0, 19).replace('T', ' ')
+                            }
+                          }
+
+                          // Tahsilat durumunu güncelle
+                          const response = await fetch(`/api/registrations/${params.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(paymentData)
+                          })
+
+                          const data = await response.json()
+
+                          if (response.ok) {
+                            modal.remove()
+                            alert('Tahsilat başarıyla onaylandı')
+                            fetchRegistration()
+                          } else {
+                            alert(data.error || 'Güncelleme başarısız oldu')
+                          }
+                        } catch (error) {
+                          console.error('Error:', error)
+                          alert('Bir hata oluştu')
+                        }
+                      })
+
+                      // Modal dışına tıklanınca kapat
+                      modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                          modal.remove()
+                        }
+                      })
+                    }}
+                    className="w-full px-4 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors"
+                  >
+                    ✓ Tahsilatı Onayla
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -321,13 +680,19 @@ export default function RegistrationDetailPage() {
               <div className="p-6">
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase">Seçilen Kayıtlar</h3>
                 <div className="space-y-4">
-                  {registration.selections.map((selection) => (
+                  {registration.selections.map((selection) => {
+                    const isRefundCompleted = selection.is_cancelled && selection.refund_status === 'completed'
+                    const isCancelledButNotRefunded = selection.is_cancelled && selection.refund_status !== 'completed'
+                    
+                    return (
                     <div
                       key={selection.id}
                       className={`border rounded-lg p-4 ${
-                        selection.is_cancelled 
-                          ? 'border-red-200 bg-red-50' 
-                          : 'border-gray-200 hover:border-primary-300 transition-colors'
+                        isRefundCompleted
+                          ? 'border-gray-300 bg-gray-100' 
+                          : isCancelledButNotRefunded
+                            ? 'border-orange-200 bg-orange-50'
+                            : 'border-gray-200 hover:border-primary-300 transition-colors'
                       }`}
                     >
                       {/* Üst Kısım - Kategori ve Tutar */}
@@ -335,24 +700,60 @@ export default function RegistrationDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              selection.is_cancelled 
-                                ? 'bg-red-100 text-red-800' 
-                                : 'bg-primary-100 text-primary-800'
+                              isRefundCompleted
+                                ? 'bg-gray-200 text-gray-700'
+                                : selection.refund_status === 'rejected'
+                                  ? 'bg-red-100 text-red-800'
+                                  : selection.refund_status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : isCancelledButNotRefunded
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : 'bg-primary-100 text-primary-800'
                             }`}>
                               {selection.category_name}
                             </span>
-                            {selection.is_cancelled && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-200 text-red-900">
-                                ❌ İptal Edildi
+                            {selection.is_cancelled ? (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                isRefundCompleted
+                                  ? 'bg-gray-300 text-gray-800'
+                                  : selection.refund_status === 'rejected'
+                                    ? 'bg-red-100 text-red-800'
+                                    : selection.refund_status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-orange-200 text-orange-900'
+                              }`}>
+                                {isRefundCompleted 
+                                  ? '❌ İptal Edildi, ✓ İade Tamamlandı' 
+                                  : selection.refund_status === 'rejected'
+                                    ? '❌ İptal Edildi, ✗ İade Reddedildi'
+                                    : selection.refund_status === 'pending'
+                                      ? '❌ İptal Edildi, ⏳ İade Beklemede'
+                                      : '⏳ İptal Edildi'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Kayıtlı
                               </span>
                             )}
                           </div>
-                          <p className={`font-medium ${selection.is_cancelled ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                          <p className={`font-medium ${
+                            selection.is_cancelled && selection.refund_status === 'completed' 
+                              ? 'text-gray-500 line-through' 
+                              : selection.is_cancelled 
+                                ? 'text-gray-700' 
+                                : 'text-gray-900'
+                          }`}>
                             {selection.type_label}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className={`text-lg font-semibold ${selection.is_cancelled ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
+                          <p className={`text-lg font-semibold ${
+                            selection.is_cancelled && selection.refund_status === 'completed' 
+                              ? 'text-gray-400 line-through' 
+                              : selection.is_cancelled 
+                                ? 'text-orange-600' 
+                                : 'text-gray-900'
+                          }`}>
                             {formatTurkishCurrency(selection.applied_fee_try)}
                           </p>
                         </div>
@@ -361,7 +762,13 @@ export default function RegistrationDetailPage() {
                       {/* Fiyat Detayları */}
                       <div className="flex justify-between items-center text-xs text-gray-500 pb-3 border-b border-gray-200">
                         <span>KDV (%{(selection.vat_rate * 100).toFixed(0)}): {formatTurkishCurrency(selection.vat_amount_try)}</span>
-                        <span className={`font-medium ${selection.is_cancelled ? 'text-gray-400' : 'text-gray-700'}`}>
+                        <span className={`font-medium ${
+                          selection.is_cancelled && selection.refund_status === 'completed' 
+                            ? 'text-gray-400 line-through' 
+                            : selection.is_cancelled 
+                              ? 'text-orange-600' 
+                              : 'text-gray-700'
+                        }`}>
                           Toplam: {formatTurkishCurrency(selection.total_try)}
                         </span>
                       </div>
@@ -379,19 +786,17 @@ export default function RegistrationDetailPage() {
                             </div>
                             
                             {/* İade Durumu */}
-                            {(selection.refund_status === 'none' || selection.refund_status === 'pending') && (
+                            {selection.refund_status === 'pending' && (
                               <div className="space-y-2">
-                                {selection.refund_status === 'pending' && (
-                                  <div className="text-xs text-yellow-700 bg-yellow-50 rounded p-2 flex items-center gap-2">
-                                    <span className="text-base">⏳</span>
-                                    <div>
-                                      <div className="font-medium">İade Talebi Beklemede</div>
-                                      <div className="text-yellow-600 mt-1">
-                                        Talep: {selection.refund_requested_at ? new Date(selection.refund_requested_at).toLocaleString('tr-TR') : '-'}
-                                      </div>
+                                <div className="text-xs text-yellow-700 bg-yellow-50 rounded p-2 flex items-center gap-2">
+                                  <span className="text-base">⏳</span>
+                                  <div>
+                                    <div className="font-medium">İade Talebi Beklemede</div>
+                                    <div className="text-yellow-600 mt-1">
+                                      Talep: {selection.refund_requested_at ? new Date(selection.refund_requested_at).toLocaleString('tr-TR') : '-'}
                                     </div>
                                   </div>
-                                )}
+                                </div>
                                 <div className="flex gap-2">
                                   <button
                                     onClick={() => handleRefundAction(selection.id, 'approve')}
@@ -405,16 +810,45 @@ export default function RegistrationDetailPage() {
                                   >
                                     ✗ İadeyi Reddet
                                   </button>
+                                  <button
+                                    onClick={() => handleUndoCancel(selection.id)}
+                                    className="flex-1 text-xs bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded transition-colors"
+                                  >
+                                    ↩️ İptali Geri Al
+                                  </button>
                                 </div>
                               </div>
                             )}
                             
+                            {/* İade süreci yok (none) - Sadece iptali geri al */}
+                            {selection.refund_status === 'none' && (
+                              <div className="space-y-2">
+                                <div className="text-xs text-gray-700 bg-gray-100 rounded p-2">
+                                  <div className="font-medium">💡 Para henüz sisteme gelmediği için iade süreci yok</div>
+                                </div>
+                                <button
+                                  onClick={() => handleUndoCancel(selection.id)}
+                                  className="w-full text-xs bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded transition-colors"
+                                >
+                                  ↩️ İptali Geri Al
+                                </button>
+                              </div>
+                            )}
+                            
                             {selection.refund_status === 'rejected' && (
-                              <div className="text-xs text-red-700 bg-red-50 rounded p-2">
-                                <div className="font-medium">✗ İade Reddedildi</div>
-                                {selection.refund_notes && (
-                                  <div className="text-red-600 mt-1">Not: {selection.refund_notes}</div>
-                                )}
+                              <div className="space-y-2">
+                                <div className="text-xs text-red-700 bg-red-50 rounded p-2">
+                                  <div className="font-medium">✗ İade Reddedildi</div>
+                                  {selection.refund_notes && (
+                                    <div className="text-red-600 mt-1">Not: {selection.refund_notes}</div>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => handleUndoRefundRejection(selection.id)}
+                                  className="w-full text-xs bg-orange-600 text-white hover:bg-orange-700 px-3 py-2 rounded transition-colors"
+                                >
+                                  ↩️ İade Reddini Geri Al
+                                </button>
                               </div>
                             )}
                             
@@ -454,7 +888,8 @@ export default function RegistrationDetailPage() {
                         )}
                       </div>
                     </div>
-                  ))}
+                  )
+                  })}
                 </div>
               </div>
             )}
@@ -475,7 +910,7 @@ export default function RegistrationDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-300">
-                  <span className="text-gray-900">ÖDENECEK TOPLAM</span>
+                  <span className="text-gray-900">TOPLAM</span>
                   <span className="text-primary-600">
                     {formatTurkishCurrency(registration.grand_total)}
                   </span>

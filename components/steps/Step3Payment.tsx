@@ -130,36 +130,36 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
     }
   }
 
-  const selectedRegistrationType = registrationTypes.find(
-    type => type.value === formData.accommodation.registrationType
-  )
-  
-  const accommodationData = formData.accommodation as any
-  const selectedCurrency = accommodationData.selectedCurrency || 'TRY'
-  const feeInCurrency = accommodationData.feeInCurrency
-  const feeInTRY = accommodationData.feeInTRY
-  
-  const getCurrencySymbol = (currency: string): string => {
-    if (currency === 'USD') return '$'
-    if (currency === 'EUR') return '€'
-    return '₺'
+  // Seçilen kayıt türlerini al
+  const getSelectedTypes = () => {
+    if (!formData.registrationSelections) return []
+    
+    const selected: any[] = []
+    Object.entries(formData.registrationSelections).forEach(([categoryId, typeIds]) => {
+      typeIds.forEach(typeId => {
+        const type = registrationTypes.find((t: any) => t.id === typeId)
+        if (type) {
+          selected.push(type)
+        }
+      })
+    })
+    return selected
   }
+
+  const selectedTypes = getSelectedTypes()
   
-  const registrationInfo = selectedRegistrationType
-    ? {
-        label: language === 'en' ? selectedRegistrationType.label_en || selectedRegistrationType.label : selectedRegistrationType.label,
-        fee: formatTurkishCurrency(selectedRegistrationType.fee_try),
-        feeInCurrency: feeInCurrency,
-        feeInTRY: feeInTRY,
-        currency: selectedCurrency
-      }
-    : {
-        label: formData.accommodation.registrationType || '',
-        fee: '',
-        feeInCurrency: 0,
-        feeInTRY: 0,
-        currency: 'TRY'
-      }
+  // Toplam hesapla (KDV dahil)
+  const calculateTotal = () => {
+    let total = 0
+    selectedTypes.forEach(type => {
+      const fee = Number(type.fee_try || 0)
+      const vatRate = Number(type.vat_rate) || 0.20
+      total += fee + (fee * vatRate)
+    })
+    return total
+  }
+
+  const grandTotal = calculateTotal()
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full">
@@ -273,43 +273,47 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             </div>
           </div>
 
-          {/* Step 2 Summary */}
+          {/* Step 2 Summary - Seçimler */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('step3.registrationTypeAndFee')}</h4>
-            <div className="space-y-2">
-              <div className="text-sm">
-                <span className="text-gray-600">{t('step3.selectedType')}:</span>
-                <span className="ml-2 font-medium text-gray-900">{registrationInfo.label}</span>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">
+              {language === 'en' ? 'Selected Registrations' : 'Seçilen Kayıtlar'}
+            </h4>
+            <div className="space-y-3">
+              {selectedTypes.map((type: any) => {
+                const fee = Number(type.fee_try || 0)
+                const vatRate = Number(type.vat_rate) || 0.20
+                const vat = fee * vatRate
+                const total = fee + vat
+                
+                return (
+                  <div key={type.id} className="bg-white rounded-lg p-3 border border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">
+                          {language === 'en' ? type.label_en || type.label : type.label}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatTurkishCurrency(fee)} + %{(vatRate * 100).toFixed(0)} KDV
+                        </p>
+                      </div>
+                      <p className="font-semibold text-gray-900">
+                        {formatTurkishCurrency(total)}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+              
+              <div className="pt-3 border-t-2 border-gray-300">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-900">
+                    {language === 'en' ? 'Total (VAT Included):' : 'Genel Toplam (KDV Dahil):'}
+                  </span>
+                  <span className="text-xl font-bold text-primary-600">
+                    {formatTurkishCurrency(grandTotal)}
+                  </span>
+                </div>
               </div>
-              
-              {registrationInfo.currency !== 'TRY' && registrationInfo.feeInCurrency > 0 && (
-                <div className="text-sm bg-blue-50 border border-blue-200 rounded p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-600">{t('step3.selectedCurrencyFee')}:</span>
-                    <span className="font-bold text-blue-600 text-lg">
-                      {getCurrencySymbol(registrationInfo.currency)}{Number(registrationInfo.feeInCurrency).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-t border-blue-200">
-                    <span className="text-gray-600 text-xs">
-                      {t('step3.exchangeRate')} (1 {registrationInfo.currency} = {Number(accommodationData.exchangeRate || 1).toFixed(2)} ₺)
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-blue-300">
-                    <span className="text-gray-700 font-medium">{t('step3.tryEquivalent')}:</span>
-                    <span className="font-bold text-primary-600 text-lg">
-                      {formatTurkishCurrency(Number(registrationInfo.feeInTRY))}
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {registrationInfo.currency === 'TRY' && registrationInfo.fee && (
-                <div className="text-sm">
-                  <span className="text-gray-600">{t('step3.fee')}:</span>
-                  <span className="ml-2 font-bold text-primary-600">{registrationInfo.fee}</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -579,21 +583,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('step3.bankAccounts')}</h3>
               <div className="space-y-4">
                 {bankAccounts
-                  .filter(account => {
-                    // TRY seçiliyse sadece TRY hesapları
-                    if (selectedCurrency === 'TRY') {
-                      return account.currency === 'TRY'
-                    }
-                    // USD seçiliyse TRY ve USD hesapları
-                    if (selectedCurrency === 'USD') {
-                      return account.currency === 'TRY' || account.currency === 'USD'
-                    }
-                    // EUR seçiliyse TRY ve EUR hesapları
-                    if (selectedCurrency === 'EUR') {
-                      return account.currency === 'TRY' || account.currency === 'EUR'
-                    }
-                    return true
-                  })
+                  .filter(account => account.currency === 'TRY')
                   .map((account, index) => (
                   <div key={account.id} className={`${index > 0 ? 'pt-4 border-t border-blue-200' : ''}`}>
                     <div className="flex items-center justify-between mb-2">

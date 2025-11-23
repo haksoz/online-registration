@@ -213,12 +213,12 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
               {/* Kategori Header */}
               <button
                 onClick={() => toggleCategory(category.id)}
-                className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-primary-50 to-primary-100 hover:from-primary-100 hover:to-primary-200 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   {category.icon && category.icon !== '0' && <span className="text-2xl">{category.icon}</span>}
                   <div className="text-left">
-                    <h3 className="font-semibold text-gray-900 uppercase">
+                    <h3 className="font-bold text-primary-900 uppercase text-base">
                       {language === 'en' ? category.label_en : category.label_tr}
                       {(category.is_required === true || category.is_required === 1) && <span className="text-red-500 ml-1">*</span>}
                     </h3>

@@ -15,19 +15,43 @@ export async function POST(request: NextRequest) {
     // Extract form data
     const {
       personalInfo,
-      accommodation,
+      registrationSelections,
       payment,
       formLanguage,
     } = formData
 
-    // Get currency info from accommodation data
-    const currencyCode = accommodation.selectedCurrency || 'TRY'
-    const feeInCurrency = accommodation.feeInCurrency || 0
-    const feeInTRY = accommodation.feeInTRY || 0
-    const exchangeRate = accommodation.exchangeRate || 1.0
+    // Seçilen kayıt türlerini al ve toplam hesapla
+    const selectedTypeIds: number[] = []
+    if (registrationSelections) {
+      Object.values(registrationSelections).forEach((typeIds: any) => {
+        selectedTypeIds.push(...typeIds)
+      })
+    }
 
-    // Use TRY fee as main fee
-    const fee = feeInTRY
+    // Kayıt türlerini veritabanından çek
+    let registrationTypes: any[] = []
+    if (selectedTypeIds.length > 0) {
+      const placeholders = selectedTypeIds.map(() => '?').join(',')
+      const [rows] = await pool.execute(
+        `SELECT id, label, label_en, fee_try, vat_rate FROM registration_types WHERE id IN (${placeholders})`,
+        selectedTypeIds
+      )
+      registrationTypes = rows as any[]
+    }
+
+    // Toplam ücreti hesapla (KDV dahil)
+    let totalFee = 0
+    const types = registrationTypes
+    types.forEach((type: any) => {
+      const fee = Number(type.fee_try || 0)
+      const vatRate = Number(type.vat_rate || 0.20)
+      totalFee += fee + (fee * vatRate)
+    })
+
+    const fee = totalFee
+    const currencyCode = 'TRY'
+    const feeInCurrency = totalFee
+    const exchangeRate = 1.0
 
     // Generate unique reference number
     const referenceNumber = generateReferenceNumber()
@@ -98,7 +122,7 @@ export async function POST(request: NextRequest) {
         const customerName = personalInfo.fullName || `${personalInfo.firstName} ${personalInfo.lastName}`.trim()
         const customerEmail = personalInfo.email
         const customerPhone = personalInfo.phone
-        const registrationType = accommodation.registrationType
+        const registrationType = types.map((t: any) => formLanguage === 'en' ? (t.label_en || t.label) : t.label).join(', ')
         
         await pool.execute(
           `INSERT INTO online_payment_transactions (
@@ -171,8 +195,8 @@ export async function POST(request: NextRequest) {
       personalInfo.invoiceCompanyName || null,
       personalInfo.taxOffice || null,
       personalInfo.taxNumber || null,
-      accommodation.registrationType || null,
-      (accommodation as any).registrationTypeLabelEn || null,
+      types.map((t: any) => t.label).join(', ') || null,
+      types.map((t: any) => t.label_en || t.label).join(', ') || null,
       formLanguage || 'tr',
       fee,
       currencyCode,
@@ -196,16 +220,61 @@ export async function POST(request: NextRequest) {
 
     const registrationId = (result as any).insertId
 
+    // Seçimleri registration_selections tablosuna kaydet
+    if (registrationSelections && Object.keys(registrationSelections).length > 0) {
+      for (const [categoryId, typeIds] of Object.entries(registrationSelections)) {
+        for (const typeId of typeIds as number[]) {
+          const type = types.find((t: any) => t.id === typeId)
+          if (type) {
+            const typeFee = Number(type.fee_try || 0)
+            const vatRate = Number(type.vat_rate || 0.20)
+            const vat = typeFee * vatRate
+            const totalWithVat = typeFee + vat
+            
+            try {
+              await pool.execute(
+                `INSERT INTO registration_selections (
+                  registration_id, category_id, registration_type_id, 
+                  applied_fee_try, applied_currency, applied_fee_amount, exchange_rate,
+                  vat_rate, vat_amount_try, total_try,
+                  payment_status, is_early_bird, is_cancelled, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                [
+                  registrationId, 
+                  Number(categoryId), 
+                  typeId, 
+                  typeFee,
+                  'TRY',
+                  typeFee,
+                  1.0,
+                  vatRate, 
+                  vat, 
+                  totalWithVat,
+                  paymentStatus, // Ana kaydın payment_status'u ile aynı
+                  0, // is_early_bird
+                  0  // is_cancelled
+                ]
+              )
+            } catch (selectionError) {
+              console.error('Error saving registration selection:', selectionError)
+            }
+          }
+        }
+      }
+    }
+
     // Log kaydı oluştur
     try {
-      const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+      const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] || 
+                       request.headers.get('x-real-ip') || 
+                       'unknown'
       const userAgent = request.headers.get('user-agent') || 'unknown'
       
       await pool.execute(
         `INSERT INTO registration_logs (
-          registration_id, ip_address, user_agent, action, details
-        ) VALUES (?, ?, ?, ?, ?)`,
-        [registrationId, ipAddress, userAgent, 'registration_created', 'Kayıt oluşturuldu']
+          registration_id, ip_address, user_agent, form_completed_at
+        ) VALUES (?, ?, ?, NOW())`,
+        [registrationId, ipAddress, userAgent]
       )
     } catch (logError) {
       console.error('Error creating registration log:', logError)

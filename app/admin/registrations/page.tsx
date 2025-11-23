@@ -136,6 +136,14 @@ export default function RegistrationsPage() {
 
 
 
+  // Toplam tutarı hesapla
+  const calculateGrandTotal = (registration: Registration): number => {
+    if (registration.selections && registration.selections.length > 0) {
+      return registration.selections.reduce((sum, sel) => sum + Number(sel.total_try || 0), 0)
+    }
+    return Number(registration.fee || 0)
+  }
+
   const getPaymentMethodLabel = (method: string): string => {
     return method === 'online' ? 'Online Ödeme' : method === 'bank_transfer' ? 'Banka Transferi' : method
   }
@@ -365,7 +373,7 @@ export default function RegistrationsPage() {
       // Kayıt bilgileri
       'Kayıt Türü': getRegistrationTypeLabel(r.registration_type),
       'Kayıt Durumu': r.status === 1 ? 'Kayıtlı' : r.status === 0 ? 'İptal' : 'Bilinmiyor',
-      'Ücret (TL)': r.fee ? formatTurkishCurrency(r.fee) : '-',
+      'Ücret (TL)': formatTurkishCurrency(calculateGrandTotal(r)),
       'Ödeme Yöntemi': getPaymentMethodLabel(r.payment_method),
       'Ödeme Durumu': getPaymentStatusLabel(r.payment_status),
       'Kayıt Tarihi': new Date(r.created_at).toLocaleString('tr-TR', {
@@ -481,33 +489,61 @@ export default function RegistrationsPage() {
                     {r.selections && r.selections.length > 0 ? (
                       <div className="space-y-1">
                         {r.selections.map((sel: any) => {
-                          // İade onaylandı veya tamamlandı mı?
-                          const refundApproved = sel.refund_status === 'approved' || sel.refund_status === 'completed'
+                          const isRefundCompleted = sel.is_cancelled && sel.refund_status === 'completed'
+                          const isCancelledButNotRefunded = sel.is_cancelled && sel.refund_status !== 'completed'
                           
                           return (
-                            <div key={sel.id} className="flex items-center gap-2">
+                            <div key={sel.id} className="flex items-center gap-2 flex-wrap">
+                              {/* Kategori Badge */}
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                sel.is_cancelled 
-                                  ? 'bg-red-100 text-red-800' 
-                                  : 'bg-primary-100 text-primary-800'
+                                isRefundCompleted
+                                  ? 'bg-gray-200 text-gray-700'
+                                  : sel.refund_status === 'rejected'
+                                    ? 'bg-red-100 text-red-800'
+                                    : sel.refund_status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : isCancelledButNotRefunded
+                                        ? 'bg-orange-100 text-orange-800'
+                                        : 'bg-primary-100 text-primary-800'
                               }`}>
                                 {sel.category_name}
                               </span>
+                              
+                              {/* Durum Badge */}
+                              {sel.is_cancelled ? (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                  isRefundCompleted
+                                    ? 'bg-gray-300 text-gray-800'
+                                    : sel.refund_status === 'rejected'
+                                      ? 'bg-red-100 text-red-800'
+                                      : sel.refund_status === 'pending'
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : 'bg-orange-200 text-orange-900'
+                                }`}>
+                                  {isRefundCompleted 
+                                    ? '❌ İptal, ✓ İade' 
+                                    : sel.refund_status === 'rejected'
+                                      ? '❌ İptal, ✗ İade Red'
+                                      : sel.refund_status === 'pending'
+                                        ? '❌ İptal, ⏳ İade Beklemede'
+                                        : '⏳ İptal'}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                  ✓ Kayıtlı
+                                </span>
+                              )}
+                              
+                              {/* Fiyat */}
                               <span className={`text-xs font-semibold ${
-                                refundApproved 
+                                isRefundCompleted
                                   ? 'text-gray-400 line-through' 
-                                  : sel.is_cancelled 
+                                  : isCancelledButNotRefunded
                                     ? 'text-orange-600' 
                                     : 'text-gray-900'
                               }`}>
                                 {formatTurkishCurrency(sel.total_try)}
                               </span>
-                              {sel.is_cancelled && !refundApproved && (
-                                <span className="text-xs text-orange-600">⏳</span>
-                              )}
-                              {refundApproved && (
-                                <span className="text-xs text-green-600">✓</span>
-                              )}
                             </div>
                           )
                         })}
@@ -517,16 +553,17 @@ export default function RegistrationsPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    {r.grand_total ? (
-                      <div>
-                        <div className="font-semibold text-primary-600">{formatTurkishCurrency(r.grand_total)}</div>
-                        <div className="text-xs text-gray-500">KDV Dahil</div>
-                      </div>
-                    ) : r.fee ? (
-                      <div className="font-semibold text-primary-600">{formatTurkishCurrency(r.fee)}</div>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
+                    {(() => {
+                      const total = calculateGrandTotal(r)
+                      return total > 0 ? (
+                        <div>
+                          <div className="font-semibold text-primary-600">{formatTurkishCurrency(total)}</div>
+                          <div className="text-xs text-gray-500">KDV Dahil</div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex flex-col gap-1">

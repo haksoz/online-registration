@@ -23,19 +23,40 @@ export async function DELETE(
 
     const selection = (selections as any[])[0]
 
-    // Selection'a is_cancelled flag'i ekle (soft delete)
-    await pool.execute(
-      `UPDATE registration_selections 
-       SET is_cancelled = TRUE, 
-           cancelled_at = CURRENT_TIMESTAMP,
-           refund_status = 'pending',
-           refund_requested_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [params.selectionId]
-    )
+    // Seçimin kendi ödeme durumunu kontrol et
+    const paymentPending = selection.payment_status === 'pending'
+
+    console.log('🔍 İptal işlemi - Selection ID:', params.selectionId)
+    console.log('💳 Selection Payment Status:', selection.payment_status)
+    console.log('⏳ Payment Pending:', paymentPending)
+
+    // Ödeme beklemedeyse (para henüz gelmemişse) direkt iptal, iade süreci yok
+    // Ödeme tamamlanmışsa (para gelmişse) iade süreci başlat
+    if (paymentPending) {
+      // Para henüz gelmemiş, direkt iptal (iade yok)
+      await pool.execute(
+        `UPDATE registration_selections 
+         SET is_cancelled = TRUE, 
+             cancelled_at = CURRENT_TIMESTAMP,
+             refund_status = 'none'
+         WHERE id = ?`,
+        [params.selectionId]
+      )
+    } else {
+      // Para gelmiş, iade süreci başlat
+      await pool.execute(
+        `UPDATE registration_selections 
+         SET is_cancelled = TRUE, 
+             cancelled_at = CURRENT_TIMESTAMP,
+             refund_status = 'pending',
+             refund_requested_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [params.selectionId]
+      )
+    }
 
     // Ana kaydın toplamlarını güncelle
-    // İptal edildi ama iade tamamlanmadıysa para hala sistemde, toplama dahil
+    // Sadece iade tamamlananları hariç tut
     const [totals] = await pool.execute(
       `SELECT 
         COALESCE(SUM(CASE WHEN is_cancelled = FALSE OR (is_cancelled = TRUE AND refund_status != 'completed') THEN applied_fee_try ELSE 0 END), 0) as total_fee,
@@ -52,8 +73,7 @@ export async function DELETE(
       `UPDATE registrations 
        SET total_fee = ?, 
            vat_amount = ?, 
-           grand_total = ?,
-           updated_at = CURRENT_TIMESTAMP
+           grand_total = ?
        WHERE id = ?`,
       [totalsData.total_fee, totalsData.vat_amount, totalsData.grand_total, params.id]
     )

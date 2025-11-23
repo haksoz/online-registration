@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       `SELECT * FROM registrations WHERE status >= 0 ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`
     )
 
-    // Her kayıt için selections'ları çek
+    // Her kayıt için selections'ları çek ve toplam hesapla
     const registrations = rows as any[]
     for (const registration of registrations) {
       const [selections] = await pool.execute(
@@ -41,6 +41,18 @@ export async function GET(request: NextRequest) {
         [registration.id]
       )
       registration.selections = selections
+
+      // Toplam hesapla: Sadece iade tamamlananları hariç tut
+      const includedSelections = (selections as any[]).filter((s: any) => 
+        !s.is_cancelled || (s.is_cancelled && s.refund_status !== 'completed')
+      )
+      const totalFee = includedSelections.reduce((sum: number, s: any) => sum + Number(s.applied_fee_try || 0), 0)
+      const vatAmount = includedSelections.reduce((sum: number, s: any) => sum + Number(s.vat_amount_try || 0), 0)
+      const grandTotal = includedSelections.reduce((sum: number, s: any) => sum + Number(s.total_try || 0), 0)
+
+      registration.total_fee = totalFee
+      registration.vat_amount = vatAmount
+      registration.grand_total = grandTotal
     }
 
     return NextResponse.json({

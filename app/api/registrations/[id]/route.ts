@@ -41,6 +41,18 @@ export async function GET(
 
     registration.selections = selections
 
+    // Toplam hesapla: Sadece iade tamamlananları hariç tut
+    const includedSelections = (selections as any[]).filter(s => 
+      !s.is_cancelled || (s.is_cancelled && s.refund_status !== 'completed')
+    )
+    const totalFee = includedSelections.reduce((sum, s) => sum + Number(s.applied_fee_try || 0), 0)
+    const vatAmount = includedSelections.reduce((sum, s) => sum + Number(s.vat_amount_try || 0), 0)
+    const grandTotal = includedSelections.reduce((sum, s) => sum + Number(s.total_try || 0), 0)
+
+    registration.total_fee = totalFee
+    registration.vat_amount = vatAmount
+    registration.grand_total = grandTotal
+
     return NextResponse.json({
       success: true,
       data: registration
@@ -94,6 +106,17 @@ export async function PATCH(
       `UPDATE registrations SET ${updates.join(', ')} WHERE id = ?`,
       values
     )
+
+    // Eğer payment_status güncellendiyse, tüm seçimlerin payment_status'unu da güncelle
+    // İptal edilmiş olanlar dahil (çünkü iptal edilmiş ama para gelmiş olabilir)
+    if (body.payment_status) {
+      await pool.execute(
+        `UPDATE registration_selections 
+         SET payment_status = ? 
+         WHERE registration_id = ?`,
+        [body.payment_status, params.id]
+      )
+    }
 
     return NextResponse.json({
       success: true,
