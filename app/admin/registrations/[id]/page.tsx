@@ -681,16 +681,24 @@ export default function RegistrationDetailPage() {
                 <h3 className="text-sm font-semibold text-gray-700 mb-4 uppercase">Seçilen Kayıtlar</h3>
                 <div className="space-y-4">
                   {registration.selections.map((selection) => {
-                    const isRefundCompleted = selection.is_cancelled && selection.refund_status === 'completed'
-                    const isCancelledButNotRefunded = selection.is_cancelled && selection.refund_status !== 'completed'
+                    // Para sistemde değil: İade tamamlandı veya hiç gelmedi
+                    const isMoneyNotInSystem = selection.is_cancelled && (
+                      selection.refund_status === 'completed' || 
+                      selection.payment_status === 'cancelled'
+                    )
+                    // Para sistemde: İptal edilmiş ama iade bekliyor/reddedildi
+                    const isMoneyInSystem = selection.is_cancelled && (
+                      selection.refund_status === 'pending' || 
+                      selection.refund_status === 'rejected'
+                    )
                     
                     return (
                     <div
                       key={selection.id}
                       className={`border rounded-lg p-4 ${
-                        isRefundCompleted
+                        isMoneyNotInSystem
                           ? 'border-gray-300 bg-gray-100' 
-                          : isCancelledButNotRefunded
+                          : isMoneyInSystem
                             ? 'border-orange-200 bg-orange-50'
                             : 'border-gray-200 hover:border-primary-300 transition-colors'
                       }`}
@@ -700,21 +708,21 @@ export default function RegistrationDetailPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              isRefundCompleted
+                              isMoneyNotInSystem
                                 ? 'bg-gray-200 text-gray-700'
                                 : selection.refund_status === 'rejected'
                                   ? 'bg-red-100 text-red-800'
                                   : selection.refund_status === 'pending'
                                     ? 'bg-yellow-100 text-yellow-800'
-                                    : isCancelledButNotRefunded
-                                      ? 'bg-orange-100 text-orange-800'
-                                      : 'bg-primary-100 text-primary-800'
+                                  : isMoneyInSystem
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : 'bg-primary-100 text-primary-800'
                             }`}>
                               {selection.category_name}
                             </span>
                             {selection.is_cancelled ? (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                isRefundCompleted
+                                isMoneyNotInSystem
                                   ? 'bg-gray-300 text-gray-800'
                                   : selection.refund_status === 'rejected'
                                     ? 'bg-red-100 text-red-800'
@@ -722,13 +730,13 @@ export default function RegistrationDetailPage() {
                                       ? 'bg-yellow-100 text-yellow-800'
                                       : 'bg-orange-200 text-orange-900'
                               }`}>
-                                {isRefundCompleted 
-                                  ? '❌ İptal Edildi, ✓ İade Tamamlandı' 
+                                {isMoneyNotInSystem
+                                  ? '❌ İptal Edildi' 
                                   : selection.refund_status === 'rejected'
                                     ? '❌ İptal Edildi, ✗ İade Reddedildi'
                                     : selection.refund_status === 'pending'
                                       ? '❌ İptal Edildi, ⏳ İade Beklemede'
-                                      : '⏳ İptal Edildi'}
+                                      : '❌ İptal Edildi'}
                               </span>
                             ) : (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
@@ -737,7 +745,7 @@ export default function RegistrationDetailPage() {
                             )}
                           </div>
                           <p className={`font-medium ${
-                            selection.is_cancelled && selection.refund_status === 'completed' 
+                            isMoneyNotInSystem
                               ? 'text-gray-500 line-through' 
                               : selection.is_cancelled 
                                 ? 'text-gray-700' 
@@ -748,7 +756,7 @@ export default function RegistrationDetailPage() {
                         </div>
                         <div className="text-right">
                           <p className={`text-lg font-semibold ${
-                            selection.is_cancelled && selection.refund_status === 'completed' 
+                            isMoneyNotInSystem
                               ? 'text-gray-400 line-through' 
                               : selection.is_cancelled 
                                 ? 'text-orange-600' 
@@ -760,17 +768,39 @@ export default function RegistrationDetailPage() {
                       </div>
                       
                       {/* Fiyat Detayları */}
-                      <div className="flex justify-between items-center text-xs text-gray-500 pb-3 border-b border-gray-200">
-                        <span>KDV (%{(selection.vat_rate * 100).toFixed(0)}): {formatTurkishCurrency(selection.vat_amount_try)}</span>
-                        <span className={`font-medium ${
-                          selection.is_cancelled && selection.refund_status === 'completed' 
-                            ? 'text-gray-400 line-through' 
-                            : selection.is_cancelled 
-                              ? 'text-orange-600' 
-                              : 'text-gray-700'
-                        }`}>
-                          Toplam: {formatTurkishCurrency(selection.total_try)}
-                        </span>
+                      <div className="space-y-1 pb-3 border-b border-gray-200">
+                        <div className="flex justify-between items-center text-xs text-gray-500">
+                          <span>KDV (%{(selection.vat_rate * 100).toFixed(0)}): {formatTurkishCurrency(selection.vat_amount_try)}</span>
+                          <span className={`font-medium ${
+                            isMoneyNotInSystem
+                              ? 'text-gray-400 line-through' 
+                              : selection.is_cancelled 
+                                ? 'text-orange-600' 
+                                : 'text-gray-700'
+                          }`}>
+                            Toplam: {formatTurkishCurrency(selection.total_try)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-500">Ödeme Durumu:</span>
+                          <span className={`font-medium px-2 py-0.5 rounded ${
+                            selection.payment_status === 'completed' 
+                              ? 'bg-green-100 text-green-700' 
+                              : selection.payment_status === 'refunded'
+                                ? 'bg-purple-100 text-purple-700'
+                                : selection.payment_status === 'cancelled'
+                                  ? 'bg-gray-100 text-gray-700'
+                                  : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {selection.payment_status === 'completed' 
+                              ? '✓ Ödendi' 
+                              : selection.payment_status === 'refunded'
+                                ? '↩ İade Edildi'
+                                : selection.payment_status === 'cancelled'
+                                  ? '✗ İptal'
+                                  : '⏳ Beklemede'}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Durum ve Aksiyonlar */}
@@ -820,8 +850,36 @@ export default function RegistrationDetailPage() {
                               </div>
                             )}
                             
-                            {/* İade süreci yok (none) - Sadece iptali geri al */}
-                            {selection.refund_status === 'none' && (
+                            {/* Para sistemde değil - İade tamamlandı veya hiç gelmedi */}
+                            {isMoneyNotInSystem && (
+                              <div className="space-y-2">
+                                <div className="text-xs text-gray-700 bg-gray-100 rounded p-2">
+                                  <div className="font-medium">✓ İşlem Tamamlandı</div>
+                                  <div className="text-gray-600 mt-1">
+                                    {selection.refund_status === 'completed' 
+                                      ? `Para iadesi yapıldı: ${selection.refund_completed_at ? new Date(selection.refund_completed_at).toLocaleString('tr-TR') : '-'}`
+                                      : 'Para sisteme hiç gelmedi, iade süreci yok'}
+                                  </div>
+                                  {selection.refund_status === 'completed' && selection.refund_amount && (
+                                    <div className="text-gray-600">
+                                      İade tutarı: {formatTurkishCurrency(selection.refund_amount)}
+                                    </div>
+                                  )}
+                                </div>
+                                {/* İptali geri al butonu - Sadece tahsilat onayı verilmemişse */}
+                                {registration.payment_status === 'pending' && selection.payment_status === 'cancelled' && (
+                                  <button
+                                    onClick={() => handleUndoCancel(selection.id)}
+                                    className="w-full text-xs bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded transition-colors"
+                                  >
+                                    ↩️ İptali Geri Al
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* İade süreci yok ama para sistemde değil - Sadece iptali geri al */}
+                            {selection.refund_status === 'none' && selection.payment_status !== 'cancelled' && (
                               <div className="space-y-2">
                                 <div className="text-xs text-gray-700 bg-gray-100 rounded p-2">
                                   <div className="font-medium">💡 Para henüz sisteme gelmediği için iade süreci yok</div>
@@ -849,21 +907,6 @@ export default function RegistrationDetailPage() {
                                 >
                                   ↩️ İade Reddini Geri Al
                                 </button>
-                              </div>
-                            )}
-                            
-                            {selection.refund_status === 'completed' && (
-                              <div className="text-xs text-green-700 bg-green-50 rounded p-2">
-                                <div className="font-medium">✓ İade Tamamlandı</div>
-                                <div className="text-green-600 mt-1">
-                                  Tamamlanma: {selection.refund_completed_at ? new Date(selection.refund_completed_at).toLocaleString('tr-TR') : '-'}
-                                </div>
-                                <div className="text-green-600">
-                                  Tutar: {formatTurkishCurrency(selection.refund_amount || selection.total_try)}
-                                </div>
-                                {selection.refund_method && (
-                                  <div className="text-green-600">Yöntem: {selection.refund_method}</div>
-                                )}
                               </div>
                             )}
                           </div>

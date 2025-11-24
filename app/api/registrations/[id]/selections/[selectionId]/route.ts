@@ -37,6 +37,7 @@ export async function DELETE(
       await pool.execute(
         `UPDATE registration_selections 
          SET is_cancelled = TRUE, 
+             payment_status = 'cancelled',
              cancelled_at = CURRENT_TIMESTAMP,
              refund_status = 'none'
          WHERE id = ?`,
@@ -55,27 +56,7 @@ export async function DELETE(
       )
     }
 
-    // Ana kaydın toplamlarını güncelle - Sadece aktif seçimler
-    const [totals] = await pool.execute(
-      `SELECT 
-        COALESCE(SUM(CASE WHEN is_cancelled = FALSE THEN applied_fee_try ELSE 0 END), 0) as total_fee,
-        COALESCE(SUM(CASE WHEN is_cancelled = FALSE THEN vat_amount_try ELSE 0 END), 0) as vat_amount,
-        COALESCE(SUM(CASE WHEN is_cancelled = FALSE THEN total_try ELSE 0 END), 0) as grand_total
-       FROM registration_selections 
-       WHERE registration_id = ?`,
-      [params.id]
-    )
-
-    const totalsData = (totals as any[])[0]
-
-    await pool.execute(
-      `UPDATE registrations 
-       SET total_fee = ?, 
-           vat_amount = ?, 
-           grand_total = ?
-       WHERE id = ?`,
-      [totalsData.total_fee, totalsData.vat_amount, totalsData.grand_total, params.id]
-    )
+    // Toplamlar artık anlık hesaplanıyor, güncellemeye gerek yok
 
     return NextResponse.json({
       success: true,

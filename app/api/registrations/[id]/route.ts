@@ -41,11 +41,13 @@ export async function GET(
 
     registration.selections = selections
 
-    // Toplam hesapla: Sadece aktif seçimler
-    const activeSelections = (selections as any[]).filter(s => !s.is_cancelled)
-    const totalFee = activeSelections.reduce((sum, s) => sum + Number(s.applied_fee_try || 0), 0)
-    const vatAmount = activeSelections.reduce((sum, s) => sum + Number(s.vat_amount_try || 0), 0)
-    const grandTotal = activeSelections.reduce((sum, s) => sum + Number(s.total_try || 0), 0)
+    // Toplam hesapla: Aktif seçimler + İade bekleyen/reddedilen seçimler
+    const includedSelections = (selections as any[]).filter(s => 
+      !s.is_cancelled || (s.is_cancelled && ['pending', 'rejected'].includes(s.refund_status))
+    )
+    const totalFee = includedSelections.reduce((sum, s) => sum + Number(s.applied_fee_try || 0), 0)
+    const vatAmount = includedSelections.reduce((sum, s) => sum + Number(s.vat_amount_try || 0), 0)
+    const grandTotal = includedSelections.reduce((sum, s) => sum + Number(s.total_try || 0), 0)
 
     registration.total_fee = totalFee
     registration.vat_amount = vatAmount

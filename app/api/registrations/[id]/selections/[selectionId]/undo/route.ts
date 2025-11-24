@@ -23,6 +23,22 @@ export async function POST(
 
     const selection = (selections as any[])[0]
 
+    // Ana kaydın ödeme durumunu kontrol et
+    const [registrations] = await pool.execute(
+      'SELECT payment_status FROM registrations WHERE id = ?',
+      [params.id]
+    )
+    
+    const registration = (registrations as any[])[0]
+    
+    // Tahsilat onayı verildiyse iptal geri alınamaz
+    if (registration.payment_status === 'completed') {
+      return NextResponse.json(
+        { success: false, error: 'Tahsilat onayı verilmiş kayıtlarda iptal geri alınamaz' },
+        { status: 400 }
+      )
+    }
+
     // İade tamamlanmışsa geri alınamaz
     if (selection.refund_status === 'completed') {
       return NextResponse.json(

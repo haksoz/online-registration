@@ -495,20 +495,28 @@ export default function RegistrationsPage() {
                     {r.selections && r.selections.length > 0 ? (
                       <div className="space-y-1">
                         {r.selections.map((sel: any) => {
-                          const isRefundCompleted = sel.is_cancelled && sel.refund_status === 'completed'
-                          const isCancelledButNotRefunded = sel.is_cancelled && sel.refund_status !== 'completed'
+                          // Para sistemde değil: İade tamamlandı veya hiç gelmedi
+                          const isMoneyNotInSystem = sel.is_cancelled && (
+                            sel.refund_status === 'completed' || 
+                            sel.payment_status === 'cancelled'
+                          )
+                          // Para sistemde: İptal edilmiş ama iade bekliyor/reddedildi
+                          const isMoneyInSystem = sel.is_cancelled && (
+                            sel.refund_status === 'pending' || 
+                            sel.refund_status === 'rejected'
+                          )
                           
                           return (
                             <div key={sel.id} className="flex items-center gap-2 flex-wrap">
                               {/* Kategori Badge */}
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                isRefundCompleted
+                                isMoneyNotInSystem
                                   ? 'bg-gray-200 text-gray-700'
                                   : sel.refund_status === 'rejected'
                                     ? 'bg-red-100 text-red-800'
                                     : sel.refund_status === 'pending'
                                       ? 'bg-yellow-100 text-yellow-800'
-                                      : isCancelledButNotRefunded
+                                      : isMoneyInSystem
                                         ? 'bg-orange-100 text-orange-800'
                                         : 'bg-primary-100 text-primary-800'
                               }`}>
@@ -518,7 +526,7 @@ export default function RegistrationsPage() {
                               {/* Durum Badge */}
                               {sel.is_cancelled ? (
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                  isRefundCompleted
+                                  isMoneyNotInSystem
                                     ? 'bg-gray-300 text-gray-800'
                                     : sel.refund_status === 'rejected'
                                       ? 'bg-red-100 text-red-800'
@@ -526,13 +534,13 @@ export default function RegistrationsPage() {
                                         ? 'bg-yellow-100 text-yellow-800'
                                         : 'bg-orange-200 text-orange-900'
                                 }`}>
-                                  {isRefundCompleted 
-                                    ? '❌ İptal, ✓ İade' 
+                                  {isMoneyNotInSystem
+                                    ? '❌ İptal' 
                                     : sel.refund_status === 'rejected'
                                       ? '❌ İptal, ✗ İade Red'
                                       : sel.refund_status === 'pending'
                                         ? '❌ İptal, ⏳ İade Beklemede'
-                                        : '⏳ İptal'}
+                                        : '❌ İptal'}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
@@ -542,9 +550,9 @@ export default function RegistrationsPage() {
                               
                               {/* Fiyat */}
                               <span className={`text-xs font-semibold ${
-                                isRefundCompleted
+                                isMoneyNotInSystem
                                   ? 'text-gray-400 line-through' 
-                                  : isCancelledButNotRefunded
+                                  : isMoneyInSystem
                                     ? 'text-orange-600' 
                                     : 'text-gray-900'
                               }`}>
