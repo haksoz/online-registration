@@ -442,10 +442,7 @@ export default function RegistrationsPage() {
                 Fatura Tipi
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kayıt Türü
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ücret
+                Seçilen Kayıtlar
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Ödeme Durumu
@@ -461,7 +458,7 @@ export default function RegistrationsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {!Array.isArray(registrations) || registrations.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                   {loading ? 'Yükleniyor...' : 'Henüz kayıt bulunmamaktadır.'}
                 </td>
               </tr>
@@ -561,23 +558,18 @@ export default function RegistrationsPage() {
                             </div>
                           )
                         })}
+                        {/* Toplam */}
+                        {r.selections && r.selections.length > 1 && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <span className="text-xs font-semibold text-gray-700">
+                              Toplam: {formatTurkishCurrency(calculateGrandTotal(r))}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <span className="text-gray-400">{getRegistrationTypeLabel(r.registration_type)}</span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    {(() => {
-                      const total = calculateGrandTotal(r)
-                      return total > 0 ? (
-                        <div>
-                          <div className="font-semibold text-primary-600">{formatTurkishCurrency(total)}</div>
-                          <div className="text-xs text-gray-500">KDV Dahil</div>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )
-                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex flex-col gap-1">
