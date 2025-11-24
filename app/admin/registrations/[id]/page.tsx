@@ -852,28 +852,17 @@ export default function RegistrationDetailPage() {
                             
                             {/* Para sistemde değil - İade tamamlandı veya hiç gelmedi */}
                             {isMoneyNotInSystem && (
-                              <div className="space-y-2">
-                                <div className="text-xs text-gray-700 bg-gray-100 rounded p-2">
-                                  <div className="font-medium">✓ İşlem Tamamlandı</div>
-                                  <div className="text-gray-600 mt-1">
-                                    {selection.refund_status === 'completed' 
-                                      ? `Para iadesi yapıldı: ${selection.refund_completed_at ? new Date(selection.refund_completed_at).toLocaleString('tr-TR') : '-'}`
-                                      : 'Para sisteme hiç gelmedi, iade süreci yok'}
-                                  </div>
-                                  {selection.refund_status === 'completed' && selection.refund_amount && (
-                                    <div className="text-gray-600">
-                                      İade tutarı: {formatTurkishCurrency(selection.refund_amount)}
-                                    </div>
-                                  )}
+                              <div className="text-xs text-gray-700 bg-gray-100 rounded p-2">
+                                <div className="font-medium">✓ İşlem Tamamlandı</div>
+                                <div className="text-gray-600 mt-1">
+                                  {selection.refund_status === 'completed' 
+                                    ? `Para iadesi yapıldı: ${selection.refund_completed_at ? new Date(selection.refund_completed_at).toLocaleString('tr-TR') : '-'}`
+                                    : 'Para sisteme hiç gelmedi, iade süreci yok'}
                                 </div>
-                                {/* İptali geri al butonu - Sadece tahsilat onayı verilmemişse */}
-                                {registration.payment_status === 'pending' && selection.payment_status === 'cancelled' && (
-                                  <button
-                                    onClick={() => handleUndoCancel(selection.id)}
-                                    className="w-full text-xs bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded transition-colors"
-                                  >
-                                    ↩️ İptali Geri Al
-                                  </button>
+                                {selection.refund_status === 'completed' && selection.refund_amount && (
+                                  <div className="text-gray-600">
+                                    İade tutarı: {formatTurkishCurrency(selection.refund_amount)}
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -901,12 +890,20 @@ export default function RegistrationDetailPage() {
                                     <div className="text-red-600 mt-1">Not: {selection.refund_notes}</div>
                                   )}
                                 </div>
-                                <button
-                                  onClick={() => handleUndoRefundRejection(selection.id)}
-                                  className="w-full text-xs bg-orange-600 text-white hover:bg-orange-700 px-3 py-2 rounded transition-colors"
-                                >
-                                  ↩️ İade Reddini Geri Al
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleUndoRefundRejection(selection.id)}
+                                    className="flex-1 text-xs bg-orange-600 text-white hover:bg-orange-700 px-3 py-2 rounded transition-colors"
+                                  >
+                                    ↩️ İade Reddini Geri Al
+                                  </button>
+                                  <button
+                                    onClick={() => handleUndoCancel(selection.id)}
+                                    className="flex-1 text-xs bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded transition-colors"
+                                  >
+                                    ↩️ İptali Geri Al
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>

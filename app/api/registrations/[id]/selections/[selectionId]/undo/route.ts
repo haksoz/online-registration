@@ -23,22 +23,6 @@ export async function POST(
 
     const selection = (selections as any[])[0]
 
-    // Ana kaydın ödeme durumunu kontrol et
-    const [registrations] = await pool.execute(
-      'SELECT payment_status FROM registrations WHERE id = ?',
-      [params.id]
-    )
-    
-    const registration = (registrations as any[])[0]
-    
-    // Tahsilat onayı verildiyse iptal geri alınamaz
-    if (registration.payment_status === 'completed') {
-      return NextResponse.json(
-        { success: false, error: 'Tahsilat onayı verilmiş kayıtlarda iptal geri alınamaz' },
-        { status: 400 }
-      )
-    }
-
     // İade tamamlanmışsa geri alınamaz
     if (selection.refund_status === 'completed') {
       return NextResponse.json(
@@ -55,10 +39,21 @@ export async function POST(
       )
     }
 
-    // İptali geri al
+    // Ana kaydın ödeme durumunu kontrol et
+    const [registrations] = await pool.execute(
+      'SELECT payment_status FROM registrations WHERE id = ?',
+      [params.id]
+    )
+    
+    const registration = (registrations as any[])[0]
+    
+    // İptali geri al - payment_status'u ana kaydın durumuna göre ayarla
+    const newPaymentStatus = registration.payment_status === 'completed' ? 'completed' : 'pending'
+    
     await pool.execute(
       `UPDATE registration_selections 
-       SET is_cancelled = FALSE, 
+       SET is_cancelled = FALSE,
+           payment_status = ?,
            cancelled_at = NULL,
            cancelled_by = NULL,
            cancel_reason = NULL,
@@ -71,7 +66,7 @@ export async function POST(
            refund_notes = NULL,
            refund_method = NULL
        WHERE id = ?`,
-      [params.selectionId]
+      [newPaymentStatus, params.selectionId]
     )
 
     // Ana kaydın toplamlarını güncelle
