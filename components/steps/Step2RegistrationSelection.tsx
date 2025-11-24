@@ -55,6 +55,13 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
   const [selections, setSelections] = useState<Record<number, number[]>>({}) // category_id -> [type_ids]
   const [error, setError] = useState<string | null>(null)
 
+  // FormData'dan seçimleri yükle
+  useEffect(() => {
+    if (formData.registrationSelections && Object.keys(formData.registrationSelections).length > 0) {
+      setSelections(formData.registrationSelections)
+    }
+  }, [formData.registrationSelections])
+
   // Kategorileri yükle
   useEffect(() => {
     const fetchCategories = async () => {
