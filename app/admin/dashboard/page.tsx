@@ -114,34 +114,20 @@ export default function DashboardPage() {
       </div>
 
       {/* Özet Kartlar */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Toplam Kayıt */}
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
-          <p className="text-blue-100 text-sm mb-2">👥 Toplam Kayıt</p>
-          <p className="text-4xl font-bold">{stats.totalRegistrations}</p>
-          <div className="flex items-center gap-4 mt-3 text-sm">
-            <span className="text-blue-100">✅ {stats.activeRegistrations} aktif</span>
-            <span className="text-blue-100">❌ {stats.cancelledRegistrations} iptal</span>
-          </div>
-        </div>
-
-        {/* Toplam Seçim */}
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-          <p className="text-purple-100 text-sm mb-2">📋 Toplam Seçim</p>
-          <p className="text-4xl font-bold">{stats.totalSelections}</p>
-          <div className="flex items-center gap-4 mt-3 text-sm">
-            <span className="text-purple-100">✅ {stats.activeSelections} aktif</span>
-            <span className="text-purple-100">❌ {stats.cancelledSelections} iptal</span>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Toplam Gelir */}
         <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-lg text-white">
           <p className="text-green-100 text-sm mb-2">💰 Toplam Gelir</p>
-          <p className="text-2xl font-bold">{formatTurkishCurrency(stats.totalRevenue)}</p>
-          <div className="mt-3 text-xs text-green-100 space-y-1">
-            <p>✅ Tahsil: {formatTurkishCurrency(stats.completedRevenue)}</p>
-            <p>⏳ Bekleyen: {formatTurkishCurrency(stats.pendingRevenue)}</p>
+          <p className="text-3xl font-bold">{formatTurkishCurrency(stats.totalRevenue)}</p>
+          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-green-100 opacity-90">✅ Tahsil Edilen</p>
+              <p className="text-xl font-semibold mt-1">{formatTurkishCurrency(stats.completedRevenue)}</p>
+            </div>
+            <div>
+              <p className="text-green-100 opacity-90">⏳ Bekleyen</p>
+              <p className="text-xl font-semibold mt-1">{formatTurkishCurrency(stats.pendingRevenue)}</p>
+            </div>
           </div>
         </div>
 
@@ -149,8 +135,8 @@ export default function DashboardPage() {
         {stats.refundPendingCount > 0 && (
           <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-xl shadow-lg text-white">
             <p className="text-amber-100 text-sm mb-2">↩️ İade Bekleyen</p>
-            <p className="text-2xl font-bold">{formatTurkishCurrency(stats.refundPending)}</p>
-            <p className="mt-3 text-sm text-amber-100">{stats.refundPendingCount} seçim</p>
+            <p className="text-3xl font-bold">{formatTurkishCurrency(stats.refundPending)}</p>
+            <p className="mt-4 text-sm text-amber-100">{stats.refundPendingCount} seçim bekliyor</p>
           </div>
         )}
       </div>
