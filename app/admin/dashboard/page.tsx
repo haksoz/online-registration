@@ -14,6 +14,17 @@ interface CategoryStats {
   completed_revenue: number
 }
 
+interface TypeStats {
+  type_id: number
+  type_name: string
+  category_name: string
+  total_selections: number
+  active_selections: number
+  cancelled_selections: number
+  total_revenue: number
+  completed_revenue: number
+}
+
 interface DashboardStats {
   // Genel İstatistikler
   totalRegistrations: number
@@ -40,6 +51,9 @@ interface DashboardStats {
   
   // Kategorilere Göre
   byCategory: CategoryStats[]
+  
+  // Kayıt Türüne Göre
+  byType: TypeStats[]
   
   // Ödeme Yöntemine Göre
   byPaymentMethod: Array<{
@@ -226,6 +240,43 @@ export default function DashboardPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-right text-amber-600">
                     {formatTurkishCurrency(cat.pending_revenue)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Kayıt Türüne Göre İstatistikler */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 Kayıt Türüne Göre İstatistikler</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kayıt Türü</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Toplam</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktif</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">İptal</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Toplam Gelir</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tahsil Edilen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {stats.byType.map((type) => (
+                <tr key={type.type_id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-xs text-gray-600">{type.category_name}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{type.type_name}</td>
+                  <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">{type.total_selections}</td>
+                  <td className="px-6 py-4 text-sm text-right text-green-600">{type.active_selections}</td>
+                  <td className="px-6 py-4 text-sm text-right text-red-600">{type.cancelled_selections}</td>
+                  <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
+                    {formatTurkishCurrency(type.total_revenue)}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-right text-green-600">
+                    {formatTurkishCurrency(type.completed_revenue)}
                   </td>
                 </tr>
               ))}
