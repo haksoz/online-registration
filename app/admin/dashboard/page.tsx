@@ -3,65 +3,62 @@
 import { useState, useEffect } from 'react'
 import { formatTurkishCurrency } from '@/lib/currencyUtils'
 
-interface ReportStats {
+interface CategoryStats {
+  category_id: number
+  category_name: string
+  total_selections: number
+  active_selections: number
+  cancelled_selections: number
+  total_revenue: number
+  pending_revenue: number
+  completed_revenue: number
+}
+
+interface DashboardStats {
+  // Genel İstatistikler
   totalRegistrations: number
   activeRegistrations: number
   cancelledRegistrations: number
-  cashRegister: number
-  cashRegisterCount: number
+  
+  // Seçim İstatistikleri
+  totalSelections: number
+  activeSelections: number
+  cancelledSelections: number
+  
+  // Gelir İstatistikleri
   totalRevenue: number
-  totalRevenueCount: number
   completedRevenue: number
-  completedRevenueCount: number
   pendingRevenue: number
-  pendingRevenueCount: number
-  refundAmount: number
+  
+  // İade İstatistikleri
   refundPending: number
-  refundCompleted: number
-  refundRejected: number
   refundPendingCount: number
+  refundCompleted: number
   refundCompletedCount: number
+  refundRejected: number
   refundRejectedCount: number
-  byRegistrationType: Array<{
-    type: string
-    label: string
-    count: number
-    revenue: number
-  }>
+  
+  // Kategorilere Göre
+  byCategory: CategoryStats[]
+  
+  // Ödeme Yöntemine Göre
   byPaymentMethod: Array<{
     method: string
     count: number
     revenue: number
   }>
-  byPaymentStatus: Array<{
-    status: string
-    count: number
-    revenue: number
-  }>
-  byMonth: Array<{
-    month: string
-    count: number
-    revenue: number
-  }>
+  
+  // Günlük Trend
   byDay: Array<{
     date: string
-    count: number
+    registrations: number
+    selections: number
     revenue: number
-  }>
-  deadlines: {
-    registration_start_date?: string
-    registration_deadline?: string
-    cancellation_deadline?: string
-  }
-  exchangeRates: Array<{
-    currency_code: string
-    rate: number
-    updated_at: string
   }>
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<ReportStats | null>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -71,14 +68,14 @@ export default function DashboardPage() {
   const fetchStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/reports')
+      const response = await fetch('/api/admin/dashboard')
       const data = await response.json()
       
       if (data.success) {
         setStats(data.data)
       }
     } catch (error) {
-      console.error('Error fetching reports:', error)
+      console.error('Error fetching dashboard stats:', error)
     } finally {
       setLoading(false)
     }
@@ -113,247 +110,143 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">📊 Dashboard</h1>
+        <p className="text-sm text-gray-600 mt-1">Kayıt ve seçim istatistikleri</p>
       </div>
 
-      {/* Deadline Uyarıları */}
-      {stats.deadlines && (stats.deadlines.registration_start_date || stats.deadlines.registration_deadline || stats.deadlines.cancellation_deadline) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {stats.deadlines.registration_start_date && (
-            <div className={`p-4 rounded-lg border-2 ${
-              (() => {
-                const startDate = new Date(stats.deadlines.registration_start_date)
-                const now = new Date()
-                return now >= startDate ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'
-              })()
-            }`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Kayıt Başlangıcı</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {new Date(stats.deadlines.registration_start_date).toLocaleString('tr-TR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-                {(() => {
-                  const startDate = new Date(stats.deadlines.registration_start_date)
-                  const now = new Date()
-                  return now >= startDate ? (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                      ✅ Başladı
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      ⏳ Bekliyor
-                    </span>
-                  )
-                })()}
-              </div>
-            </div>
-          )}
-          
-          {stats.deadlines.registration_deadline && (
-            <div className={`p-4 rounded-lg border-2 ${
-              (() => {
-                const now = new Date()
-                const startDate = stats.deadlines.registration_start_date ? new Date(stats.deadlines.registration_start_date) : null
-                const endDate = new Date(stats.deadlines.registration_deadline)
-                
-                if (startDate && now < startDate) {
-                  return 'bg-blue-50 border-blue-200'
-                } else if (now >= endDate) {
-                  return 'bg-red-50 border-red-200'
-                } else {
-                  return 'bg-green-50 border-green-200'
-                }
-              })()
-            }`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">Kayıt Son Tarihi</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {new Date(stats.deadlines.registration_deadline).toLocaleString('tr-TR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-                {(() => {
-                  const now = new Date()
-                  const startDate = stats.deadlines.registration_start_date ? new Date(stats.deadlines.registration_start_date) : null
-                  const endDate = new Date(stats.deadlines.registration_deadline)
-                  
-                  if (startDate && now < startDate) {
-                    return (
-                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        ⏳ Henüz Başlamadı
-                      </span>
-                    )
-                  } else if (now >= endDate) {
-                    return (
-                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        🚫 Kapalı
-                      </span>
-                    )
-                  } else {
-                    return (
-                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        ✅ Açık
-                      </span>
-                    )
-                  }
-                })()}
-              </div>
-            </div>
-          )}
-          
-          {stats.deadlines.cancellation_deadline && (
-            <div className={`p-4 rounded-lg border-2 ${
-              (() => {
-                const deadline = new Date(stats.deadlines.cancellation_deadline)
-                const now = new Date()
-                return now >= deadline ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'
-              })()
-            }`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-700">İptal Son Tarihi</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {new Date(stats.deadlines.cancellation_deadline).toLocaleString('tr-TR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                </div>
-                {(() => {
-                  const deadline = new Date(stats.deadlines.cancellation_deadline)
-                  const now = new Date()
-                  return now >= deadline ? (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
-                      ⚠️ Süre Doldu
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                      ✅ Aktif
-                    </span>
-                  )
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Gelir Kartları */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Özet Kartlar */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Toplam Kayıt */}
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-lg text-white">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-blue-100 text-sm">📊 Toplam Kayıt</p>
-            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-400 text-blue-900">
-              {stats.totalRegistrations} kayıt
-            </span>
-          </div>
-          <div className="flex items-center justify-between mt-3">
-            <div>
-              <p className="text-3xl font-bold">{stats.activeRegistrations}</p>
-              <p className="text-sm text-blue-100 mt-1">✅ Aktif</p>
-            </div>
-            <div>
-              <p className="text-3xl font-bold">{stats.cancelledRegistrations}</p>
-              <p className="text-sm text-blue-100 mt-1">❌ İptal</p>
-            </div>
+          <p className="text-blue-100 text-sm mb-2">👥 Toplam Kayıt</p>
+          <p className="text-4xl font-bold">{stats.totalRegistrations}</p>
+          <div className="flex items-center gap-4 mt-3 text-sm">
+            <span className="text-blue-100">✅ {stats.activeRegistrations} aktif</span>
+            <span className="text-blue-100">❌ {stats.cancelledRegistrations} iptal</span>
           </div>
         </div>
 
+        {/* Toplam Seçim */}
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-lg text-white">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-purple-100 text-sm">💰 Kasa</p>
-            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-400 text-purple-900">
-              {stats.cashRegisterCount} ödeme
-            </span>
-          </div>
-          <p className="text-3xl font-bold">{formatTurkishCurrency(stats.cashRegister)}</p>
-          <div className="mt-2 text-xs text-purple-100 space-y-1">
-            <p className="opacity-90">Tüm tahsil edilen ödemeler</p>
-            <p className="opacity-90">Bekleyen iadeler dahil</p>
+          <p className="text-purple-100 text-sm mb-2">📋 Toplam Seçim</p>
+          <p className="text-4xl font-bold">{stats.totalSelections}</p>
+          <div className="flex items-center gap-4 mt-3 text-sm">
+            <span className="text-purple-100">✅ {stats.activeSelections} aktif</span>
+            <span className="text-purple-100">❌ {stats.cancelledSelections} iptal</span>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-xl shadow-lg text-white">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-amber-100 text-sm">⏳ Bekleyen Tahsilat</p>
-            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-amber-400 text-amber-900">
-              {stats.pendingRevenueCount} kayıt
-            </span>
+        {/* Toplam Gelir */}
+        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-lg text-white">
+          <p className="text-green-100 text-sm mb-2">💰 Toplam Gelir</p>
+          <p className="text-2xl font-bold">{formatTurkishCurrency(stats.totalRevenue)}</p>
+          <div className="mt-3 text-xs text-green-100 space-y-1">
+            <p>✅ Tahsil: {formatTurkishCurrency(stats.completedRevenue)}</p>
+            <p>⏳ Bekleyen: {formatTurkishCurrency(stats.pendingRevenue)}</p>
           </div>
-          <p className="text-3xl font-bold">{formatTurkishCurrency(stats.pendingRevenue)}</p>
-          <p className="mt-2 text-sm text-amber-100">Ödeme durumu: Pending</p>
         </div>
+
+        {/* İade Bekleyen */}
+        {stats.refundPendingCount > 0 && (
+          <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-6 rounded-xl shadow-lg text-white">
+            <p className="text-amber-100 text-sm mb-2">↩️ İade Bekleyen</p>
+            <p className="text-2xl font-bold">{formatTurkishCurrency(stats.refundPending)}</p>
+            <p className="mt-3 text-sm text-amber-100">{stats.refundPendingCount} seçim</p>
+          </div>
+        )}
       </div>
 
       {/* İade Detayları */}
-      {stats.refundAmount > 0 && (
+      {(stats.refundPendingCount > 0 || stats.refundCompletedCount > 0 || stats.refundRejectedCount > 0) && (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center mb-4">
-            <span className="text-2xl mr-3">↩️</span>
-            <h2 className="text-lg font-semibold text-gray-900">İade Detayları</h2>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">↩️ İade Detayları</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Bekleyen İadeler */}
-            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-yellow-800">💰 Bekleyen İadeler</span>
-                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                  {stats.refundPendingCount} kayıt
-                </span>
+            {stats.refundPendingCount > 0 && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-yellow-800">⏳ Bekleyen</span>
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    {stats.refundPendingCount} seçim
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-yellow-900">
+                  {formatTurkishCurrency(stats.refundPending)}
+                </p>
               </div>
-              <p className="text-2xl font-bold text-yellow-900">
-                {formatTurkishCurrency(stats.refundPending || 0)}
-              </p>
-              <p className="text-xs text-yellow-700 mt-1">İade işlemi bekliyor</p>
-            </div>
+            )}
 
             {/* Tamamlanan İadeler */}
-            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-green-800">✅ Tamamlanan İadeler</span>
-                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                  {stats.refundCompletedCount} kayıt
-                </span>
+            {stats.refundCompletedCount > 0 && (
+              <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-green-800">✅ Tamamlanan</span>
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    {stats.refundCompletedCount} seçim
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-green-900">
+                  {formatTurkishCurrency(stats.refundCompleted)}
+                </p>
               </div>
-              <p className="text-2xl font-bold text-green-900">
-                {formatTurkishCurrency(stats.refundCompleted || 0)}
-              </p>
-              <p className="text-xs text-green-700 mt-1">İade yapıldı</p>
-            </div>
+            )}
 
             {/* Reddedilen İadeler */}
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-red-800">❌ Reddedilen İadeler</span>
-                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                  {stats.refundRejectedCount} kayıt
-                </span>
+            {stats.refundRejectedCount > 0 && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-red-800">❌ Reddedilen</span>
+                  <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                    {stats.refundRejectedCount} seçim
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-red-900">
+                  {formatTurkishCurrency(stats.refundRejected)}
+                </p>
               </div>
-              <p className="text-2xl font-bold text-red-900">
-                {formatTurkishCurrency(stats.refundRejected || 0)}
-              </p>
-              <p className="text-xs text-red-700 mt-1">İade reddedildi</p>
-            </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* Kategorilere Göre İstatistikler */}
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">📊 Kategorilere Göre İstatistikler</h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Toplam Seçim</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktif</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">İptal</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Toplam Gelir</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tahsil Edilen</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bekleyen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {stats.byCategory.map((cat) => (
+                <tr key={cat.category_id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{cat.category_name}</td>
+                  <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">{cat.total_selections}</td>
+                  <td className="px-6 py-4 text-sm text-right text-green-600">{cat.active_selections}</td>
+                  <td className="px-6 py-4 text-sm text-right text-red-600">{cat.cancelled_selections}</td>
+                  <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
+                    {formatTurkishCurrency(cat.total_revenue)}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-right text-green-600">
+                    {formatTurkishCurrency(cat.completed_revenue)}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-right text-amber-600">
+                    {formatTurkishCurrency(cat.pending_revenue)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Ödeme Yöntemine Göre */}
@@ -374,116 +267,37 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Döviz Kurları */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">💱 Döviz Kurları</h2>
-          {stats.exchangeRates && stats.exchangeRates.length > 0 ? (
-            <div className="space-y-3">
-              {stats.exchangeRates.map((rate) => (
-                <div key={rate.currency_code} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-bold text-gray-700">{rate.currency_code}</span>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">{Number(rate.rate).toFixed(4)} ₺</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(rate.updated_at).toLocaleDateString('tr-TR', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-4">Kur bilgisi yok</p>
-          )}
-        </div>
-      </div>
-
-      {/* Kayıt Türlerine Göre */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">📋 Kayıt Türlerine Göre</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kayıt Türü</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Kayıt Sayısı</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Oran</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {stats.byRegistrationType.map((item) => {
-                const percentage = ((item.count / stats.totalRegistrations) * 100).toFixed(1)
+        {/* Son 7 Gün Trendi */}
+        {stats.byDay.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">📈 Son 7 Gün</h2>
+            <div className="space-y-2">
+              {stats.byDay.slice(0, 7).map((item) => {
+                const isToday = new Date(item.date).toDateString() === new Date().toDateString()
                 return (
-                  <tr key={item.type} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.label || item.type}</td>
-                    <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">{item.count}</td>
-                    <td className="px-6 py-4 text-sm text-right text-gray-600">%{percentage}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Kayıt Trendi */}
-      {stats.byDay.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">📈 Kayıt Trendi</h2>
-          
-          {/* Özet Kartlar */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-700 mb-1">Son 7 Gün</p>
-              <p className="text-3xl font-bold text-blue-900">
-                {stats.byDay.slice(0, 7).reduce((sum, item) => sum + item.count, 0)}
-              </p>
-              <p className="text-xs text-blue-600 mt-1">Toplam Kayıt</p>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm text-green-700 mb-1">Son 30 Gün</p>
-              <p className="text-3xl font-bold text-green-900">
-                {stats.byDay.slice(0, 30).reduce((sum, item) => sum + item.count, 0)}
-              </p>
-              <p className="text-xs text-green-600 mt-1">Toplam Kayıt</p>
-            </div>
-          </div>
-
-          {/* Günlük Detay Tablosu */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tarih</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Kayıt Sayısı</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {stats.byDay.slice(0, 30).map((item) => {
-                  const isToday = new Date(item.date).toDateString() === new Date().toDateString()
-                  return (
-                    <tr key={item.date} className={`hover:bg-gray-50 ${isToday ? 'bg-blue-50' : ''}`}>
-                      <td className={`px-6 py-3 text-sm ${isToday ? 'font-bold text-blue-600' : 'text-gray-900'}`}>
+                  <div key={item.date} className={`p-3 rounded-lg ${isToday ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-sm font-medium ${isToday ? 'text-blue-900' : 'text-gray-900'}`}>
                         {new Date(item.date).toLocaleDateString('tr-TR', {
                           weekday: 'short',
-                          year: 'numeric',
                           month: 'short',
                           day: 'numeric'
                         })}
                         {isToday && ' (Bugün)'}
-                      </td>
-                      <td className="px-6 py-3 text-sm text-right font-semibold text-gray-900">{item.count}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                      </span>
+                      <span className="text-xs text-gray-600">{item.registrations} kayıt</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span>{item.selections} seçim</span>
+                      <span className="font-semibold text-green-600">{formatTurkishCurrency(item.revenue)}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
