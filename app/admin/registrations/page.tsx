@@ -433,6 +433,9 @@ export default function RegistrationsPage() {
                 />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Katılımcı Bilgileri
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -458,7 +461,7 @@ export default function RegistrationsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {!Array.isArray(registrations) || registrations.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
                   {loading ? 'Yükleniyor...' : 'Henüz kayıt bulunmamaktadır.'}
                 </td>
               </tr>
@@ -472,6 +475,9 @@ export default function RegistrationsPage() {
                       onChange={(e) => handleSelectRegistration(r.id, e.target.checked)}
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
                     />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                    #{r.id}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm">

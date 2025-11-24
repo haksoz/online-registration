@@ -41,13 +41,11 @@ export async function GET(
 
     registration.selections = selections
 
-    // Toplam hesapla: Sadece iade tamamlananları hariç tut
-    const includedSelections = (selections as any[]).filter(s => 
-      !s.is_cancelled || (s.is_cancelled && s.refund_status !== 'completed')
-    )
-    const totalFee = includedSelections.reduce((sum, s) => sum + Number(s.applied_fee_try || 0), 0)
-    const vatAmount = includedSelections.reduce((sum, s) => sum + Number(s.vat_amount_try || 0), 0)
-    const grandTotal = includedSelections.reduce((sum, s) => sum + Number(s.total_try || 0), 0)
+    // Toplam hesapla: Sadece aktif seçimler
+    const activeSelections = (selections as any[]).filter(s => !s.is_cancelled)
+    const totalFee = activeSelections.reduce((sum, s) => sum + Number(s.applied_fee_try || 0), 0)
+    const vatAmount = activeSelections.reduce((sum, s) => sum + Number(s.vat_amount_try || 0), 0)
+    const grandTotal = activeSelections.reduce((sum, s) => sum + Number(s.total_try || 0), 0)
 
     registration.total_fee = totalFee
     registration.vat_amount = vatAmount
@@ -107,13 +105,13 @@ export async function PATCH(
       values
     )
 
-    // Eğer payment_status güncellendiyse, tüm seçimlerin payment_status'unu da güncelle
-    // İptal edilmiş olanlar dahil (çünkü iptal edilmiş ama para gelmiş olabilir)
+    // Eğer payment_status güncellendiyse, sadece aktif seçimlerin payment_status'unu güncelle
+    // İptal edilmiş seçimler için payment_status değişmemeli
     if (body.payment_status) {
       await pool.execute(
         `UPDATE registration_selections 
          SET payment_status = ? 
-         WHERE registration_id = ?`,
+         WHERE registration_id = ? AND is_cancelled = FALSE`,
         [body.payment_status, params.id]
       )
     }

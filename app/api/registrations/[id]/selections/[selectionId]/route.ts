@@ -55,13 +55,12 @@ export async function DELETE(
       )
     }
 
-    // Ana kaydın toplamlarını güncelle
-    // Sadece iade tamamlananları hariç tut
+    // Ana kaydın toplamlarını güncelle - Sadece aktif seçimler
     const [totals] = await pool.execute(
       `SELECT 
-        COALESCE(SUM(CASE WHEN is_cancelled = FALSE OR (is_cancelled = TRUE AND refund_status != 'completed') THEN applied_fee_try ELSE 0 END), 0) as total_fee,
-        COALESCE(SUM(CASE WHEN is_cancelled = FALSE OR (is_cancelled = TRUE AND refund_status != 'completed') THEN vat_amount_try ELSE 0 END), 0) as vat_amount,
-        COALESCE(SUM(CASE WHEN is_cancelled = FALSE OR (is_cancelled = TRUE AND refund_status != 'completed') THEN total_try ELSE 0 END), 0) as grand_total
+        COALESCE(SUM(CASE WHEN is_cancelled = FALSE THEN applied_fee_try ELSE 0 END), 0) as total_fee,
+        COALESCE(SUM(CASE WHEN is_cancelled = FALSE THEN vat_amount_try ELSE 0 END), 0) as vat_amount,
+        COALESCE(SUM(CASE WHEN is_cancelled = FALSE THEN total_try ELSE 0 END), 0) as grand_total
        FROM registration_selections 
        WHERE registration_id = ?`,
       [params.id]
