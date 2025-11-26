@@ -80,9 +80,6 @@ export default function RegistrationTypesTable({
                 ID
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Value
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Label
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -112,13 +109,13 @@ export default function RegistrationTypesTable({
                   <div className="h-4 bg-gray-200 rounded w-8"></div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="h-4 bg-gray-200 rounded w-20"></div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="h-4 bg-gray-200 rounded w-32"></div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="h-4 bg-gray-200 rounded w-24"></div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="h-4 bg-gray-200 rounded w-16"></div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="h-4 bg-gray-200 rounded w-16"></div>
@@ -191,9 +188,6 @@ export default function RegistrationTypesTable({
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Value
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Label
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -219,7 +213,7 @@ export default function RegistrationTypesTable({
             <tbody className="bg-white divide-y divide-gray-200">
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     <div className="flex flex-col items-center">
                       <svg className="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -233,9 +227,6 @@ export default function RegistrationTypesTable({
                   <tr key={type.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {type.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-primary-600">
-                      {type.value}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {type.label}

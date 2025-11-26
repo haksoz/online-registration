@@ -81,11 +81,37 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
       const formStore = useFormStore.getState()
       const completeFormData = formStore.formData
 
+      // Belgeleri yükle
+      const documentUrls: Record<number, { filename: string; url: string }> = {}
+      if (completeFormData.documents) {
+        for (const [typeId, file] of Object.entries(completeFormData.documents)) {
+          const formData = new FormData()
+          formData.append('file', file)
+          
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          })
+          
+          const uploadData = await uploadResponse.json()
+          if (uploadData.success) {
+            documentUrls[Number(typeId)] = {
+              filename: file.name,
+              url: uploadData.url
+            }
+          }
+        }
+      }
+
       // MySQL'e kayıt
       const response = await fetch('/api/saveForm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(completeFormData),
+        body: JSON.stringify({
+          ...completeFormData,
+          documents: undefined, // File objelerini gönderme
+          documentUrls // URL'leri gönder
+        }),
       })
 
       const result = await response.json()

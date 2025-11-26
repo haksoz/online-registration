@@ -192,54 +192,71 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="p-6 border-b border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900">Yeni Kayıt Türü Ekle</h3>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h3 className="text-lg font-bold text-gray-900">Yeni Kayıt Türü Ekle</h3>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="label" className="block text-sm font-medium text-gray-700 mb-2">
-                Kayıt Türü Adı (Türkçe) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="label"
-                value={formData.label}
-                onChange={(e) => handleLabelChange(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Örnek: Öğrenci, Dernek Üyesi, vb."
-                disabled={submitting}
-              />
-              {errors.label && <p className="mt-1 text-sm text-red-600">{errors.label}</p>}
+        <form onSubmit={handleSubmit} className="p-4">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="label" className="block text-xs font-medium text-gray-700 mb-1">
+                  Kayıt Türü Adı (TR) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="label"
+                  value={formData.label}
+                  onChange={(e) => handleLabelChange(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="Örn: Öğrenci"
+                  disabled={submitting}
+                />
+                {errors.label && <p className="mt-1 text-xs text-red-600">{errors.label}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="label_en" className="block text-xs font-medium text-gray-700 mb-1">
+                  Kayıt Türü Adı (EN)
+                </label>
+                <input
+                  type="text"
+                  id="label_en"
+                  value={formData.label_en}
+                  onChange={(e) => setFormData({ ...formData, label_en: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="Ex: Student"
+                  disabled={submitting}
+                />
+                {errors.label_en && <p className="mt-1 text-xs text-red-600">{errors.label_en}</p>}
+              </div>
             </div>
 
             <div>
-              <label htmlFor="label_en" className="block text-sm font-medium text-gray-700 mb-2">
-                Kayıt Türü Adı (İngilizce)
+              <label htmlFor="value" className="block text-xs font-medium text-gray-700 mb-1">
+                Value (Otomatik) <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="label_en"
-                value={formData.label_en}
-                onChange={(e) => setFormData({ ...formData, label_en: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Example: Student, Association Member, etc."
+                id="value"
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50"
                 disabled={submitting}
               />
-              {errors.label_en && <p className="mt-1 text-sm text-red-600">{errors.label_en}</p>}
+              {errors.value && <p className="mt-1 text-xs text-red-600">{errors.value}</p>}
             </div>
 
             <div>
-              <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="category_id" className="block text-xs font-medium text-gray-700 mb-1">
                 Kategori <span className="text-red-500">*</span>
               </label>
               <select
                 id="category_id"
                 value={formData.category_id}
                 onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={submitting}
               >
                 <option value="">Kategori Seçin</option>
@@ -249,7 +266,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                   </option>
                 ))}
               </select>
-              {errors.category_id && <p className="mt-1 text-sm text-red-600">{errors.category_id}</p>}
+              {errors.category_id && <p className="mt-1 text-xs text-red-600">{errors.category_id}</p>}
             </div>
 
             {formData.value && (
@@ -264,9 +281,9 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
               </div>
             )}
 
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-4 gap-2">
               <div>
-                <label htmlFor="fee_try" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="fee_try" className="block text-xs font-medium text-gray-700 mb-1">
                   Ücret (TRY)
                 </label>
                 <input
@@ -274,17 +291,17 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                   id="fee_try"
                   value={formData.fee_try}
                   onChange={(e) => setFormData({ ...formData, fee_try: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="5000"
                   min="0"
                   step="0.01"
                   disabled={submitting}
                 />
-                {errors.fee_try && <p className="mt-1 text-sm text-red-600">{errors.fee_try}</p>}
+                {errors.fee_try && <p className="mt-1 text-xs text-red-600">{errors.fee_try}</p>}
               </div>
 
               <div>
-                <label htmlFor="fee_usd" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="fee_usd" className="block text-xs font-medium text-gray-700 mb-1">
                   Ücret (USD)
                 </label>
                 <input
@@ -292,17 +309,17 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                   id="fee_usd"
                   value={formData.fee_usd}
                   onChange={(e) => setFormData({ ...formData, fee_usd: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="150"
                   min="0"
                   step="0.01"
                   disabled={submitting}
                 />
-                {errors.fee_usd && <p className="mt-1 text-sm text-red-600">{errors.fee_usd}</p>}
+                {errors.fee_usd && <p className="mt-1 text-xs text-red-600">{errors.fee_usd}</p>}
               </div>
 
               <div>
-                <label htmlFor="fee_eur" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="fee_eur" className="block text-xs font-medium text-gray-700 mb-1">
                   Ücret (EUR)
                 </label>
                 <input
@@ -310,17 +327,17 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                   id="fee_eur"
                   value={formData.fee_eur}
                   onChange={(e) => setFormData({ ...formData, fee_eur: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="140"
                   min="0"
                   step="0.01"
                   disabled={submitting}
                 />
-                {errors.fee_eur && <p className="mt-1 text-sm text-red-600">{errors.fee_eur}</p>}
+                {errors.fee_eur && <p className="mt-1 text-xs text-red-600">{errors.fee_eur}</p>}
               </div>
 
               <div>
-                <label htmlFor="vat_rate" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="vat_rate" className="block text-xs font-medium text-gray-700 mb-1">
                   KDV (%)
                 </label>
                 <input
@@ -328,26 +345,26 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                   id="vat_rate"
                   value={formData.vat_rate}
                   onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="20"
                   min="0"
                   max="100"
                   step="0.01"
                   disabled={submitting}
                 />
-                {errors.vat_rate && <p className="mt-1 text-sm text-red-600">{errors.vat_rate}</p>}
+                {errors.vat_rate && <p className="mt-1 text-xs text-red-600">{errors.vat_rate}</p>}
               </div>
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="description" className="block text-xs font-medium text-gray-700 mb-1">
                 Açıklama (Türkçe)
               </label>
               <textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Kayıt türü açıklaması (opsiyonel)"
                 rows={2}
                 disabled={submitting}
@@ -355,14 +372,14 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
             </div>
 
             <div>
-              <label htmlFor="description_en" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="description_en" className="block text-xs font-medium text-gray-700 mb-1">
                 Açıklama (İngilizce)
               </label>
               <textarea
                 id="description_en"
                 value={formData.description_en}
                 onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Registration type description (optional)"
                 rows={2}
                 disabled={submitting}
@@ -373,7 +390,7 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
             <div className="col-span-2 border-t pt-4 mt-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Belge Gereksinimleri</h4>
               
-              <div className="flex items-center mb-4">
+              <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="requires_document"
@@ -386,87 +403,24 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
                   Bu kayıt türü için belge yükleme zorunlu
                 </label>
               </div>
-
-              {formData.requires_document && (
-                <div className="space-y-4 pl-6 border-l-2 border-primary-200">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="document_label" className="block text-sm font-medium text-gray-700 mb-2">
-                        Belge Etiketi (Türkçe)
-                      </label>
-                      <input
-                        type="text"
-                        id="document_label"
-                        value={formData.document_label}
-                        onChange={(e) => setFormData({ ...formData, document_label: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="Örn: Öğrenci Belgesi"
-                        disabled={submitting}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="document_label_en" className="block text-sm font-medium text-gray-700 mb-2">
-                        Belge Etiketi (İngilizce)
-                      </label>
-                      <input
-                        type="text"
-                        id="document_label_en"
-                        value={formData.document_label_en}
-                        onChange={(e) => setFormData({ ...formData, document_label_en: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="Ex: Student Certificate"
-                        disabled={submitting}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="document_description" className="block text-sm font-medium text-gray-700 mb-2">
-                        Belge Açıklaması (Türkçe)
-                      </label>
-                      <textarea
-                        id="document_description"
-                        value={formData.document_description}
-                        onChange={(e) => setFormData({ ...formData, document_description: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="Örn: Öğrenci olduğunuzu kanıtlayan belgeyi yükleyin"
-                        rows={2}
-                        disabled={submitting}
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="document_description_en" className="block text-sm font-medium text-gray-700 mb-2">
-                        Belge Açıklaması (İngilizce)
-                      </label>
-                      <textarea
-                        id="document_description_en"
-                        value={formData.document_description_en}
-                        onChange={(e) => setFormData({ ...formData, document_description_en: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="Ex: Upload document proving your student status"
-                        rows={2}
-                        disabled={submitting}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+              <p className="text-xs text-gray-500 mt-2 ml-6">
+                Seçildiğinde, kullanıcılar bu kayıt türünü seçtiklerinde belge yüklemek zorunda kalacaklar.
+              </p>
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-4 flex justify-end gap-2 pt-4 border-t">
             <button
               type="button"
               onClick={handleClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               disabled={submitting}
             >
               İptal
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={submitting}
             >
               {submitting ? 'Ekleniyor...' : 'Ekle'}

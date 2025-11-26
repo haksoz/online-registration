@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
       registrationSelections,
       payment,
       formLanguage,
+      documentUrls,
     } = formData
 
     // Seçilen kayıt türlerini al ve toplam hesapla
@@ -232,13 +233,18 @@ export async function POST(request: NextRequest) {
             const totalWithVat = typeFee + vat
             
             try {
-              await pool.execute(
+              // Belge bilgilerini al
+              const docInfo = documentUrls?.[typeId]
+              
+              const [selectionResult] = await pool.execute(
                 `INSERT INTO registration_selections (
                   registration_id, category_id, registration_type_id, 
                   applied_fee_try, applied_currency, applied_fee_amount, exchange_rate,
                   vat_rate, vat_amount_try, total_try,
-                  payment_status, is_early_bird, is_cancelled, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                  payment_status, is_early_bird, is_cancelled,
+                  document_filename, document_url, document_uploaded_at,
+                  created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
                 [
                   registrationId, 
                   Number(categoryId), 
@@ -252,7 +258,10 @@ export async function POST(request: NextRequest) {
                   totalWithVat,
                   paymentStatus, // Ana kaydın payment_status'u ile aynı
                   0, // is_early_bird
-                  0  // is_cancelled
+                  0, // is_cancelled
+                  docInfo?.filename || null,
+                  docInfo?.url || null,
+                  docInfo ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null
                 ]
               )
             } catch (selectionError) {

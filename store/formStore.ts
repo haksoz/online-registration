@@ -40,6 +40,7 @@ export interface FormData {
   accommodation: AccommodationInfo
   payment: PaymentInfo
   registrationSelections?: Record<number, number[]> // category_id -> [type_ids]
+  documents?: Record<number, File> // type_id -> File
   referenceNumber?: string
   formLanguage?: 'tr' | 'en'
 }
@@ -52,6 +53,7 @@ interface FormStore {
   updateAccommodation: (data: Partial<AccommodationInfo>) => void
   updatePayment: (data: Partial<PaymentInfo>) => void
   updateRegistrationSelections: (selections: Record<number, number[]>) => void
+  updateDocument: (typeId: number, file: File | null) => void
   setReferenceNumber: (referenceNumber: string) => void
   setFormLanguage: (language: 'tr' | 'en') => void
   resetForm: () => void
@@ -130,6 +132,21 @@ export const useFormStore = create<FormStore>((set) => ({
         registrationSelections: selections,
       },
     })),
+  updateDocument: (typeId, file) =>
+    set((state) => {
+      const documents = { ...state.formData.documents }
+      if (file) {
+        documents[typeId] = file
+      } else {
+        delete documents[typeId]
+      }
+      return {
+        formData: {
+          ...state.formData,
+          documents,
+        },
+      }
+    }),
   setReferenceNumber: (referenceNumber) =>
     set((state) => ({
       formData: {

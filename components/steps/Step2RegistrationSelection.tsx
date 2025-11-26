@@ -45,7 +45,7 @@ interface RegistrationType {
 }
 
 export default function Step2RegistrationSelection({ onNext, onBack }: Step2RegistrationSelectionProps) {
-  const { formData, updateRegistrationSelections } = useFormStore()
+  const { formData, updateRegistrationSelections, updateDocument } = useFormStore()
   const { registrationTypes, registrationTypesLoading, currencyType } = useDataStore()
   const { t, language } = useTranslation()
   
@@ -170,6 +170,34 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
       return
     }
 
+    // Belge yükleme kontrolü
+    const selectedTypeIds = Object.values(selections).flat()
+    for (const typeId of selectedTypeIds) {
+      const type = registrationTypes.find((t: any) => t.id === typeId)
+      if (type && (type.requires_document === true || type.requires_document === 1)) {
+        if (!formData.documents?.[typeId]) {
+          const typeLabel = language === 'en' ? type.label_en : type.label
+          setError(language === 'en' 
+            ? `Please upload the required document for "${typeLabel}"`
+            : `"${typeLabel}" için gerekli belgeyi yüklemeniz zorunludur`)
+          
+          // Scroll to the document upload section
+          setTimeout(() => {
+            const element = document.getElementById(`doc-upload-${typeId}`)
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              element.parentElement?.classList.add('ring-4', 'ring-red-500', 'ring-opacity-50')
+              setTimeout(() => {
+                element.parentElement?.classList.remove('ring-4', 'ring-red-500', 'ring-opacity-50')
+              }, 2000)
+            }
+          }, 100)
+          
+          return
+        }
+      }
+    }
+
     // Seçimleri kaydet
     updateRegistrationSelections(selections)
     onNext()
@@ -251,56 +279,102 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                       <button
                         key={type.id}
                         onClick={() => toggleSelection(category.id, type.id, category.allow_multiple)}
-                        className={`w-full p-4 rounded-lg border-2 transition-all text-left flex items-center justify-between ${
+                        className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
                           isSelected
                             ? 'border-primary-500 bg-primary-50 shadow-sm'
                             : 'border-gray-200 bg-white hover:border-primary-300'
                         }`}
                       >
-                        {/* Sol Taraf - Başlık ve Açıklama */}
-                        <div className="flex-1 min-w-0 pr-4">
-                          <div className="flex items-center gap-3 mb-1">
-                            <h4 className="font-semibold text-gray-900 text-lg">
-                              {language === 'en' ? type.label_en : type.label}
-                            </h4>
-                            {(type.requires_document === true || type.requires_document === 1) && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Belge gerekli
-                              </span>
+                        {/* Masaüstü Görünümü */}
+                        <div className="hidden md:flex items-center justify-between">
+                          {/* Sol Taraf - Başlık ve Açıklama */}
+                          <div className="flex-1 min-w-0 pr-4">
+                            <div className="flex items-center gap-3 mb-1">
+                              <h4 className="font-semibold text-gray-900 text-lg">
+                                {language === 'en' ? type.label_en : type.label}
+                              </h4>
+                              {(type.requires_document === true || type.requires_document === 1) && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  Belge gerekli
+                                </span>
+                              )}
+                            </div>
+                            {(language === 'en' ? type.description_en : type.description) && (
+                              <p className="text-sm text-gray-600">
+                                {language === 'en' ? type.description_en : type.description}
+                              </p>
                             )}
                           </div>
+                          
+                          {/* Orta - Fiyat Bilgisi */}
+                          <div className="flex items-center px-6">
+                            <div className="text-right">
+                              <div className="text-sm text-gray-500 mb-1">
+                                {showPriceWithVat ? 'Ücret (KDV Dahil)' : 'Ücret (KDV Hariç)'}
+                              </div>
+                              <div className="text-2xl font-bold text-primary-600">
+                                {formatTurkishCurrency(showPriceWithVat ? total : fee)}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Sağ Taraf - Checkbox */}
+                          <div className="flex-shrink-0 pl-4">
+                            <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center ${
+                              isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Mobil Görünümü */}
+                        <div className="md:hidden">
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-gray-900 text-base mb-1">
+                                {language === 'en' ? type.label_en : type.label}
+                              </h4>
+                              {(type.requires_document === true || type.requires_document === 1) && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  Belge gerekli
+                                </span>
+                              )}
+                            </div>
+                            <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 ${
+                              isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          
                           {(language === 'en' ? type.description_en : type.description) && (
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 mb-3">
                               {language === 'en' ? type.description_en : type.description}
                             </p>
                           )}
-                        </div>
-                        
-                        {/* Orta - Fiyat Bilgisi */}
-                        <div className="flex items-center px-6">
-                          <div className="text-right">
-                            <div className="text-sm text-gray-500 mb-1">
+                          
+                          <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                            <span className="text-xs text-gray-500">
                               {showPriceWithVat ? 'Ücret (KDV Dahil)' : 'Ücret (KDV Hariç)'}
-                            </div>
-                            <div className="text-2xl font-bold text-primary-600">
+                            </span>
+                            <span className="text-xl font-bold text-primary-600">
                               {formatTurkishCurrency(showPriceWithVat ? total : fee)}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Sağ Taraf - Checkbox */}
-                        <div className="flex-shrink-0 pl-4">
-                          <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center ${
-                            isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
-                          }`}>
-                            {isSelected && (
-                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
+                            </span>
                           </div>
                         </div>
                       </button>
@@ -360,21 +434,81 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                           
                           {/* Belge Yükleme */}
                           {(type.requires_document === true || type.requires_document === 1) && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                {language === 'en' ? type.document_label_en || 'Required Document' : type.document_label || 'Gerekli Belge'}
-                                <span className="text-red-500 ml-1">*</span>
-                              </label>
-                              {(language === 'en' ? type.document_description_en : type.document_description) && (
-                                <p className="text-xs text-gray-500 mb-2">
-                                  {language === 'en' ? type.document_description_en : type.document_description}
-                                </p>
+                            <div className="mt-3 pt-3 border-t-2 border-orange-200 bg-orange-50 rounded-lg p-4">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1">
+                                  <label className="block text-sm font-semibold text-orange-900 mb-1">
+                                    {language === 'en' ? 'Required Document' : 'Gerekli Belge'}
+                                    <span className="text-red-600 ml-1">*</span>
+                                  </label>
+                                  <p className="text-xs text-orange-700 mb-2">
+                                    {language === 'en' 
+                                      ? 'Please upload the required document for this registration type (PDF, JPG, PNG)'
+                                      : 'Bu kayıt türü için gerekli belgeyi yükleyin (PDF, JPG, PNG)'}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  id={`doc-upload-${typeId}`}
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) {
+                                      updateDocument(typeId, file)
+                                    }
+                                  }}
+                                  className="hidden"
+                                />
+                                <label
+                                  htmlFor={`doc-upload-${typeId}`}
+                                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-white border-2 border-dashed border-orange-300 rounded-lg cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors"
+                                >
+                                  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                  </svg>
+                                  <span className="text-sm font-medium text-orange-700">
+                                    {formData.documents?.[typeId] 
+                                      ? 'Belgeyi Değiştir' 
+                                      : 'Belge Yükle (PDF, JPG, PNG)'}
+                                  </span>
+                                </label>
+                              </div>
+                              
+                              {formData.documents?.[typeId] && (
+                                <div className="mt-3 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                  <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-green-900 truncate">
+                                      {formData.documents[typeId].name}
+                                    </p>
+                                    <p className="text-xs text-green-700">
+                                      {(formData.documents[typeId].size / 1024).toFixed(1)} KB
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      updateDocument(typeId, null)
+                                    }}
+                                    className="flex-shrink-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
                               )}
-                              <input
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-                              />
                             </div>
                           )}
                         </div>

@@ -30,6 +30,9 @@ interface RegistrationSelection {
   refund_completed_at?: string
   refund_notes?: string
   refund_method?: string
+  document_filename?: string
+  document_url?: string
+  document_uploaded_at?: string
 }
 
 interface Registration {
@@ -801,6 +804,19 @@ export default function RegistrationDetailPage() {
                                   : '⏳ Beklemede'}
                           </span>
                         </div>
+                        {selection.document_url && (
+                          <div className="flex justify-between items-center text-xs mt-2 pt-2 border-t border-gray-100">
+                            <span className="text-gray-500">Belge:</span>
+                            <a
+                              href={selection.document_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary-600 hover:text-primary-700 underline font-medium"
+                            >
+                              📄 {selection.document_filename || 'Belge Görüntüle'}
+                            </a>
+                          </div>
+                        )}
                       </div>
 
                       {/* Durum ve Aksiyonlar */}

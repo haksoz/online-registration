@@ -420,7 +420,8 @@ export default function RegistrationsPage() {
         </button>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* Masaüstü Tablo Görünümü */}
+      <div className="hidden lg:block overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -439,9 +440,6 @@ export default function RegistrationsPage() {
                 Katılımcı Bilgileri
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fatura Tipi
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Seçilen Kayıtlar
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -458,7 +456,7 @@ export default function RegistrationsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {!Array.isArray(registrations) || registrations.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                   {loading ? 'Yükleniyor...' : 'Henüz kayıt bulunmamaktadır.'}
                 </td>
               </tr>
@@ -480,17 +478,17 @@ export default function RegistrationsPage() {
                     <div className="text-sm">
                       <div className="font-medium text-gray-900">{r.full_name}</div>
                       <div className="text-xs text-gray-500 mt-1">{r.email}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Fatura Türü: {getInvoiceTypeLabel(r.invoice_type)}
+                      </div>
                       {r.reference_number && (
                         <div className="text-xs text-gray-400 mt-1">Ref: {r.reference_number}</div>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
-                    {getInvoiceTypeLabel(r.invoice_type)}
-                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {r.selections && r.selections.length > 0 ? (
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {r.selections.map((sel: any) => {
                           // Para sistemde değil: İade tamamlandı veya hiç gelmedi
                           const isMoneyNotInSystem = sel.is_cancelled && (
@@ -504,57 +502,71 @@ export default function RegistrationsPage() {
                           )
                           
                           return (
-                            <div key={sel.id} className="flex items-center gap-2 flex-wrap">
-                              {/* Kategori Badge */}
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            <div key={sel.id} className="flex flex-col gap-1">
+                              {/* Kayıt Tipi */}
+                              <div className={`text-xs font-medium ${
                                 isMoneyNotInSystem
-                                  ? 'bg-gray-200 text-gray-700'
-                                  : sel.refund_status === 'rejected'
-                                    ? 'bg-red-100 text-red-800'
-                                    : sel.refund_status === 'pending'
-                                      ? 'bg-yellow-100 text-yellow-800'
-                                      : isMoneyInSystem
-                                        ? 'bg-orange-100 text-orange-800'
-                                        : 'bg-primary-100 text-primary-800'
+                                  ? 'text-gray-500 line-through'
+                                  : isMoneyInSystem
+                                    ? 'text-orange-700'
+                                    : 'text-gray-900'
                               }`}>
-                                {sel.category_name}
-                              </span>
+                                {sel.type_label}
+                              </div>
                               
-                              {/* Durum Badge */}
-                              {sel.is_cancelled ? (
+                              {/* Badges ve Fiyat */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {/* Kategori Badge */}
                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                   isMoneyNotInSystem
-                                    ? 'bg-gray-300 text-gray-800'
+                                    ? 'bg-gray-200 text-gray-700'
                                     : sel.refund_status === 'rejected'
                                       ? 'bg-red-100 text-red-800'
                                       : sel.refund_status === 'pending'
                                         ? 'bg-yellow-100 text-yellow-800'
-                                        : 'bg-orange-200 text-orange-900'
+                                        : isMoneyInSystem
+                                          ? 'bg-orange-100 text-orange-800'
+                                          : 'bg-primary-100 text-primary-800'
                                 }`}>
-                                  {isMoneyNotInSystem
-                                    ? '❌ İptal' 
-                                    : sel.refund_status === 'rejected'
-                                      ? '❌ İptal, ✗ İade Red'
-                                      : sel.refund_status === 'pending'
-                                        ? '❌ İptal, ⏳ İade Beklemede'
-                                        : '❌ İptal'}
+                                  {sel.category_name}
                                 </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                  ✓ Kayıtlı
+                                
+                                {/* Durum Badge */}
+                                {sel.is_cancelled ? (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                    isMoneyNotInSystem
+                                      ? 'bg-gray-300 text-gray-800'
+                                      : sel.refund_status === 'rejected'
+                                        ? 'bg-red-100 text-red-800'
+                                        : sel.refund_status === 'pending'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : 'bg-orange-200 text-orange-900'
+                                  }`}>
+                                    {isMoneyNotInSystem
+                                      ? '❌ İptal' 
+                                      : sel.refund_status === 'rejected'
+                                        ? '❌ İptal, ✗ İade Red'
+                                        : sel.refund_status === 'pending'
+                                          ? '❌ İptal, ⏳ İade Beklemede'
+                                          : '❌ İptal'}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    ✓ Kayıtlı
+                                  </span>
+                                )}
+                                
+                                {/* Fiyat */}
+                                <span className={`text-xs font-semibold ${
+                                  isMoneyNotInSystem
+                                    ? 'text-gray-400 line-through' 
+                                    : isMoneyInSystem
+                                      ? 'text-orange-600' 
+                                      : 'text-gray-900'
+                                }`}>
+                                  {formatTurkishCurrency(sel.total_try)}
                                 </span>
-                              )}
-                              
-                              {/* Fiyat */}
-                              <span className={`text-xs font-semibold ${
-                                isMoneyNotInSystem
-                                  ? 'text-gray-400 line-through' 
-                                  : isMoneyInSystem
-                                    ? 'text-orange-600' 
-                                    : 'text-gray-900'
-                              }`}>
-                                {formatTurkishCurrency(sel.total_try)}
-                              </span>
+                              </div>
                             </div>
                           )
                         })}
@@ -661,6 +673,215 @@ export default function RegistrationsPage() {
         </table>
 
         {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
+        />
+      </div>
+
+      {/* Mobil Kart Görünümü */}
+      <div className="lg:hidden space-y-4">
+        {!Array.isArray(registrations) || registrations.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center text-gray-500">
+            {loading ? 'Yükleniyor...' : 'Henüz kayıt bulunmamaktadır.'}
+          </div>
+        ) : (
+          registrations.map((r) => (
+            <div key={r.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              {/* Checkbox ve ID */}
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedRegistrations.includes(r.id)}
+                    onChange={(e) => handleSelectRegistration(r.id, e.target.checked)}
+                    className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
+                  />
+                  <span className="text-sm font-mono text-gray-500">#{r.id}</span>
+                </div>
+                <Link 
+                  href={`/admin/registrations/${r.id}`} 
+                  className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+                >
+                  Detay →
+                </Link>
+              </div>
+
+              {/* Katılımcı Bilgileri */}
+              <div className="mb-3">
+                <div className="font-medium text-gray-900 mb-1">{r.full_name}</div>
+                <div className="text-xs text-gray-500">{r.email}</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Fatura Türü: {getInvoiceTypeLabel(r.invoice_type)}
+                </div>
+                {r.reference_number && (
+                  <div className="text-xs text-gray-400 mt-1">Ref: {r.reference_number}</div>
+                )}
+              </div>
+
+              {/* Seçilen Kayıtlar */}
+              <div className="mb-3 pb-3 border-b border-gray-200">
+                <div className="text-xs font-medium text-gray-500 mb-2">Seçilen Kayıtlar</div>
+                {r.selections && r.selections.length > 0 ? (
+                  <div className="space-y-2">
+                    {r.selections.map((sel: any) => {
+                      const isMoneyNotInSystem = sel.is_cancelled && (
+                        sel.refund_status === 'completed' || 
+                        sel.payment_status === 'cancelled'
+                      )
+                      const isMoneyInSystem = sel.is_cancelled && (
+                        sel.refund_status === 'pending' || 
+                        sel.refund_status === 'rejected'
+                      )
+                      
+                      return (
+                        <div key={sel.id} className="text-sm">
+                          <div className={`font-medium mb-1 ${
+                            isMoneyNotInSystem
+                              ? 'text-gray-500 line-through'
+                              : isMoneyInSystem
+                                ? 'text-orange-700'
+                                : 'text-gray-900'
+                          }`}>
+                            {sel.type_label}
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              isMoneyNotInSystem
+                                ? 'bg-gray-200 text-gray-700'
+                                : sel.refund_status === 'rejected'
+                                  ? 'bg-red-100 text-red-800'
+                                  : sel.refund_status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : isMoneyInSystem
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : 'bg-primary-100 text-primary-800'
+                            }`}>
+                              {sel.category_name}
+                            </span>
+                            {sel.is_cancelled ? (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                isMoneyNotInSystem
+                                  ? 'bg-gray-300 text-gray-800'
+                                  : sel.refund_status === 'rejected'
+                                    ? 'bg-red-100 text-red-800'
+                                    : sel.refund_status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-orange-200 text-orange-900'
+                              }`}>
+                                {isMoneyNotInSystem
+                                  ? '❌ İptal' 
+                                  : sel.refund_status === 'rejected'
+                                    ? '❌ İptal, ✗ İade Red'
+                                    : sel.refund_status === 'pending'
+                                      ? '❌ İptal, ⏳ İade Beklemede'
+                                      : '❌ İptal'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Kayıtlı
+                              </span>
+                            )}
+                            <span className={`text-xs font-semibold ${
+                              isMoneyNotInSystem
+                                ? 'text-gray-400 line-through' 
+                                : isMoneyInSystem
+                                  ? 'text-orange-600' 
+                                  : 'text-gray-900'
+                            }`}>
+                              {formatTurkishCurrency(sel.total_try)}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    {r.selections && r.selections.length > 1 && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs font-semibold text-gray-700">
+                          Toplam: {formatTurkishCurrency(calculateGrandTotal(r))}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm text-gray-400">{getRegistrationTypeLabel(r.registration_type)}</span>
+                )}
+              </div>
+
+              {/* Ödeme Durumu */}
+              <div className="mb-3">
+                <div className="text-xs font-medium text-gray-500 mb-2">Ödeme Durumu</div>
+                <div className="flex flex-col gap-1">
+                  {r.status === 1 && (
+                    <>
+                      <span className={getPaymentStatusBadge(r.payment_status)}>
+                        {getCombinedPaymentStatus(r.payment_method, r.payment_status)}
+                      </span>
+                      {r.payment_method === 'bank_transfer' && r.payment_receipt_filename && (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          📄 Dekont Var
+                        </span>
+                      )}
+                      {r.payment_method === 'bank_transfer' && r.payment_status === 'pending' && currentUser?.role !== 'reporter' && (
+                        <button
+                          onClick={() => handlePaymentConfirmation(r.id)}
+                          className="px-3 py-2 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                        >
+                          ✓ Tahsilatı Onayla
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {r.status === 0 && (
+                    <>
+                      {r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' ? (
+                        <>
+                          {r.refund_status === 'pending' && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              {r.payment_method === 'online' ? 'Online Ödeme Tamamlandı' : 'Banka Transferi Tamamlandı'}
+                            </span>
+                          )}
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            r.refund_status === 'completed' ? 'bg-green-100 text-green-800' :
+                            r.refund_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {r.refund_status === 'pending' ? '💰 İade Beklemede' :
+                             r.refund_status === 'completed' ? '✅ İade Tamamlandı' :
+                             r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
+                             `💰 ${r.refund_status}`}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                          {r.payment_status === 'completed' ? '💳 Ödeme Alındı' : '⏳ Ödeme Beklemedeyken İptal Edildi'}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Tarih */}
+              <div className="text-xs text-gray-500">
+                {new Date(r.created_at).toLocaleString('tr-TR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </div>
+            </div>
+          ))
+        )}
+
+        {/* Mobil Pagination */}
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
