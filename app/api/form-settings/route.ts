@@ -72,8 +72,18 @@ export async function GET() {
     )
     const invoiceCorporateNoteEn = (corporateNoteEnRows as any[])[0]?.setting_value || ''
 
+    // Show price with VAT
+    const [showPriceWithVatRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'show_price_with_vat'`
+    )
+    const showPriceWithVat = (showPriceWithVatRows as any[])[0]?.setting_value !== 'false'
+
     return NextResponse.json({
       success: true,
+      data: [{
+        setting_key: 'show_price_with_vat',
+        setting_value: showPriceWithVat ? 'true' : 'false'
+      }],
       fields: fieldRows,
       paymentMethods: paymentRows,
       step2Settings: step2Settings,
