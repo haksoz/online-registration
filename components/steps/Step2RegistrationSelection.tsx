@@ -51,9 +51,9 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
   
   const [categories, setCategories] = useState<Category[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
-  const [openCategories, setOpenCategories] = useState<Record<number, boolean>>({})
   const [selections, setSelections] = useState<Record<number, number[]>>({}) // category_id -> [type_ids]
   const [error, setError] = useState<string | null>(null)
+  const [showPriceWithVat, setShowPriceWithVat] = useState(true)
 
   // FormData'dan seçimleri yükle
   useEffect(() => {
@@ -62,37 +62,35 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
     }
   }, [formData.registrationSelections])
 
-  // Kategorileri yükle
+  // Kategorileri ve ayarları yükle
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/admin/categories')
-        const data = await response.json()
-        if (data.success) {
-          const visibleCategories = data.data.filter((cat: Category) => cat.is_visible)
+        // Kategorileri yükle
+        const categoriesResponse = await fetch('/api/admin/categories')
+        const categoriesData = await categoriesResponse.json()
+        if (categoriesData.success) {
+          const visibleCategories = categoriesData.data.filter((cat: Category) => cat.is_visible)
           setCategories(visibleCategories)
-          
-          // İlk kategoriyi aç
-          if (visibleCategories.length > 0) {
-            setOpenCategories({ [visibleCategories[0].id]: true })
+        }
+
+        // Form ayarlarını yükle
+        const settingsResponse = await fetch('/api/form-settings')
+        const settingsData = await settingsResponse.json()
+        if (settingsData.success) {
+          const showVatSetting = settingsData.data.find((s: any) => s.setting_key === 'show_price_with_vat')
+          if (showVatSetting) {
+            setShowPriceWithVat(showVatSetting.setting_value === 'true')
           }
         }
       } catch (error) {
-        console.error('Error fetching categories:', error)
+        console.error('Error fetching data:', error)
       } finally {
         setCategoriesLoading(false)
       }
     }
-    fetchCategories()
+    fetchData()
   }, [])
-
-  // Kategori aç/kapa
-  const toggleCategory = (categoryId: number) => {
-    setOpenCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }))
-  }
 
   // Kayıt türü seç/kaldır
   const toggleSelection = (categoryId: number, typeId: number, allowMultiple: boolean) => {
@@ -208,115 +206,106 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
         </div>
       )}
 
-      {/* Kategoriler */}
-      <div className="space-y-4 mb-6">
+      {/* Kategoriler - Tümü Açık */}
+      <div className="space-y-8 mb-6">
         {categories.map((category) => {
           const types = getTypesByCategory(category.id)
-          const isOpen = openCategories[category.id]
           const categorySelections = selections[category.id] || []
           
           return (
-            <div key={category.id} className="border border-gray-200 rounded-lg overflow-hidden">
-              {/* Kategori Header */}
-              <button
-                onClick={() => toggleCategory(category.id)}
-                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-primary-50 to-primary-100 hover:from-primary-100 hover:to-primary-200 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  {category.icon && category.icon !== '0' && <span className="text-2xl">{category.icon}</span>}
-                  <div className="text-left">
-                    <h3 className="font-bold text-primary-900 uppercase text-base">
-                      {language === 'en' ? category.label_en : category.label_tr}
-                      {(category.is_required === true || category.is_required === 1) && <span className="text-red-500 ml-1">*</span>}
-                    </h3>
-                    {((language === 'en' ? category.description_en : category.description_tr) && 
-                      (language === 'en' ? category.description_en : category.description_tr) !== '0') && (
-                      <p className="text-sm text-gray-500">
-                        {language === 'en' ? category.description_en : category.description_tr}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
+            <div key={category.id} className="bg-white border border-gray-200 rounded-lg p-6">
+              {/* Kategori Başlık */}
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  {category.icon && category.icon !== '0' && <span className="text-3xl">{category.icon}</span>}
+                  <h3 className="text-xl font-bold text-gray-900 uppercase">
+                    {language === 'en' ? category.label_en : category.label_tr}
+                    {(category.is_required === true || category.is_required === 1) && <span className="text-red-500 ml-1">*</span>}
+                  </h3>
                   {categorySelections.length > 0 && (
-                    <span className="px-2 py-1 bg-primary-100 text-primary-700 text-sm rounded-full">
+                    <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
                       {categorySelections.length} seçili
                     </span>
                   )}
-                  <svg
-                    className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
                 </div>
-              </button>
+                {((language === 'en' ? category.description_en : category.description_tr) && 
+                  (language === 'en' ? category.description_en : category.description_tr) !== '0') && (
+                  <p className="text-sm text-gray-600">
+                    {language === 'en' ? category.description_en : category.description_tr}
+                  </p>
+                )}
+              </div>
 
-              {/* Kategori İçeriği */}
-              {isOpen && (
-                <div className="p-4 bg-gray-50 border-t border-gray-200">
-                  {types.length === 0 ? (
-                    <p className="text-gray-500 text-sm">Bu kategoride aktif kayıt türü bulunmamaktadır</p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {types.map((type) => {
-                        const isSelected = categorySelections.includes(type.id)
-                        const fee = currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try
-                        const vat = fee * (type.vat_rate || 0.20)
-                        const total = fee + vat
-                        
-                        return (
-                          <button
-                            key={type.id}
-                            onClick={() => toggleSelection(category.id, type.id, category.allow_multiple)}
-                            className={`p-4 rounded-lg border-2 transition-all text-left ${
-                              isSelected
-                                ? 'border-primary-500 bg-primary-50'
-                                : 'border-gray-200 bg-white hover:border-gray-300'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <h4 className="font-medium text-gray-900">
-                                {language === 'en' ? type.label_en : type.label}
-                              </h4>
-                              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
-                              }`}>
-                                {isSelected && (
-                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                            </div>
-                            {(language === 'en' ? type.description_en : type.description) && (
-                              <p className="text-sm text-gray-600 mb-2">
-                                {language === 'en' ? type.description_en : type.description}
-                              </p>
-                            )}
-                            <div className={`flex items-baseline gap-2 ${type.requires_document ? 'mb-2' : ''}`}>
-                              <span className="text-lg font-semibold text-gray-900">
-                                {formatTurkishCurrency(fee)}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                + %{((type.vat_rate || 0.20) * 100).toFixed(0)} KDV
-                              </span>
-                            </div>
+              {/* Kayıt Türleri - Tam Genişlik, Alt Alta */}
+              {types.length === 0 ? (
+                <p className="text-gray-500 text-sm">Bu kategoride aktif kayıt türü bulunmamaktadır</p>
+              ) : (
+                <div className="space-y-3">
+                  {types.map((type) => {
+                    const isSelected = categorySelections.includes(type.id)
+                    const fee = currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try
+                    const vat = fee * (type.vat_rate || 0.20)
+                    const total = fee + vat
+                    
+                    return (
+                      <button
+                        key={type.id}
+                        onClick={() => toggleSelection(category.id, type.id, category.allow_multiple)}
+                        className={`w-full p-4 rounded-lg border-2 transition-all text-left flex items-center justify-between ${
+                          isSelected
+                            ? 'border-primary-500 bg-primary-50 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-primary-300'
+                        }`}
+                      >
+                        {/* Sol Taraf - Başlık ve Açıklama */}
+                        <div className="flex-1 min-w-0 pr-4">
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="font-semibold text-gray-900 text-lg">
+                              {language === 'en' ? type.label_en : type.label}
+                            </h4>
                             {(type.requires_document === true || type.requires_document === 1) && (
-                              <div className="text-xs text-orange-600 flex items-center gap-1">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 Belge gerekli
-                              </div>
+                              </span>
                             )}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
+                          </div>
+                          {(language === 'en' ? type.description_en : type.description) && (
+                            <p className="text-sm text-gray-600">
+                              {language === 'en' ? type.description_en : type.description}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* Orta - Fiyat Bilgisi */}
+                        <div className="flex items-center px-6">
+                          <div className="text-right">
+                            <div className="text-sm text-gray-500 mb-1">
+                              {showPriceWithVat ? 'Ücret (KDV Dahil)' : 'Ücret (KDV Hariç)'}
+                            </div>
+                            <div className="text-2xl font-bold text-primary-600">
+                              {formatTurkishCurrency(showPriceWithVat ? total : fee)}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Sağ Taraf - Checkbox */}
+                        <div className="flex-shrink-0 pl-4">
+                          <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center ${
+                            isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>

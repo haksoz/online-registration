@@ -65,6 +65,12 @@ export async function GET() {
     )
     const homepageUrl = (homepageRows as any[])[0]?.setting_value || ''
 
+    // Show price with VAT
+    const [showPriceWithVatRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'show_price_with_vat'`
+    )
+    const showPriceWithVat = (showPriceWithVatRows as any[])[0]?.setting_value !== 'false'
+
     return NextResponse.json({
       success: true,
       fields: fieldRows,
@@ -76,7 +82,8 @@ export async function GET() {
       invoiceCorporateNote: invoiceCorporateNote,
       invoiceIndividualNoteEn: invoiceIndividualNoteEn,
       invoiceCorporateNoteEn: invoiceCorporateNoteEn,
-      homepageUrl: homepageUrl
+      homepageUrl: homepageUrl,
+      showPriceWithVat: showPriceWithVat
     })
   } catch (error) {
     console.error('Error fetching admin form settings:', error)
@@ -91,7 +98,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { fields, paymentMethods, step2Settings, homepageUrl, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn } = body
+    const { fields, paymentMethods, step2Settings, showPriceWithVat, homepageUrl, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn } = body
 
     const connection = await pool.getConnection()
     
@@ -187,6 +194,16 @@ export async function PUT(request: NextRequest) {
            VALUES ('invoice_corporate_note_en', ?, 'Kurumsal fatura seçimi için uyarı notu (İngilizce)')
            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
           [invoiceCorporateNoteEn]
+        )
+      }
+
+      // Show price with VAT güncelle
+      if (showPriceWithVat !== undefined) {
+        await connection.execute(
+          `INSERT INTO form_settings (setting_key, setting_value, description) 
+           VALUES ('show_price_with_vat', ?, 'Kayıt türlerinde fiyatları KDV dahil göster')
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+          [showPriceWithVat ? 'true' : 'false']
         )
       }
 

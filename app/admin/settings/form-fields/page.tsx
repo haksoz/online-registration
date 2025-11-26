@@ -28,6 +28,7 @@ export default function FormFieldsSettingsPage() {
   const [fields, setFields] = useState<FormFieldSetting[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSetting[]>([])
   const [step2CurrencyType, setStep2CurrencyType] = useState('TRY')
+  const [showPriceWithVat, setShowPriceWithVat] = useState(true)
   const [homepageUrl, setHomepageUrl] = useState('')
   const [language, setLanguage] = useState('tr')
   const [invoiceIndividualNote, setInvoiceIndividualNote] = useState('')
@@ -51,6 +52,7 @@ export default function FormFieldsSettingsPage() {
         setFields(data.fields || [])
         setPaymentMethods(data.paymentMethods || [])
         setStep2CurrencyType(data.step2Settings?.currency_type || 'TRY')
+        setShowPriceWithVat(data.showPriceWithVat !== false)
         setHomepageUrl(data.homepageUrl || '')
         setLanguage(data.language || 'tr')
         setInvoiceIndividualNote(data.invoiceIndividualNote || '')
@@ -99,6 +101,7 @@ export default function FormFieldsSettingsPage() {
           fields, 
           paymentMethods,
           step2Settings: { currency_type: step2CurrencyType },
+          showPriceWithVat,
           homepageUrl,
           language,
           invoiceIndividualNote,
@@ -347,10 +350,10 @@ export default function FormFieldsSettingsPage() {
       <div className="bg-white rounded-lg shadow mb-6">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Step 2: Kayıt Türü Ayarları</h2>
-          <p className="text-sm text-gray-600 mt-1">Kayıt türü seçiminde gösterilecek döviz türünü belirleyin</p>
+          <p className="text-sm text-gray-600 mt-1">Kayıt türü seçiminde gösterilecek ayarları belirleyin</p>
         </div>
         
-        <div className="p-6">
+        <div className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Gösterilecek Döviz Türü
@@ -366,6 +369,39 @@ export default function FormFieldsSettingsPage() {
             </select>
             <p className="text-xs text-gray-500 mt-2">
               Kullanıcılar kayıt türü seçerken bu döviz cinsinden fiyatları görecekler
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fiyat Gösterimi
+            </label>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="priceDisplay"
+                  value="with_vat"
+                  checked={showPriceWithVat}
+                  onChange={() => setShowPriceWithVat(true)}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700">KDV Dahil</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="priceDisplay"
+                  value="without_vat"
+                  checked={!showPriceWithVat}
+                  onChange={() => setShowPriceWithVat(false)}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700">KDV Hariç</span>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Kayıt türlerinde fiyatların KDV dahil mi yoksa KDV hariç mi gösterileceğini belirler
             </p>
           </div>
         </div>
