@@ -19,3 +19,10 @@ WHERE is_cancelled = TRUE AND refund_status = 'none';
 UPDATE registration_selections 
 SET payment_status = 'refunded' 
 WHERE is_cancelled = TRUE AND refund_status = 'completed';
+
+-- 5. registration_type kolonlarını TEXT yap (çoklu seçim için)
+ALTER TABLE registrations 
+MODIFY COLUMN registration_type TEXT NULL;
+
+ALTER TABLE registrations 
+MODIFY COLUMN registration_type_label_en TEXT NULL;

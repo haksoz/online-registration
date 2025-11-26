@@ -77,14 +77,10 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
         // Form ayarlarını yükle
         const settingsResponse = await fetch('/api/form-settings')
         const settingsData = await settingsResponse.json()
-        console.log('Settings Data:', settingsData)
         if (settingsData.success) {
           const showVatSetting = settingsData.data.find((s: any) => s.setting_key === 'show_price_with_vat')
-          console.log('Show VAT Setting:', showVatSetting)
           if (showVatSetting) {
-            const newValue = showVatSetting.setting_value === 'true'
-            console.log('Setting showPriceWithVat to:', newValue)
-            setShowPriceWithVat(newValue)
+            setShowPriceWithVat(showVatSetting.setting_value === 'true')
           }
         }
       } catch (error) {
@@ -250,8 +246,6 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                     const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
                     const vat = fee * Number(type.vat_rate || 0.20)
                     const total = fee + vat
-                    
-                    console.log(`Type: ${type.label}, Fee: ${fee}, VAT: ${vat}, Total: ${total}, showPriceWithVat: ${showPriceWithVat}`)
                     
                     return (
                       <button
