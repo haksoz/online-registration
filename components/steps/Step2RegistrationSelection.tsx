@@ -18,6 +18,8 @@ interface Category {
   label_en: string
   description_tr?: string
   description_en?: string
+  warning_message_tr?: string
+  warning_message_en?: string
   icon?: string
   is_visible: boolean
   is_required: boolean
@@ -54,6 +56,17 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
   const [selections, setSelections] = useState<Record<number, number[]>>({}) // category_id -> [type_ids]
   const [error, setError] = useState<string | null>(null)
   const [showPriceWithVat, setShowPriceWithVat] = useState(true)
+  const [exchangeRates, setExchangeRates] = useState<{ USD: number; EUR: number }>({ USD: 1, EUR: 1 })
+
+  // Döviz formatı
+  const formatCurrency = (amount: number, currency: string = currencyType) => {
+    if (currency === 'USD') {
+      return `$${amount.toFixed(2)}`
+    } else if (currency === 'EUR') {
+      return `€${amount.toFixed(2)}`
+    }
+    return formatTurkishCurrency(amount)
+  }
 
   // FormData'dan seçimleri yükle
   useEffect(() => {
@@ -83,6 +96,19 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
             setShowPriceWithVat(showVatSetting.setting_value === 'true')
           }
         }
+
+        // Kur bilgilerini yükle
+        if (currencyType !== 'TRY') {
+          const ratesResponse = await fetch('/api/admin/exchange-rates')
+          const ratesData = await ratesResponse.json()
+          if (ratesData.success && ratesData.rates) {
+            const rates: any = {}
+            ratesData.rates.forEach((rate: any) => {
+              rates[rate.currency_code] = Number(rate.rate_to_try)
+            })
+            setExchangeRates(rates)
+          }
+        }
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -90,7 +116,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
       }
     }
     fetchData()
-  }, [])
+  }, [currencyType])
 
   // Kayıt türü seç/kaldır
   const toggleSelection = (categoryId: number, typeId: number, allowMultiple: boolean) => {
@@ -219,14 +245,9 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
         {language === 'en' ? 'Registration Selection' : 'Kayıt Seçimi'}
       </h2>
-      <p className="text-gray-600 mb-6">
-        {language === 'en' 
-          ? 'Select the registration types you want to register for' 
-          : 'Kayıt olmak istediğiniz türleri seçin'}
-      </p>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
@@ -252,7 +273,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                   </h3>
                   {categorySelections.length > 0 && (
                     <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
-                      {categorySelections.length} seçili
+                      {categorySelections.length} {language === 'en' ? 'selected' : 'seçili'}
                     </span>
                   )}
                 </div>
@@ -261,6 +282,20 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                   <p className="text-sm text-gray-600">
                     {language === 'en' ? category.description_en : category.description_tr}
                   </p>
+                )}
+                
+                {/* Kategori Uyarı Mesajı */}
+                {(language === 'en' ? category.warning_message_en : category.warning_message_tr) && (
+                  <div className="mt-3 bg-red-50 border-l-4 border-red-400 p-3 rounded-r-lg">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <p className="text-sm text-red-800 whitespace-pre-line">
+                        {language === 'en' ? category.warning_message_en : category.warning_message_tr}
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -313,10 +348,12 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                           <div className="flex items-center px-6">
                             <div className="text-right">
                               <div className="text-sm text-gray-500 mb-1">
-                                {showPriceWithVat ? 'Ücret (KDV Dahil)' : 'Ücret (KDV Hariç)'}
+                                {language === 'en' 
+                                  ? (showPriceWithVat ? 'Fee (VAT Included)' : 'Fee (VAT Excluded)')
+                                  : (showPriceWithVat ? 'Ücret (KDV Dahil)' : 'Ücret (KDV Hariç)')}
                               </div>
                               <div className="text-2xl font-bold text-primary-600">
-                                {formatTurkishCurrency(showPriceWithVat ? total : fee)}
+                                {formatCurrency(showPriceWithVat ? total : fee)}
                               </div>
                             </div>
                           </div>
@@ -370,10 +407,12 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                           
                           <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                             <span className="text-xs text-gray-500">
-                              {showPriceWithVat ? 'Ücret (KDV Dahil)' : 'Ücret (KDV Hariç)'}
+                              {language === 'en' 
+                                ? (showPriceWithVat ? 'Fee (VAT Included)' : 'Fee (VAT Excluded)')
+                                : (showPriceWithVat ? 'Ücret (KDV Dahil)' : 'Ücret (KDV Hariç)')}
                             </span>
                             <span className="text-xl font-bold text-primary-600">
-                              {formatTurkishCurrency(showPriceWithVat ? total : fee)}
+                              {formatCurrency(showPriceWithVat ? total : fee)}
                             </span>
                           </div>
                         </div>
@@ -416,6 +455,10 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                       const vat = fee * vatRate
                       const total = fee + vat
                       
+                      // TL karşılığı hesapla (döviz seçiliyse)
+                      const exchangeRate = exchangeRates[currencyType] || 1
+                      const tryTotal = currencyType !== 'TRY' ? total * exchangeRate : total
+                      
                       return (
                         <div key={typeId} className="bg-gray-50 rounded-lg p-3">
                           <div className="flex justify-between items-start mb-2">
@@ -424,11 +467,16 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                                 {language === 'en' ? type.label_en : type.label}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {formatTurkishCurrency(fee)} + %{((type.vat_rate || 0.20) * 100).toFixed(0)} KDV
+                                {formatCurrency(fee)} + %{((type.vat_rate || 0.20) * 100).toFixed(0)} {language === 'en' ? 'VAT' : 'KDV'}
                               </p>
+                              {currencyType !== 'TRY' && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  ≈ {formatTurkishCurrency(tryTotal)} {language === 'en' ? '(TRY equivalent)' : '(TL karşılığı)'}
+                                </p>
+                              )}
                             </div>
                             <p className="font-semibold text-gray-900 whitespace-nowrap">
-                              {formatTurkishCurrency(total)}
+                              {formatCurrency(total)}
                             </p>
                           </div>
                           
@@ -523,11 +571,18 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
           {/* Toplam */}
           <div className="mt-6 pt-4 border-t-2 border-gray-300">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-900">
-                {language === 'en' ? 'Total (VAT Included):' : 'Genel Toplam (KDV Dahil):'}
-              </span>
+              <div>
+                <span className="text-lg font-semibold text-gray-900 block">
+                  {language === 'en' ? 'Total (VAT Included):' : 'Genel Toplam (KDV Dahil):'}
+                </span>
+                {currencyType !== 'TRY' && (
+                  <span className="text-sm text-gray-500">
+                    ≈ {formatTurkishCurrency(calculateTotal() * (exchangeRates[currencyType] || 1))} {language === 'en' ? '(TRY)' : '(TL)'}
+                  </span>
+                )}
+              </div>
               <span className="text-2xl font-bold text-primary-600">
-                {formatTurkishCurrency(calculateTotal())}
+                {formatCurrency(calculateTotal())}
               </span>
             </div>
           </div>

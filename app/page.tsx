@@ -122,11 +122,27 @@ export default function Home() {
       <div className={`pb-8 px-0 sm:px-6 lg:px-8 ${hasHeaderContent ? '-mt-12' : 'pt-8'} relative z-20`}>
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-xl p-4 md:p-8">
+            {/* Top Info Message */}
+            {pageSettings?.form_top_info_message && (
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-sm text-blue-800 whitespace-pre-line">
+                      {formData.formLanguage === 'en' ? pageSettings.form_top_info_message_en || pageSettings.form_top_info_message : pageSettings.form_top_info_message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Progress Indicator & Form Content */}
             <FormWizard />
 
-            {/* General Warning Message at Bottom */}
-            {pageSettings?.form_general_warning && (
+            {/* Bottom Warning Message */}
+            {(pageSettings?.form_bottom_warning || pageSettings?.form_general_warning) && (
               <div className="mt-8 pt-6 border-t border-gray-200">
                 <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
                   <div className="flex items-start">
@@ -134,7 +150,9 @@ export default function Home() {
                       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                     <p className="text-sm text-amber-800 font-medium">
-                      {formData.formLanguage === 'en' ? pageSettings.form_general_warning_en || pageSettings.form_general_warning : pageSettings.form_general_warning}
+                      {formData.formLanguage === 'en' 
+                        ? pageSettings.form_bottom_warning_en || pageSettings.form_general_warning_en || pageSettings.form_bottom_warning || pageSettings.form_general_warning
+                        : pageSettings.form_bottom_warning || pageSettings.form_general_warning}
                     </p>
                   </div>
                 </div>
@@ -143,6 +161,39 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      {(pageSettings?.contact_email || pageSettings?.contact_phone || pageSettings?.footer_message) && (
+        <div className="pb-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-gray-50 border-t border-gray-200 rounded-b-lg p-6 text-center space-y-2">
+              {pageSettings.contact_email && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Email:</span>{' '}
+                  <a href={`mailto:${pageSettings.contact_email}`} className="text-primary-600 hover:text-primary-700">
+                    {pageSettings.contact_email}
+                  </a>
+                </p>
+              )}
+              {pageSettings.contact_phone && (
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">
+                    {formData.formLanguage === 'en' ? 'Phone:' : 'Telefon:'}
+                  </span>{' '}
+                  <a href={`tel:${pageSettings.contact_phone}`} className="text-primary-600 hover:text-primary-700">
+                    {pageSettings.contact_phone}
+                  </a>
+                </p>
+              )}
+              {(formData.formLanguage === 'en' ? pageSettings.footer_message_en || pageSettings.footer_message : pageSettings.footer_message) && (
+                <p className="text-xs text-gray-500 mt-3 pt-3 border-t border-gray-300 whitespace-pre-line">
+                  {formData.formLanguage === 'en' ? pageSettings.footer_message_en || pageSettings.footer_message : pageSettings.footer_message}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

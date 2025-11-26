@@ -58,6 +58,11 @@ export const useDataStore = create<DataStore>((set, get) => ({
       const data = await response.json()
       if (data.success) {
         set({ registrationTypes: data.data })
+        
+        // Currency type'ı da yükle
+        if (data.currencyType) {
+          set({ currencyType: data.currencyType })
+        }
       }
     } catch (error) {
       console.error('Error fetching registration types:', error)

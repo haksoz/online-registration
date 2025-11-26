@@ -11,10 +11,18 @@ export async function GET(request: NextRequest) {
     // Fetch all active registration types from database
     const registrationTypes = await getAllRegistrationTypes() as RegistrationType[]
 
+    // Fetch currency type from step2_settings
+    const { pool } = require('@/lib/db')
+    const [currencyRows] = await pool.execute(
+      "SELECT setting_value FROM step2_settings WHERE setting_key = 'currency_type'"
+    )
+    const currencyType = (currencyRows as any[])[0]?.setting_value || 'TRY'
+
     return NextResponse.json(
       {
         success: true,
-        data: registrationTypes
+        data: registrationTypes,
+        currencyType: currencyType
       },
       { status: 200 }
     )

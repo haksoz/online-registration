@@ -8,6 +8,10 @@ interface PageSettings {
   form_title_en: string
   form_subtitle: string
   form_subtitle_en: string
+  form_top_info_message: string
+  form_top_info_message_en: string
+  form_bottom_warning: string
+  form_bottom_warning_en: string
   form_general_warning: string
   form_general_warning_en: string
   banner_image_url: string
@@ -23,6 +27,8 @@ interface PageSettings {
   organization_name_en: string
   contact_email: string
   contact_phone: string
+  footer_message: string
+  footer_message_en: string
   homepage_url: string
   show_header: string
   show_subtitle: string
@@ -47,6 +53,10 @@ export default function PageSettingsPage() {
     form_title_en: 'Online Registration System',
     form_subtitle: '',
     form_subtitle_en: '',
+    form_top_info_message: '',
+    form_top_info_message_en: '',
+    form_bottom_warning: '',
+    form_bottom_warning_en: '',
     form_general_warning: '',
     form_general_warning_en: '',
     banner_image_url: '',
@@ -62,6 +72,8 @@ export default function PageSettingsPage() {
     organization_name_en: '',
     contact_email: '',
     contact_phone: '',
+    footer_message: '',
+    footer_message_en: '',
     homepage_url: '',
     show_header: 'true',
     show_subtitle: 'true'
@@ -280,16 +292,53 @@ export default function PageSettingsPage() {
             </label>
           </div>
 
-          {/* Form Genel Uyarı Mesajı */}
+          {/* Form Üstü Bilgilendirme Mesajı */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Form Genel Uyarı Mesajı (Türkçe)
+                Üst Bilgilendirme Mesajı (Türkçe)
+              </label>
+              <textarea
+                value={settings.form_top_info_message}
+                onChange={(e) => handleInputChange('form_top_info_message', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Kayıt işleminiz için lütfen tüm adımları eksiksiz tamamlayın."
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Step göstergesi altında, form üstünde görünen bilgilendirme mesajı
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Top Info Message (English)
+              </label>
+              <textarea
+                value={settings.form_top_info_message_en}
+                onChange={(e) => handleInputChange('form_top_info_message_en', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Please complete all steps for your registration."
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Info message displayed above the form, below step indicator
+              </p>
+            </div>
+          </div>
+
+          {/* Form Altı Uyarı Mesajı */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Alt Uyarı Mesajı (Türkçe)
               </label>
               <input
                 type="text"
-                value={settings.form_general_warning}
-                onChange={(e) => handleInputChange('form_general_warning', e.target.value)}
+                value={settings.form_bottom_warning || settings.form_general_warning}
+                onChange={(e) => {
+                  handleInputChange('form_bottom_warning', e.target.value)
+                  handleInputChange('form_general_warning', e.target.value)
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="* ile işaretli tüm alanları eksiksiz doldurun."
               />
@@ -299,12 +348,15 @@ export default function PageSettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Form Genel Uyarı Mesajı (İngilizce)
+                Bottom Warning Message (English)
               </label>
               <input
                 type="text"
-                value={settings.form_general_warning_en}
-                onChange={(e) => handleInputChange('form_general_warning_en', e.target.value)}
+                value={settings.form_bottom_warning_en || settings.form_general_warning_en}
+                onChange={(e) => {
+                  handleInputChange('form_bottom_warning_en', e.target.value)
+                  handleInputChange('form_general_warning_en', e.target.value)
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Please fill in all fields marked with *."
               />
@@ -569,6 +621,40 @@ export default function PageSettingsPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="+90 (212) 123 45 67"
               />
+            </div>
+          </div>
+
+          {/* Footer Mesajı */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Footer Mesajı (Türkçe)
+              </label>
+              <textarea
+                value={settings.footer_message}
+                onChange={(e) => handleInputChange('footer_message', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="© 2024 Organizasyon Adı. Tüm hakları saklıdır."
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Form altında görünen footer mesajı
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Footer Message (English)
+              </label>
+              <textarea
+                value={settings.footer_message_en}
+                onChange={(e) => handleInputChange('footer_message_en', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="© 2024 Organization Name. All rights reserved."
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Footer message displayed at the bottom of the form
+              </p>
             </div>
           </div>
 

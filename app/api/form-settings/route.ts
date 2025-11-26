@@ -18,7 +18,7 @@ export async function GET() {
 
     // Payment method settings - Sadece aktif olanları döndür
     const [paymentRows] = await pool.execute(
-      `SELECT method_name, method_label, is_enabled, display_order, description, icon
+      `SELECT method_name, method_label, is_enabled, display_order, description, warning_message, warning_message_en, icon
        FROM payment_method_settings 
        WHERE is_enabled = TRUE
        ORDER BY display_order`

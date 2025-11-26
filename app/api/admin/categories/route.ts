@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, label_tr, label_en, description_tr, description_en, is_visible, is_required, allow_multiple, display_order, icon } = body
+    const { name, label_tr, label_en, description_tr, description_en, warning_message_tr, warning_message_en, is_visible, is_required, allow_multiple, display_order, icon } = body
 
     if (!name || !label_tr || !label_en) {
       return NextResponse.json({ success: false, error: 'Zorunlu alanlar eksik' }, { status: 400 })
@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
 
     const [result] = await pool.execute(
       `INSERT INTO registration_categories 
-       (name, label_tr, label_en, description_tr, description_en, is_visible, is_required, allow_multiple, display_order, icon)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, label_tr, label_en, description_tr, description_en, is_visible ?? true, is_required ?? false, allow_multiple ?? false, display_order ?? 0, icon]
+       (name, label_tr, label_en, description_tr, description_en, warning_message_tr, warning_message_en, is_visible, is_required, allow_multiple, display_order, icon)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, label_tr, label_en, description_tr, description_en, warning_message_tr, warning_message_en, is_visible ?? true, is_required ?? false, allow_multiple ?? false, display_order ?? 0, icon]
     )
 
     return NextResponse.json({ success: true, message: 'Kategori oluşturuldu', data: { id: (result as any).insertId } })

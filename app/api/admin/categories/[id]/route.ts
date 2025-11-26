@@ -12,14 +12,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const body = await request.json()
-    const { name, label_tr, label_en, description_tr, description_en, is_visible, is_required, allow_multiple, display_order, is_active, icon } = body
+    const { name, label_tr, label_en, description_tr, description_en, warning_message_tr, warning_message_en, is_visible, is_required, allow_multiple, display_order, is_active, icon } = body
 
     await pool.execute(
       `UPDATE registration_categories 
        SET name = ?, label_tr = ?, label_en = ?, description_tr = ?, description_en = ?,
+           warning_message_tr = ?, warning_message_en = ?,
            is_visible = ?, is_required = ?, allow_multiple = ?, display_order = ?, is_active = ?, icon = ?
        WHERE id = ?`,
-      [name, label_tr, label_en, description_tr, description_en, is_visible, is_required, allow_multiple, display_order, is_active, icon, params.id]
+      [name, label_tr, label_en, description_tr, description_en, warning_message_tr, warning_message_en, is_visible, is_required, allow_multiple, display_order, is_active, icon, params.id]
     )
 
     return NextResponse.json({ success: true, message: 'Kategori güncellendi' })

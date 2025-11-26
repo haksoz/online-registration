@@ -9,6 +9,8 @@ interface Category {
   label_en: string
   description_tr?: string
   description_en?: string
+  warning_message_tr?: string
+  warning_message_en?: string
   is_visible: boolean
   is_required: boolean
   allow_multiple: boolean
@@ -29,6 +31,8 @@ export default function CategoriesPage() {
     label_en: '',
     description_tr: '',
     description_en: '',
+    warning_message_tr: '',
+    warning_message_en: '',
     is_visible: true,
     is_required: false,
     allow_multiple: false,
@@ -108,6 +112,8 @@ export default function CategoriesPage() {
       label_en: category.label_en,
       description_tr: category.description_tr || '',
       description_en: category.description_en || '',
+      warning_message_tr: category.warning_message_tr || '',
+      warning_message_en: category.warning_message_en || '',
       is_visible: category.is_visible,
       is_required: category.is_required,
       allow_multiple: category.allow_multiple,
@@ -125,6 +131,8 @@ export default function CategoriesPage() {
       label_en: '',
       description_tr: '',
       description_en: '',
+      warning_message_tr: '',
+      warning_message_en: '',
       is_visible: true,
       is_required: false,
       allow_multiple: false,
@@ -266,6 +274,35 @@ export default function CategoriesPage() {
                     onChange={(e) => setFormData({...formData, description_en: e.target.value})}
                     className="w-full px-3 py-2 border rounded-lg"
                     rows={2}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Türkçe Uyarı Mesajı
+                    <span className="text-xs text-gray-500 ml-2">(Step2'de kategori altında görünür)</span>
+                  </label>
+                  <textarea
+                    value={formData.warning_message_tr}
+                    onChange={(e) => setFormData({...formData, warning_message_tr: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="Dikkat: Bu kategori için özel şartlar geçerlidir..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    İngilizce Uyarı Mesajı
+                    <span className="text-xs text-gray-500 ml-2">(Shown below category in Step2)</span>
+                  </label>
+                  <textarea
+                    value={formData.warning_message_en}
+                    onChange={(e) => setFormData({...formData, warning_message_en: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="Note: Special conditions apply for this category..."
+                    rows={3}
                   />
                 </div>
               </div>

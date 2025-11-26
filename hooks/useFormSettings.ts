@@ -21,6 +21,8 @@ export interface PaymentMethodSetting {
   is_enabled: boolean
   display_order: number
   description?: string
+  warning_message?: string
+  warning_message_en?: string
   icon?: string
 }
 

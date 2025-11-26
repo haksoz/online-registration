@@ -21,6 +21,8 @@ interface PaymentMethodSetting {
   is_enabled: boolean
   display_order: number
   description?: string
+  warning_message?: string
+  warning_message_en?: string
   icon?: string
 }
 
@@ -38,6 +40,8 @@ export default function FormFieldsSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [editingPaymentMethod, setEditingPaymentMethod] = useState<PaymentMethodSetting | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
 
   useEffect(() => {
     fetchSettings()
@@ -443,25 +447,36 @@ export default function FormFieldsSettingsPage() {
         <div className="p-6">
           <div className="space-y-4">
             {paymentMethods.map((method) => (
-              <div key={method.method_name} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{method.icon}</span>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{method.method_label}</div>
-                    <div className="text-xs text-gray-500">{method.description}</div>
+              <div key={method.method_name} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{method.icon}</span>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{method.method_label}</div>
+                      <div className="text-xs text-gray-500">{method.description}</div>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => handlePaymentToggle(method.method_name)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      method.is_enabled ? 'bg-primary-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        method.is_enabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
                 <button
-                  onClick={() => handlePaymentToggle(method.method_name)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    method.is_enabled ? 'bg-primary-600' : 'bg-gray-200'
-                  }`}
+                  onClick={() => {
+                    setEditingPaymentMethod(method)
+                    setShowPaymentModal(true)
+                  }}
+                  className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      method.is_enabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
+                  ⚠️ Uyarı Mesajını Düzenle
                 </button>
               </div>
             ))}
@@ -489,6 +504,95 @@ export default function FormFieldsSettingsPage() {
           {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
         </button>
       </div>
+
+      {/* Payment Method Warning Modal */}
+      {showPaymentModal && editingPaymentMethod && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold">
+                {editingPaymentMethod.method_label} - Uyarı Mesajı
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Bu ödeme yöntemi seçildiğinde gösterilecek uyarı mesajını girin
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Uyarı Mesajı (Türkçe)
+                </label>
+                <textarea
+                  value={editingPaymentMethod.warning_message || ''}
+                  onChange={(e) => setEditingPaymentMethod({
+                    ...editingPaymentMethod,
+                    warning_message: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Dikkat: Bu ödeme yöntemi için özel şartlar geçerlidir..."
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Warning Message (English)
+                </label>
+                <textarea
+                  value={editingPaymentMethod.warning_message_en || ''}
+                  onChange={(e) => setEditingPaymentMethod({
+                    ...editingPaymentMethod,
+                    warning_message_en: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Note: Special conditions apply for this payment method..."
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false)
+                  setEditingPaymentMethod(null)
+                  fetchSettings()
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                İptal
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`/api/admin/payment-methods/${editingPaymentMethod.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        warning_message: editingPaymentMethod.warning_message,
+                        warning_message_en: editingPaymentMethod.warning_message_en
+                      })
+                    })
+                    
+                    if (response.ok) {
+                      setMessage({ type: 'success', text: 'Uyarı mesajı kaydedildi' })
+                      setShowPaymentModal(false)
+                      setEditingPaymentMethod(null)
+                      fetchSettings()
+                    }
+                  } catch (error) {
+                    setMessage({ type: 'error', text: 'Kaydetme hatası' })
+                  }
+                }}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              >
+                Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

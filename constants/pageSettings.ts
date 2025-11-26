@@ -8,6 +8,10 @@ export interface PageSettings {
   form_title_en: string
   form_subtitle: string
   form_subtitle_en: string
+  form_top_info_message?: string
+  form_top_info_message_en?: string
+  form_bottom_warning?: string
+  form_bottom_warning_en?: string
   form_general_warning: string
   form_general_warning_en: string
   banner_image_url?: string
@@ -21,6 +25,8 @@ export interface PageSettings {
   page_title?: string
   contact_email: string
   contact_phone: string
+  footer_message?: string
+  footer_message_en?: string
   show_header: string
   show_subtitle: string
 }
@@ -72,6 +78,10 @@ export async function fetchPageSettings(): Promise<PageSettings> {
         form_title_en: data.data.form_title_en || DEFAULT_PAGE_SETTINGS.form_title_en,
         form_subtitle: data.data.form_subtitle || DEFAULT_PAGE_SETTINGS.form_subtitle,
         form_subtitle_en: data.data.form_subtitle_en || DEFAULT_PAGE_SETTINGS.form_subtitle_en,
+        form_top_info_message: data.data.form_top_info_message || '',
+        form_top_info_message_en: data.data.form_top_info_message_en || '',
+        form_bottom_warning: data.data.form_bottom_warning || data.data.form_general_warning || DEFAULT_PAGE_SETTINGS.form_general_warning,
+        form_bottom_warning_en: data.data.form_bottom_warning_en || data.data.form_general_warning_en || DEFAULT_PAGE_SETTINGS.form_general_warning_en,
         form_general_warning: data.data.form_general_warning || DEFAULT_PAGE_SETTINGS.form_general_warning,
         form_general_warning_en: data.data.form_general_warning_en || DEFAULT_PAGE_SETTINGS.form_general_warning_en,
         banner_image_url: data.data.banner_image_url || DEFAULT_PAGE_SETTINGS.banner_image_url,
@@ -85,6 +95,8 @@ export async function fetchPageSettings(): Promise<PageSettings> {
         page_title: data.data.page_title || DEFAULT_PAGE_SETTINGS.page_title,
         contact_email: data.data.contact_email || DEFAULT_PAGE_SETTINGS.contact_email,
         contact_phone: data.data.contact_phone || DEFAULT_PAGE_SETTINGS.contact_phone,
+        footer_message: data.data.footer_message || '',
+        footer_message_en: data.data.footer_message_en || '',
         show_header: data.data.show_header || DEFAULT_PAGE_SETTINGS.show_header,
         show_subtitle: data.data.show_subtitle || DEFAULT_PAGE_SETTINGS.show_subtitle
       }

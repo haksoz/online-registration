@@ -27,30 +27,45 @@ export async function POST(request: NextRequest) {
     const isEnglish = language === 'en'
     const pageTitle = isEnglish ? formTitleEn : formTitle
     
-    console.log('📧 Mail language:', language, 'isEnglish:', isEnglish)
-    console.log('📧 Page title:', pageTitle)
-    
     // Mail HTML içeriği - Step4'teki içeriği kullan
     const mailHtml = `
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
           body { 
             font-family: Arial, sans-serif; 
             line-height: 1.6; 
             color: #333; 
             margin: 0;
-            padding: 5px;
+            padding: 10px;
             background-color: #f3f4f6;
           }
           .container { 
-            max-width: 800px; 
+            max-width: 700px; 
             margin: 0 auto; 
             background: white;
-            padding: 10px;
+            padding: 20px;
             border-radius: 8px;
+          }
+          
+          /* Mobile Responsive */
+          @media only screen and (max-width: 600px) {
+            body {
+              padding: 5px;
+            }
+            .container {
+              padding: 15px;
+              border-radius: 4px;
+            }
+            .text-2xl { font-size: 20px !important; line-height: 28px !important; }
+            .text-xl { font-size: 18px !important; line-height: 24px !important; }
+            .text-lg { font-size: 16px !important; line-height: 24px !important; }
+            table { font-size: 12px !important; }
+            .p-6 { padding: 8px !important; }
+            .p-4 { padding: 6px !important; }
           }
           
           /* Kopyala butonlarını gizle */

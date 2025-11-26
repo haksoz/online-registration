@@ -19,13 +19,15 @@ interface Step3PaymentProps {
 }
 
 export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
-  const { formData, updatePayment, setReferenceNumber } = useFormStore()
+  const { formData, updatePayment, setReferenceNumber, setRegistrationId } = useFormStore()
   const { getEnabledPaymentMethods, loading: settingsLoading } = useFormSettings()
   const { t, language } = useTranslation()
   const { 
     registrationTypes, 
     bankAccounts: storeBankAccounts, 
-    paymentSettings: storePaymentSettings 
+    paymentSettings: storePaymentSettings,
+    currencyType,
+    exchangeRates
   } = useDataStore()
   
   // Ensure arrays
@@ -37,6 +39,16 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
   console.log('⚙️ Step3 - Payment Settings:', paymentSettings)
   
   const enabledPaymentMethods = getEnabledPaymentMethods()
+
+  // Döviz formatı
+  const formatCurrency = (amount: number, currency: string = currencyType) => {
+    if (currency === 'USD') {
+      return `$${amount.toFixed(2)}`
+    } else if (currency === 'EUR') {
+      return `€${amount.toFixed(2)}`
+    }
+    return formatTurkishCurrency(amount)
+  }
 
   // Eğer sadece 1 ödeme yöntemi aktifse, otomatik seç
   useEffect(() => {
@@ -127,8 +139,11 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
       }
       
       if (result.success && result.referenceNumber) {
-        // Referans numarasını store'a kaydet
+        // Referans numarasını ve ID'yi store'a kaydet
         setReferenceNumber(result.referenceNumber)
+        if (result.id) {
+          setRegistrationId(result.id)
+        }
         
         // Online ödeme kontrolü
         if (data.paymentMethod === 'online' && result.paymentResult) {
@@ -178,7 +193,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
   const calculateTotal = () => {
     let total = 0
     selectedTypes.forEach(type => {
-      const fee = Number(type.fee_try || 0)
+      const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
       const vatRate = Number(type.vat_rate) || 0.20
       total += fee + (fee * vatRate)
     })
@@ -306,10 +321,14 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             </h4>
             <div className="space-y-3">
               {selectedTypes.map((type: any) => {
-                const fee = Number(type.fee_try || 0)
+                const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
                 const vatRate = Number(type.vat_rate) || 0.20
                 const vat = fee * vatRate
                 const total = fee + vat
+                
+                // TL karşılığı
+                const exchangeRate = exchangeRates[currencyType] || 1
+                const tryTotal = currencyType !== 'TRY' ? total * exchangeRate : total
                 
                 return (
                   <div key={type.id} className="bg-white rounded-lg p-3 border border-gray-200">
@@ -319,11 +338,16 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                           {language === 'en' ? type.label_en || type.label : type.label}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {formatTurkishCurrency(fee)} + %{(vatRate * 100).toFixed(0)} KDV
+                          {formatCurrency(fee)} + %{(vatRate * 100).toFixed(0)} {language === 'en' ? 'VAT' : 'KDV'}
                         </p>
+                        {currencyType !== 'TRY' && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            ≈ {formatTurkishCurrency(tryTotal)} {language === 'en' ? '(TRY)' : '(TL)'}
+                          </p>
+                        )}
                       </div>
                       <p className="font-semibold text-gray-900">
-                        {formatTurkishCurrency(total)}
+                        {formatCurrency(total)}
                       </p>
                     </div>
                   </div>
@@ -332,11 +356,18 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
               
               <div className="pt-3 border-t-2 border-gray-300">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-gray-900">
-                    {language === 'en' ? 'Total (VAT Included):' : 'Genel Toplam (KDV Dahil):'}
-                  </span>
+                  <div>
+                    <span className="font-semibold text-gray-900 block">
+                      {language === 'en' ? 'Total (VAT Included):' : 'Genel Toplam (KDV Dahil):'}
+                    </span>
+                    {currencyType !== 'TRY' && (
+                      <span className="text-xs text-gray-500">
+                        ≈ {formatTurkishCurrency(grandTotal * (exchangeRates[currencyType] || 1))} {language === 'en' ? '(TRY)' : '(TL)'}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xl font-bold text-primary-600">
-                    {formatTurkishCurrency(grandTotal)}
+                    {formatCurrency(grandTotal)}
                   </span>
                 </div>
               </div>
@@ -393,6 +424,32 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             <p className="mt-1.5 text-sm text-red-600">{errors.paymentMethod.message}</p>
           )}
         </div>
+
+        {/* Payment Method Warning Message */}
+        {paymentMethod && enabledPaymentMethods.find(m => m.method_name === paymentMethod) && (
+          (() => {
+            const selectedMethod = enabledPaymentMethods.find(m => m.method_name === paymentMethod)
+            const warningMessage = language === 'en' 
+              ? selectedMethod?.warning_message_en || selectedMethod?.warning_message
+              : selectedMethod?.warning_message
+            
+            if (warningMessage) {
+              return (
+                <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-sm text-red-800 whitespace-pre-line">
+                      {warningMessage}
+                    </p>
+                  </div>
+                </div>
+              )
+            }
+            return null
+          })()
+        )}
 
         {/* Online Payment Form */}
         {paymentMethod === 'online' && (
@@ -608,6 +665,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">{t('step3.bankAccounts')}</h3>
               <div className="space-y-4">
+                {/* TRY Hesapları */}
                 {bankAccounts
                   .filter(account => account.currency === 'TRY')
                   .map((account, index) => (
@@ -633,6 +691,60 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                         <span className="font-medium text-gray-700 sm:w-32">IBAN:</span>
                         <span className="text-gray-900 font-mono">{account.iban}</span>
                       </div>
+                      {account.description && (
+                        <div className="flex flex-col sm:flex-row">
+                          <span className="font-medium text-gray-700 sm:w-32">{t('step3.description')}:</span>
+                          <span className="text-gray-600">{account.description}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Döviz Hesapları (TRY değilse) */}
+                {currencyType !== 'TRY' && bankAccounts
+                  .filter(account => account.currency === currencyType)
+                  .map((account, index) => (
+                  <div key={account.id} className="pt-4 border-t border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-800">
+                        {language === 'en' ? account.account_name_en || account.account_name : account.account_name}
+                      </h4>
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                        {account.currency}
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex flex-col sm:flex-row">
+                        <span className="font-medium text-gray-700 sm:w-32">{t('step3.bank')}:</span>
+                        <span className="text-gray-900">{account.bank_name}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row">
+                        <span className="font-medium text-gray-700 sm:w-32">{t('step3.accountHolder')}:</span>
+                        <span className="text-gray-900">{account.account_holder}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row">
+                        <span className="font-medium text-gray-700 sm:w-32">IBAN:</span>
+                        <span className="text-gray-900 font-mono">{account.iban}</span>
+                      </div>
+                      {account.swift_code && (
+                        <div className="flex flex-col sm:flex-row">
+                          <span className="font-medium text-gray-700 sm:w-32">SWIFT:</span>
+                          <span className="text-gray-900 font-mono">{account.swift_code}</span>
+                        </div>
+                      )}
+                      {account.account_number && (
+                        <div className="flex flex-col sm:flex-row">
+                          <span className="font-medium text-gray-700 sm:w-32">{language === 'en' ? 'Account Number:' : 'Hesap No:'}</span>
+                          <span className="text-gray-900 font-mono">{account.account_number}</span>
+                        </div>
+                      )}
+                      {account.bank_address && (
+                        <div className="flex flex-col sm:flex-row">
+                          <span className="font-medium text-gray-700 sm:w-32">{language === 'en' ? 'Bank Address:' : 'Banka Adresi:'}</span>
+                          <span className="text-gray-900">{account.bank_address}</span>
+                        </div>
+                      )}
                       {account.description && (
                         <div className="flex flex-col sm:flex-row">
                           <span className="font-medium text-gray-700 sm:w-32">{t('step3.description')}:</span>

@@ -42,6 +42,7 @@ export interface FormData {
   registrationSelections?: Record<number, number[]> // category_id -> [type_ids]
   documents?: Record<number, File> // type_id -> File
   referenceNumber?: string
+  registrationId?: number
   formLanguage?: 'tr' | 'en'
 }
 
@@ -55,6 +56,7 @@ interface FormStore {
   updateRegistrationSelections: (selections: Record<number, number[]>) => void
   updateDocument: (typeId: number, file: File | null) => void
   setReferenceNumber: (referenceNumber: string) => void
+  setRegistrationId: (registrationId: number) => void
   setFormLanguage: (language: 'tr' | 'en') => void
   resetForm: () => void
 }
@@ -152,6 +154,13 @@ export const useFormStore = create<FormStore>((set) => ({
       formData: {
         ...state.formData,
         referenceNumber,
+      },
+    })),
+  setRegistrationId: (registrationId) =>
+    set((state) => ({
+      formData: {
+        ...state.formData,
+        registrationId,
       },
     })),
   setFormLanguage: (language) =>

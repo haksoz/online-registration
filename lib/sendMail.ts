@@ -23,20 +23,17 @@ export async function sendMail(options: MailOptions): Promise<{ success: boolean
       settings[row.setting_key] = row.setting_value
     })
     
-    // Mail gönderimi kapalıysa logla ve çık
-    if (options.mailType === 'user_confirmation' && settings.send_user_confirmation !== '1') {
-      console.log('User notification mail disabled')
+    // Mail gönderimi kapalıysa logla ve çık (sadece ayar varsa kontrol et)
+    if (options.mailType === 'user_confirmation' && settings.send_user_confirmation === '0') {
       return { success: true }
     }
     
-    if (options.mailType === 'admin_notification' && settings.send_admin_notification !== '1') {
-      console.log('Admin notification mail disabled')
+    if (options.mailType === 'admin_notification' && settings.send_admin_notification === '0') {
       return { success: true }
     }
     
     // SMTP ayarları eksikse hata
     if (!settings.smtp_host || !settings.from_email) {
-      console.error('SMTP settings not configured')
       return { success: false, error: 'Mail ayarları yapılandırılmamış' }
     }
     
