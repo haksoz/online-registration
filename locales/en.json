@@ -160,5 +160,36 @@
     "invoiceCompanyName": "Company name is required",
     "taxOffice": "Tax office is required",
     "taxNumber": "Tax number is required"
+  },
+  "payment": {
+    "title": "Payment Information",
+    "cardNumber": "Card Number",
+    "cardNumberPlaceholder": "1234 5678 9012 3456",
+    "cardHolder": "Cardholder Name",
+    "cardHolderPlaceholder": "FULL NAME",
+    "expiryDate": "Expiry Date",
+    "expiryPlaceholder": "MM/YY",
+    "cvv": "CVV",
+    "cvvPlaceholder": "123",
+    "payNow": "Pay Now",
+    "processing": "Processing...",
+    "secure3D": "Secure 3D Payment",
+    "errors": {
+      "cardNumber": "Please enter a valid card number",
+      "cardHolder": "Cardholder name is required",
+      "expiry": "Please enter a valid date (MM/YY)",
+      "cvv": "Please enter a valid CVV code",
+      "paymentFailed": "Payment failed",
+      "tryAgain": "Please try again"
+    },
+    "success": {
+      "title": "Payment Successful",
+      "message": "Your payment has been completed successfully",
+      "orderId": "Order ID"
+    },
+    "failed": {
+      "title": "Payment Failed",
+      "message": "Your payment could not be completed"
+    }
   }
 }

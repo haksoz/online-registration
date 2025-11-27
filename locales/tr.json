@@ -160,5 +160,36 @@
     "invoiceCompanyName": "Şirket Adı zorunludur",
     "taxOffice": "Vergi Dairesi zorunludur",
     "taxNumber": "Vergi No zorunludur"
+  },
+  "payment": {
+    "title": "Ödeme Bilgileri",
+    "cardNumber": "Kart Numarası",
+    "cardNumberPlaceholder": "1234 5678 9012 3456",
+    "cardHolder": "Kart Üzerindeki İsim",
+    "cardHolderPlaceholder": "AD SOYAD",
+    "expiryDate": "Son Kullanma Tarihi",
+    "expiryPlaceholder": "AA/YY",
+    "cvv": "CVV",
+    "cvvPlaceholder": "123",
+    "payNow": "Ödemeyi Tamamla",
+    "processing": "İşleniyor...",
+    "secure3D": "Güvenli 3D Ödeme",
+    "errors": {
+      "cardNumber": "Geçerli bir kart numarası girin",
+      "cardHolder": "Kart sahibi adı gerekli",
+      "expiry": "Geçerli bir tarih girin (AA/YY)",
+      "cvv": "Geçerli bir CVV kodu girin",
+      "paymentFailed": "Ödeme başarısız oldu",
+      "tryAgain": "Lütfen tekrar deneyin"
+    },
+    "success": {
+      "title": "Ödeme Başarılı",
+      "message": "Ödemeniz başarıyla tamamlandı",
+      "orderId": "Sipariş No"
+    },
+    "failed": {
+      "title": "Ödeme Başarısız",
+      "message": "Ödemeniz tamamlanamadı"
+    }
   }
 }
