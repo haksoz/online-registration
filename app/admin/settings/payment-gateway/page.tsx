@@ -120,13 +120,14 @@ export default function PaymentGatewaySettings() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button
                     onClick={() => handleToggleActive(gateway.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer hover:shadow-md ${
                       gateway.is_active
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                        : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                     }`}
+                    title={gateway.is_active ? 'Aktif - Pasif yapmak için tıklayın' : 'Pasif - Aktif yapmak için tıklayın'}
                   >
-                    {gateway.is_active ? 'Aktif' : 'Pasif'}
+                    {gateway.is_active ? '✓ Aktif' : '○ Pasif'}
                   </button>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
