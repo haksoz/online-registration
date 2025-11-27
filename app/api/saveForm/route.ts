@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
       payment,
       formLanguage,
       documentUrls,
+      currencyType,
+      exchangeRates,
     } = formData
 
     // Seçilen kayıt türlerini al ve toplam hesapla
@@ -29,30 +31,74 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Kayıt türlerini veritabanından çek
+    // Kayıt türlerini veritabanından çek (erken kayıt fiyatlarıyla birlikte)
     let registrationTypes: any[] = []
     if (selectedTypeIds.length > 0) {
       const placeholders = selectedTypeIds.map(() => '?').join(',')
       const [rows] = await pool.execute(
-        `SELECT id, label, label_en, fee_try, vat_rate FROM registration_types WHERE id IN (${placeholders})`,
+        `SELECT id, label, label_en, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate FROM registration_types WHERE id IN (${placeholders})`,
         selectedTypeIds
       )
       registrationTypes = rows as any[]
     }
 
-    // Toplam ücreti hesapla (KDV dahil)
+    // Erken kayıt bilgisini al
+    const [earlyBirdRows] = await pool.execute(
+      "SELECT early_bird_deadline, early_bird_enabled FROM form_settings WHERE id = 1"
+    )
+    const earlyBirdDeadline = (earlyBirdRows as any[])[0]?.early_bird_deadline || null
+    const earlyBirdEnabled = (earlyBirdRows as any[])[0]?.early_bird_enabled || false
+    const isEarlyBirdActive = earlyBirdEnabled && earlyBirdDeadline && new Date() < new Date(earlyBirdDeadline)
+
+    // Kullanılan döviz ve kur bilgisi
+    const selectedCurrency = currencyType || 'TRY'
+    const exchangeRateValue = exchangeRates?.[selectedCurrency]
+    const currentExchangeRate = exchangeRateValue ? Number(exchangeRateValue) : 1.0
+    
+    console.log('Exchange rate debug:', {
+      selectedCurrency,
+      exchangeRateValue,
+      currentExchangeRate,
+      exchangeRates
+    })
+
+    // Toplam ücreti hesapla (KDV dahil) - Döviz fiyatını kur ile çarparak TL'ye çevir
     let totalFee = 0
     const types = registrationTypes
     types.forEach((type: any) => {
-      const fee = Number(type.fee_try || 0)
+      // Erken kayıt fiyatını kontrol et
+      let baseFee = 0
+      
+      if (isEarlyBirdActive) {
+        // Erken kayıt aktifse, erken kayıt fiyatını kullan (varsa)
+        if (selectedCurrency === 'USD' && type.early_bird_fee_usd != null) {
+          baseFee = Number(type.early_bird_fee_usd) * currentExchangeRate
+        } else if (selectedCurrency === 'EUR' && type.early_bird_fee_eur != null) {
+          baseFee = Number(type.early_bird_fee_eur) * currentExchangeRate
+        } else if (selectedCurrency === 'TRY' && type.early_bird_fee_try != null) {
+          baseFee = Number(type.early_bird_fee_try)
+        }
+      }
+      
+      // Erken kayıt fiyatı yoksa normal fiyatı kullan
+      if (baseFee === 0) {
+        if (selectedCurrency === 'USD') {
+          baseFee = Number(type.fee_usd || 0) * currentExchangeRate
+        } else if (selectedCurrency === 'EUR') {
+          baseFee = Number(type.fee_eur || 0) * currentExchangeRate
+        } else {
+          baseFee = Number(type.fee_try || 0)
+        }
+      }
+      
       const vatRate = Number(type.vat_rate || 0.20)
-      totalFee += fee + (fee * vatRate)
+      totalFee += baseFee + (baseFee * vatRate)
     })
 
     const fee = totalFee
-    const currencyCode = 'TRY'
+    const currencyCode = 'TRY' // Artık her zaman TRY olarak kaydedilecek
     const feeInCurrency = totalFee
-    const exchangeRate = 1.0
+    const exchangeRate = 1.0 // TRY olarak kaydedildiği için kur 1.0
 
     // Generate unique reference number
     const referenceNumber = generateReferenceNumber()
@@ -227,7 +273,31 @@ export async function POST(request: NextRequest) {
         for (const typeId of typeIds as number[]) {
           const type = types.find((t: any) => t.id === typeId)
           if (type) {
-            const typeFee = Number(type.fee_try || 0)
+            // Erken kayıt fiyatını kontrol et
+            let typeFee = 0
+            
+            if (isEarlyBirdActive) {
+              // Erken kayıt aktifse, erken kayıt fiyatını kullan (varsa)
+              if (selectedCurrency === 'USD' && type.early_bird_fee_usd != null) {
+                typeFee = Number(type.early_bird_fee_usd) * currentExchangeRate
+              } else if (selectedCurrency === 'EUR' && type.early_bird_fee_eur != null) {
+                typeFee = Number(type.early_bird_fee_eur) * currentExchangeRate
+              } else if (selectedCurrency === 'TRY' && type.early_bird_fee_try != null) {
+                typeFee = Number(type.early_bird_fee_try)
+              }
+            }
+            
+            // Erken kayıt fiyatı yoksa normal fiyatı kullan
+            if (typeFee === 0) {
+              if (selectedCurrency === 'USD') {
+                typeFee = Number(type.fee_usd || 0) * currentExchangeRate
+              } else if (selectedCurrency === 'EUR') {
+                typeFee = Number(type.fee_eur || 0) * currentExchangeRate
+              } else {
+                typeFee = Number(type.fee_try || 0)
+              }
+            }
+            
             const vatRate = Number(type.vat_rate || 0.20)
             const vat = typeFee * vatRate
             const totalWithVat = typeFee + vat
@@ -250,14 +320,14 @@ export async function POST(request: NextRequest) {
                   Number(categoryId), 
                   typeId, 
                   typeFee,
-                  'TRY',
+                  'TRY', // Artık her zaman TRY olarak kaydedilecek
                   typeFee,
-                  1.0,
+                  1.0, // TRY olarak kaydedildiği için kur 1.0
                   vatRate, 
                   vat, 
                   totalWithVat,
                   paymentStatus, // Ana kaydın payment_status'u ile aynı
-                  0, // is_early_bird
+                  isEarlyBirdActive ? 1 : 0, // Erken kayıt aktifse 1, değilse 0
                   0, // is_cancelled
                   docInfo?.filename || null,
                   docInfo?.url || null,
@@ -319,8 +389,10 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Error saving form:', error)
+    console.error('Error details:', error instanceof Error ? error.message : error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
-      { success: false, message: 'Kayıt sırasında hata oluştu', error: String(error) },
+      { success: false, message: 'Kayıt sırasında hata oluştu', error: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

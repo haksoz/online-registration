@@ -16,6 +16,9 @@ interface FormData {
   fee_try: string
   fee_usd: string
   fee_eur: string
+  early_bird_fee_try: string
+  early_bird_fee_usd: string
+  early_bird_fee_eur: string
   vat_rate: string
   description: string
   description_en: string
@@ -42,6 +45,9 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
     fee_try: '',
     fee_usd: '',
     fee_eur: '',
+    early_bird_fee_try: '',
+    early_bird_fee_usd: '',
+    early_bird_fee_eur: '',
     vat_rate: '20',
     description: '',
     description_en: '',
@@ -149,6 +155,9 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
           fee_try: formData.fee_try.trim() ? Number(formData.fee_try) : 0,
           fee_usd: formData.fee_usd.trim() ? Number(formData.fee_usd) : 0,
           fee_eur: formData.fee_eur.trim() ? Number(formData.fee_eur) : 0,
+          early_bird_fee_try: formData.early_bird_fee_try.trim() ? Number(formData.early_bird_fee_try) : null,
+          early_bird_fee_usd: formData.early_bird_fee_usd.trim() ? Number(formData.early_bird_fee_usd) : null,
+          early_bird_fee_eur: formData.early_bird_fee_eur.trim() ? Number(formData.early_bird_fee_eur) : null,
           vat_rate: formData.vat_rate.trim() ? Number(formData.vat_rate) / 100 : 0.20,
           description: formData.description.trim() || undefined,
           description_en: formData.description_en.trim() || undefined,
@@ -178,7 +187,9 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
   const handleClose = () => {
     setFormData({ 
       value: '', label: '', label_en: '', category_id: '', 
-      fee_try: '', fee_usd: '', fee_eur: '', vat_rate: '20', 
+      fee_try: '', fee_usd: '', fee_eur: '', 
+      early_bird_fee_try: '', early_bird_fee_usd: '', early_bird_fee_eur: '',
+      vat_rate: '20', 
       description: '', description_en: '',
       requires_document: false, document_label: '', document_label_en: '',
       document_description: '', document_description_en: ''
@@ -281,78 +292,144 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
               </div>
             )}
 
-            <div className="grid grid-cols-4 gap-2">
-              <div>
-                <label htmlFor="fee_try" className="block text-xs font-medium text-gray-700 mb-1">
-                  Ücret (TRY)
-                </label>
-                <input
-                  type="number"
-                  id="fee_try"
-                  value={formData.fee_try}
-                  onChange={(e) => setFormData({ ...formData, fee_try: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="5000"
-                  min="0"
-                  step="0.01"
-                  disabled={submitting}
-                />
-                {errors.fee_try && <p className="mt-1 text-xs text-red-600">{errors.fee_try}</p>}
-              </div>
+            {/* Normal Fiyatlar */}
+            <div className="border-t pt-3 mt-3">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Normal Fiyatlar</h4>
+              <div className="grid grid-cols-4 gap-2">
+                <div>
+                  <label htmlFor="fee_try" className="block text-xs font-medium text-gray-700 mb-1">
+                    Ücret (TRY)
+                  </label>
+                  <input
+                    type="number"
+                    id="fee_try"
+                    value={formData.fee_try}
+                    onChange={(e) => setFormData({ ...formData, fee_try: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="5000"
+                    min="0"
+                    step="0.01"
+                    disabled={submitting}
+                  />
+                  {errors.fee_try && <p className="mt-1 text-xs text-red-600">{errors.fee_try}</p>}
+                </div>
 
-              <div>
-                <label htmlFor="fee_usd" className="block text-xs font-medium text-gray-700 mb-1">
-                  Ücret (USD)
-                </label>
-                <input
-                  type="number"
-                  id="fee_usd"
-                  value={formData.fee_usd}
-                  onChange={(e) => setFormData({ ...formData, fee_usd: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="150"
-                  min="0"
-                  step="0.01"
-                  disabled={submitting}
-                />
-                {errors.fee_usd && <p className="mt-1 text-xs text-red-600">{errors.fee_usd}</p>}
-              </div>
+                <div>
+                  <label htmlFor="fee_usd" className="block text-xs font-medium text-gray-700 mb-1">
+                    Ücret (USD)
+                  </label>
+                  <input
+                    type="number"
+                    id="fee_usd"
+                    value={formData.fee_usd}
+                    onChange={(e) => setFormData({ ...formData, fee_usd: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="150"
+                    min="0"
+                    step="0.01"
+                    disabled={submitting}
+                  />
+                  {errors.fee_usd && <p className="mt-1 text-xs text-red-600">{errors.fee_usd}</p>}
+                </div>
 
-              <div>
-                <label htmlFor="fee_eur" className="block text-xs font-medium text-gray-700 mb-1">
-                  Ücret (EUR)
-                </label>
-                <input
-                  type="number"
-                  id="fee_eur"
-                  value={formData.fee_eur}
-                  onChange={(e) => setFormData({ ...formData, fee_eur: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="140"
-                  min="0"
-                  step="0.01"
-                  disabled={submitting}
-                />
-                {errors.fee_eur && <p className="mt-1 text-xs text-red-600">{errors.fee_eur}</p>}
-              </div>
+                <div>
+                  <label htmlFor="fee_eur" className="block text-xs font-medium text-gray-700 mb-1">
+                    Ücret (EUR)
+                  </label>
+                  <input
+                    type="number"
+                    id="fee_eur"
+                    value={formData.fee_eur}
+                    onChange={(e) => setFormData({ ...formData, fee_eur: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="140"
+                    min="0"
+                    step="0.01"
+                    disabled={submitting}
+                  />
+                  {errors.fee_eur && <p className="mt-1 text-xs text-red-600">{errors.fee_eur}</p>}
+                </div>
 
-              <div>
-                <label htmlFor="vat_rate" className="block text-xs font-medium text-gray-700 mb-1">
-                  KDV (%)
-                </label>
-                <input
-                  type="number"
-                  id="vat_rate"
-                  value={formData.vat_rate}
-                  onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="20"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  disabled={submitting}
-                />
-                {errors.vat_rate && <p className="mt-1 text-xs text-red-600">{errors.vat_rate}</p>}
+                <div>
+                  <label htmlFor="vat_rate" className="block text-xs font-medium text-gray-700 mb-1">
+                    KDV (%)
+                  </label>
+                  <input
+                    type="number"
+                    id="vat_rate"
+                    value={formData.vat_rate}
+                    onChange={(e) => setFormData({ ...formData, vat_rate: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="20"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    disabled={submitting}
+                  />
+                  {errors.vat_rate && <p className="mt-1 text-xs text-red-600">{errors.vat_rate}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Erken Kayıt Fiyatları */}
+            <div className="border-t pt-3 mt-3">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                🎯 Erken Kayıt Fiyatları <span className="text-xs font-normal text-gray-500">(Opsiyonel)</span>
+              </h4>
+              <p className="text-xs text-gray-500 mb-2">
+                Erken kayıt bitiş tarihine kadar bu fiyatlar uygulanır. Boş bırakılırsa normal fiyat geçerli olur.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label htmlFor="early_bird_fee_try" className="block text-xs font-medium text-gray-700 mb-1">
+                    Erken Kayıt (TRY)
+                  </label>
+                  <input
+                    type="number"
+                    id="early_bird_fee_try"
+                    value={formData.early_bird_fee_try}
+                    onChange={(e) => setFormData({ ...formData, early_bird_fee_try: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="4000"
+                    min="0"
+                    step="0.01"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="early_bird_fee_usd" className="block text-xs font-medium text-gray-700 mb-1">
+                    Erken Kayıt (USD)
+                  </label>
+                  <input
+                    type="number"
+                    id="early_bird_fee_usd"
+                    value={formData.early_bird_fee_usd}
+                    onChange={(e) => setFormData({ ...formData, early_bird_fee_usd: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="120"
+                    min="0"
+                    step="0.01"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="early_bird_fee_eur" className="block text-xs font-medium text-gray-700 mb-1">
+                    Erken Kayıt (EUR)
+                  </label>
+                  <input
+                    type="number"
+                    id="early_bird_fee_eur"
+                    value={formData.early_bird_fee_eur}
+                    onChange={(e) => setFormData({ ...formData, early_bird_fee_eur: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="110"
+                    min="0"
+                    step="0.01"
+                    disabled={submitting}
+                  />
+                </div>
               </div>
             </div>
 

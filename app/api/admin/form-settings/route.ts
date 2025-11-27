@@ -71,6 +71,12 @@ export async function GET() {
     )
     const showPriceWithVat = (showPriceWithVatRows as any[])[0]?.setting_value !== 'false'
 
+    // Show early bird notice
+    const [showEarlyBirdNoticeRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'show_early_bird_notice'`
+    )
+    const showEarlyBirdNotice = (showEarlyBirdNoticeRows as any[])[0]?.setting_value !== 'false'
+
     return NextResponse.json({
       success: true,
       fields: fieldRows,
@@ -83,7 +89,8 @@ export async function GET() {
       invoiceIndividualNoteEn: invoiceIndividualNoteEn,
       invoiceCorporateNoteEn: invoiceCorporateNoteEn,
       homepageUrl: homepageUrl,
-      showPriceWithVat: showPriceWithVat
+      showPriceWithVat: showPriceWithVat,
+      showEarlyBirdNotice: showEarlyBirdNotice
     })
   } catch (error) {
     console.error('Error fetching admin form settings:', error)
@@ -98,7 +105,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { fields, paymentMethods, step2Settings, showPriceWithVat, homepageUrl, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn } = body
+    const { fields, paymentMethods, step2Settings, showPriceWithVat, showEarlyBirdNotice, homepageUrl, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn } = body
 
     const connection = await pool.getConnection()
     
@@ -204,6 +211,16 @@ export async function PUT(request: NextRequest) {
            VALUES ('show_price_with_vat', ?, 'Kayıt türlerinde fiyatları KDV dahil göster')
            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
           [showPriceWithVat ? 'true' : 'false']
+        )
+      }
+
+      // Show early bird notice güncelle
+      if (showEarlyBirdNotice !== undefined) {
+        await connection.execute(
+          `INSERT INTO form_settings (setting_key, setting_value, description) 
+           VALUES ('show_early_bird_notice', ?, 'Erken kayıt uyarısını göster')
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+          [showEarlyBirdNotice ? 'true' : 'false']
         )
       }
 

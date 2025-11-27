@@ -18,11 +18,26 @@ export async function GET(request: NextRequest) {
     )
     const currencyType = (currencyRows as any[])[0]?.setting_value || 'TRY'
 
+    // Fetch early bird settings
+    const [earlyBirdRows] = await pool.execute(
+      "SELECT early_bird_deadline, early_bird_enabled FROM form_settings WHERE id = 1"
+    )
+    const earlyBirdDeadline = (earlyBirdRows as any[])[0]?.early_bird_deadline || null
+    const earlyBirdEnabled = (earlyBirdRows as any[])[0]?.early_bird_enabled || false
+    
+    // Check if early bird is active
+    const isEarlyBirdActive = earlyBirdEnabled && earlyBirdDeadline && new Date() < new Date(earlyBirdDeadline)
+
     return NextResponse.json(
       {
         success: true,
         data: registrationTypes,
-        currencyType: currencyType
+        currencyType: currencyType,
+        earlyBird: {
+          enabled: earlyBirdEnabled,
+          deadline: earlyBirdDeadline,
+          isActive: isEarlyBirdActive
+        }
       },
       { status: 200 }
     )
@@ -44,7 +59,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    const { value, label, label_en, category_id, fee_try, fee_usd, fee_eur, vat_rate, description, description_en, requires_document, document_label, document_label_en, document_description, document_description_en } = body
+    const { value, label, label_en, category_id, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate, description, description_en, requires_document, document_label, document_label_en, document_description, document_description_en } = body
 
     // Required fields check
     if (!value || !label || !category_id) {
@@ -109,6 +124,9 @@ export async function POST(request: NextRequest) {
       fee_try: fee_try ? Number(fee_try) : 0,
       fee_usd: fee_usd ? Number(fee_usd) : 0,
       fee_eur: fee_eur ? Number(fee_eur) : 0,
+      early_bird_fee_try: early_bird_fee_try ? Number(early_bird_fee_try) : null,
+      early_bird_fee_usd: early_bird_fee_usd ? Number(early_bird_fee_usd) : null,
+      early_bird_fee_eur: early_bird_fee_eur ? Number(early_bird_fee_eur) : null,
       vat_rate: vat_rate !== undefined ? Number(vat_rate) : 0.20,
       description: description || null,
       description_en: description_en || null,

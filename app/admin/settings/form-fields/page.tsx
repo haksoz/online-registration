@@ -31,6 +31,7 @@ export default function FormFieldsSettingsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSetting[]>([])
   const [step2CurrencyType, setStep2CurrencyType] = useState('TRY')
   const [showPriceWithVat, setShowPriceWithVat] = useState(true)
+  const [showEarlyBirdNotice, setShowEarlyBirdNotice] = useState(true)
   const [homepageUrl, setHomepageUrl] = useState('')
   const [language, setLanguage] = useState('tr')
   const [invoiceIndividualNote, setInvoiceIndividualNote] = useState('')
@@ -57,6 +58,7 @@ export default function FormFieldsSettingsPage() {
         setPaymentMethods(data.paymentMethods || [])
         setStep2CurrencyType(data.step2Settings?.currency_type || 'TRY')
         setShowPriceWithVat(data.showPriceWithVat !== false)
+        setShowEarlyBirdNotice(data.showEarlyBirdNotice !== false)
         setHomepageUrl(data.homepageUrl || '')
         setLanguage(data.language || 'tr')
         setInvoiceIndividualNote(data.invoiceIndividualNote || '')
@@ -106,6 +108,7 @@ export default function FormFieldsSettingsPage() {
           paymentMethods,
           step2Settings: { currency_type: step2CurrencyType },
           showPriceWithVat,
+          showEarlyBirdNotice,
           homepageUrl,
           language,
           invoiceIndividualNote,
@@ -406,6 +409,23 @@ export default function FormFieldsSettingsPage() {
             </div>
             <p className="text-xs text-gray-500 mt-2">
               Kayıt türlerinde fiyatların KDV dahil mi yoksa KDV hariç mi gösterileceğini belirler
+            </p>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showEarlyBirdNotice}
+                onChange={(e) => setShowEarlyBirdNotice(e.target.checked)}
+                className="w-4 h-4 text-primary-600 focus:ring-primary-500 rounded"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Erken Kayıt Uyarısını Göster
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-2 ml-6">
+              Erken kayıt döneminde, kayıt türlerinin altında "X tarihinden sonra ücret Y olacaktır" uyarısı gösterilir
             </p>
           </div>
         </div>

@@ -6,7 +6,56 @@ import { FormFieldSetting } from '@/hooks/useFormSettings'
 /**
  * Form ayarlarına göre dinamik validation schema oluşturur
  */
-export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAny {
+export function buildPersonalInfoSchema(fields: FormFieldSetting[], language: 'tr' | 'en' = 'tr'): z.ZodTypeAny {
+  // Dil bazlı hata mesajları
+  const messages = {
+    tr: {
+      firstName: 'Ad zorunludur',
+      firstNameMin: 'Ad en az 2 karakter olmalıdır',
+      lastName: 'Soyad zorunludur',
+      lastNameMin: 'Soyad en az 2 karakter olmalıdır',
+      gender: 'Lütfen cinsiyet seçiniz',
+      email: 'E-posta zorunludur',
+      emailInvalid: 'Geçerli bir e-posta girin',
+      phone: 'Telefon zorunludur',
+      phoneInvalid: 'Geçerli bir telefon numarası girin',
+      address: 'Adres zorunludur',
+      company: 'Şirket/Kurum zorunludur',
+      department: 'Departman zorunludur',
+      invoiceType: 'Fatura türü zorunludur',
+      invoiceFullName: 'Fatura Ad Soyad zorunludur',
+      idNumber: 'TC Kimlik No zorunludur',
+      idNumberInvalid: 'Geçerli bir T.C. kimlik numarası girin',
+      invoiceAddress: 'Fatura Adresi zorunludur',
+      invoiceCompanyName: 'Şirket Adı zorunludur',
+      taxOffice: 'Vergi Dairesi zorunludur',
+      taxNumber: 'Vergi No zorunludur'
+    },
+    en: {
+      firstName: 'First name is required',
+      firstNameMin: 'First name must be at least 2 characters',
+      lastName: 'Last name is required',
+      lastNameMin: 'Last name must be at least 2 characters',
+      gender: 'Please select gender',
+      email: 'Email is required',
+      emailInvalid: 'Please enter a valid email',
+      phone: 'Phone is required',
+      phoneInvalid: 'Please enter a valid phone number',
+      address: 'Address is required',
+      company: 'Company/Organization is required',
+      department: 'Department is required',
+      invoiceType: 'Invoice type is required',
+      invoiceFullName: 'Invoice full name is required',
+      idNumber: 'ID number is required',
+      idNumberInvalid: 'Please enter a valid ID number',
+      invoiceAddress: 'Invoice address is required',
+      invoiceCompanyName: 'Company name is required',
+      taxOffice: 'Tax office is required',
+      taxNumber: 'Tax number is required'
+    }
+  }
+  
+  const msg = messages[language]
   const getField = (fieldName: string) => fields.find(f => f.field_name === fieldName)
   
   const isVisible = (fieldName: string) => getField(fieldName)?.is_visible ?? true
@@ -18,14 +67,14 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   // firstName
   if (isVisible('firstName')) {
     schemaFields.firstName = isRequired('firstName')
-      ? z.string().min(1, 'Ad zorunludur').min(2, 'Ad en az 2 karakter olmalıdır')
+      ? z.string().min(1, msg.firstName).min(2, msg.firstNameMin)
       : z.string().optional()
   }
 
   // lastName
   if (isVisible('lastName')) {
     schemaFields.lastName = isRequired('lastName')
-      ? z.string().min(1, 'Soyad zorunludur').min(2, 'Soyad en az 2 karakter olmalıdır')
+      ? z.string().min(1, msg.lastName).min(2, msg.lastNameMin)
       : z.string().optional()
   }
 
@@ -36,17 +85,17 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   if (isVisible('gender')) {
     schemaFields.gender = isRequired('gender')
       ? z.enum(['male', 'female', 'other', 'prefer_not_to_say'], {
-          required_error: 'Cinsiyet zorunludur',
-          invalid_type_error: 'Cinsiyet zorunludur'
+          required_error: msg.gender,
+          invalid_type_error: msg.gender
         })
-      : z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional()
+      : z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional().nullable()
   }
 
   // email
   if (isVisible('email')) {
     schemaFields.email = isRequired('email')
-      ? z.string().min(1, 'E-posta zorunludur').email('Geçerli bir e-posta girin')
-      : z.string().email('Geçerli bir e-posta girin').optional().or(z.literal(''))
+      ? z.string().min(1, msg.email).email(msg.emailInvalid)
+      : z.string().email(msg.emailInvalid).optional().or(z.literal(''))
   }
 
   // phone
@@ -54,13 +103,13 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
     if (isRequired('phone')) {
       schemaFields.phone = z
         .string()
-        .min(1, 'Telefon zorunludur')
+        .min(1, msg.phone)
         .refine(
           (phone) => {
             if (!phone.startsWith('+')) return false
             return isValidPhoneNumber(phone)
           },
-          'Geçerli bir telefon numarası girin'
+          msg.phoneInvalid
         )
     } else {
       schemaFields.phone = z
@@ -72,7 +121,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
             if (!phone.startsWith('+')) return false
             return isValidPhoneNumber(phone)
           },
-          'Geçerli bir telefon numarası girin'
+          msg.phoneInvalid
         )
     }
   }
@@ -80,21 +129,21 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   // address
   if (isVisible('address')) {
     schemaFields.address = isRequired('address')
-      ? z.string().min(1, 'Adres zorunludur')
+      ? z.string().min(1, msg.address)
       : z.string().optional()
   }
 
   // company
   if (isVisible('company')) {
     schemaFields.company = isRequired('company')
-      ? z.string().min(1, 'Şirket/Kurum zorunludur')
+      ? z.string().min(1, msg.company)
       : z.string().optional()
   }
 
   // department
   if (isVisible('department')) {
     schemaFields.department = isRequired('department')
-      ? z.string().min(1, 'Departman zorunludur')
+      ? z.string().min(1, msg.department)
       : z.string().optional()
   }
 
@@ -102,8 +151,8 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
   if (isVisible('invoiceType')) {
     schemaFields.invoiceType = isRequired('invoiceType')
       ? z.enum(['bireysel', 'kurumsal'], {
-          required_error: 'Fatura türü zorunludur',
-          invalid_type_error: 'Fatura türü zorunludur'
+          required_error: msg.invoiceType,
+          invalid_type_error: msg.invoiceType
         })
       : z.enum(['bireysel', 'kurumsal']).optional()
   }
@@ -129,7 +178,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'Fatura Ad Soyad zorunludur',
+      message: msg.invoiceFullName,
       path: ['invoiceFullName'],
     }
   )
@@ -142,7 +191,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'TC Kimlik No zorunludur',
+      message: msg.idNumber,
       path: ['idNumber'],
     }
   )
@@ -155,7 +204,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'Geçerli bir T.C. kimlik numarası girin',
+      message: msg.idNumberInvalid,
       path: ['idNumber'],
     }
   )
@@ -168,7 +217,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'Fatura Adresi zorunludur',
+      message: msg.invoiceAddress,
       path: ['invoiceAddress'],
     }
   )
@@ -182,7 +231,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'Şirket Adı zorunludur',
+      message: msg.invoiceCompanyName,
       path: ['invoiceCompanyName'],
     }
   )
@@ -195,7 +244,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'Fatura Adresi zorunludur',
+      message: msg.invoiceAddress,
       path: ['invoiceAddress'],
     }
   )
@@ -208,7 +257,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'Vergi Dairesi zorunludur',
+      message: msg.taxOffice,
       path: ['taxOffice'],
     }
   )
@@ -221,7 +270,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[]): z.ZodTypeAn
       return true
     },
     {
-      message: 'Vergi No zorunludur',
+      message: msg.taxNumber,
       path: ['taxNumber'],
     }
   )

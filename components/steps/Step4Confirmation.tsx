@@ -17,7 +17,8 @@ export default function Step4Confirmation() {
     bankAccounts: storeBankAccounts, 
     paymentSettings: storePaymentSettings,
     currencyType,
-    exchangeRates
+    exchangeRates,
+    earlyBird
   } = useDataStore()
   
   const bankAccounts = Array.isArray(storeBankAccounts) ? storeBankAccounts : []
@@ -31,6 +32,29 @@ export default function Step4Confirmation() {
       return `€${amount.toFixed(2)}`
     }
     return formatTurkishCurrency(amount)
+  }
+
+  // Erken kayıt fiyatını al (varsa ve aktifse)
+  const getFee = (type: any) => {
+    let baseFee = 0
+    
+    // Erken kayıt aktif mi ve bu tip için erken kayıt fiyatı var mı?
+    if (earlyBird.isActive) {
+      if (currencyType === 'USD' && type.early_bird_fee_usd != null) {
+        baseFee = Number(type.early_bird_fee_usd)
+      } else if (currencyType === 'EUR' && type.early_bird_fee_eur != null) {
+        baseFee = Number(type.early_bird_fee_eur)
+      } else if (currencyType === 'TRY' && type.early_bird_fee_try != null) {
+        baseFee = Number(type.early_bird_fee_try)
+      }
+    }
+    
+    // Erken kayıt fiyatı yoksa normal fiyatı kullan
+    if (baseFee === 0) {
+      baseFee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+    }
+    
+    return baseFee
   }
   
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
@@ -136,7 +160,7 @@ export default function Step4Confirmation() {
   const calculateTotal = () => {
     let total = 0
     selectedTypes.forEach(type => {
-      const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+      const fee = getFee(type)
       const vatRate = Number(type.vat_rate) || 0.20
       total += fee + (fee * vatRate)
     })
@@ -316,7 +340,7 @@ export default function Step4Confirmation() {
           
           <div className="space-y-2">
             {selectedTypes.map((type: any) => {
-              const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+              const fee = getFee(type)
               const vatRate = Number(type.vat_rate) || 0.20
               const vat = fee * vatRate
               const total = fee + vat

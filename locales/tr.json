@@ -146,6 +146,19 @@
     "email": "Geçerli bir e-posta adresi girin",
     "phone": "Geçerli bir telefon numarası girin",
     "minLength": "En az {min} karakter olmalıdır",
-    "maxLength": "En fazla {max} karakter olmalıdır"
+    "maxLength": "En fazla {max} karakter olmalıdır",
+    "genderRequired": "Lütfen cinsiyet seçiniz",
+    "firstName": "Ad zorunludur",
+    "lastName": "Soyad zorunludur",
+    "address": "Adres zorunludur",
+    "company": "Şirket/Kurum zorunludur",
+    "department": "Departman zorunludur",
+    "invoiceType": "Fatura türü zorunludur",
+    "invoiceFullName": "Fatura Ad Soyad zorunludur",
+    "idNumber": "TC Kimlik No zorunludur",
+    "invoiceAddress": "Fatura Adresi zorunludur",
+    "invoiceCompanyName": "Şirket Adı zorunludur",
+    "taxOffice": "Vergi Dairesi zorunludur",
+    "taxNumber": "Vergi No zorunludur"
   }
 }

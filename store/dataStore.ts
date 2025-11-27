@@ -26,6 +26,13 @@ interface DataStore {
   currencyType: string
   setCurrencyType: (type: string) => void
   
+  // Early Bird
+  earlyBird: {
+    enabled: boolean
+    deadline: string | null
+    isActive: boolean
+  }
+  
   // Fetch all data at once
   fetchAllData: () => Promise<void>
   
@@ -43,6 +50,11 @@ const initialState = {
   exchangeRates: {},
   exchangeRatesLoading: false,
   currencyType: 'TRY',
+  earlyBird: {
+    enabled: false,
+    deadline: null,
+    isActive: false
+  }
 }
 
 export const useDataStore = create<DataStore>((set, get) => ({
@@ -62,6 +74,11 @@ export const useDataStore = create<DataStore>((set, get) => ({
         // Currency type'ı da yükle
         if (data.currencyType) {
           set({ currencyType: data.currencyType })
+        }
+        
+        // Early bird bilgisini de yükle
+        if (data.earlyBird) {
+          set({ earlyBird: data.earlyBird })
         }
       }
     } catch (error) {

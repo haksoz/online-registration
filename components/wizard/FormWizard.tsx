@@ -22,6 +22,11 @@ export default function FormWizard() {
     fetchAllData()
   }, [])
 
+  // Step değiştiğinde sayfanın en üstüne scroll et
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
+
   const steps = useMemo(() => [
     { number: 1, title: t('steps.step1') },
     { number: 2, title: t('steps.step2') },
@@ -35,6 +40,8 @@ export default function FormWizard() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       setCurrentStep(currentStep + 1)
       setIsTransitioning(false)
+      // Sayfanın en üstüne scroll et
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
@@ -44,6 +51,8 @@ export default function FormWizard() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       setCurrentStep(currentStep - 1)
       setIsTransitioning(false)
+      // Sayfanın en üstüne scroll et
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 

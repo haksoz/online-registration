@@ -146,6 +146,19 @@
     "email": "Please enter a valid email address",
     "phone": "Please enter a valid phone number",
     "minLength": "Must be at least {min} characters",
-    "maxLength": "Must be at most {max} characters"
+    "maxLength": "Must be at most {max} characters",
+    "genderRequired": "Please select gender",
+    "firstName": "First name is required",
+    "lastName": "Last name is required",
+    "address": "Address is required",
+    "company": "Company/Organization is required",
+    "department": "Department is required",
+    "invoiceType": "Invoice type is required",
+    "invoiceFullName": "Invoice full name is required",
+    "idNumber": "ID number is required",
+    "invoiceAddress": "Invoice address is required",
+    "invoiceCompanyName": "Company name is required",
+    "taxOffice": "Tax office is required",
+    "taxNumber": "Tax number is required"
   }
 }

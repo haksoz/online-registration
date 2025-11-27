@@ -34,11 +34,20 @@ export async function GET() {
     )
     const bccEmail = (bccRows as any[])[0]?.setting_value || ''
 
+    // Early bird deadline - id=1 olan satırdan al
+    const [earlyBirdRows] = await pool.execute(
+      `SELECT early_bird_deadline, early_bird_enabled FROM form_settings WHERE id = 1`
+    )
+    const earlyBirdDeadline = (earlyBirdRows as any[])[0]?.early_bird_deadline || ''
+    const earlyBirdEnabled = (earlyBirdRows as any[])[0]?.early_bird_enabled || false
+
     return NextResponse.json({
       success: true,
       registrationStartDate,
       registrationDeadline,
       cancellationDeadline,
+      earlyBirdDeadline,
+      earlyBirdEnabled,
       notificationEmail,
       bccEmail
     })
@@ -55,7 +64,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { registrationStartDate, registrationDeadline, cancellationDeadline, notificationEmail, bccEmail } = body
+    const { registrationStartDate, registrationDeadline, cancellationDeadline, earlyBirdDeadline, earlyBirdEnabled, notificationEmail, bccEmail } = body
 
     const connection = await pool.getConnection()
     
@@ -100,6 +109,14 @@ export async function PUT(request: NextRequest) {
          VALUES ('bcc_email', ?, 'Kayıt bildirim BCC mail adresi')
          ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
         [bccEmail || '']
+      )
+
+      // Early bird settings güncelle - id=1 olan satırı güncelle (form_enabled satırı)
+      await connection.execute(
+        `UPDATE form_settings 
+         SET early_bird_deadline = ?, early_bird_enabled = ?
+         WHERE id = 1`,
+        [earlyBirdDeadline || null, earlyBirdEnabled ? 1 : 0]
       )
 
       await connection.commit()

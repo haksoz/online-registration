@@ -27,7 +27,8 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
     bankAccounts: storeBankAccounts, 
     paymentSettings: storePaymentSettings,
     currencyType,
-    exchangeRates
+    exchangeRates,
+    earlyBird
   } = useDataStore()
   
   // Ensure arrays
@@ -48,6 +49,29 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
       return `€${amount.toFixed(2)}`
     }
     return formatTurkishCurrency(amount)
+  }
+
+  // Erken kayıt fiyatını al (varsa ve aktifse)
+  const getFee = (type: any) => {
+    let baseFee = 0
+    
+    // Erken kayıt aktif mi ve bu tip için erken kayıt fiyatı var mı?
+    if (earlyBird.isActive) {
+      if (currencyType === 'USD' && type.early_bird_fee_usd != null) {
+        baseFee = Number(type.early_bird_fee_usd)
+      } else if (currencyType === 'EUR' && type.early_bird_fee_eur != null) {
+        baseFee = Number(type.early_bird_fee_eur)
+      } else if (currencyType === 'TRY' && type.early_bird_fee_try != null) {
+        baseFee = Number(type.early_bird_fee_try)
+      }
+    }
+    
+    // Erken kayıt fiyatı yoksa normal fiyatı kullan
+    if (baseFee === 0) {
+      baseFee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+    }
+    
+    return baseFee
   }
 
   // Eğer sadece 1 ödeme yöntemi aktifse, otomatik seç
@@ -122,7 +146,9 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
         body: JSON.stringify({
           ...completeFormData,
           documents: undefined, // File objelerini gönderme
-          documentUrls // URL'leri gönder
+          documentUrls, // URL'leri gönder
+          currencyType, // Seçilen döviz türü
+          exchangeRates // Kur bilgileri
         }),
       })
 
@@ -135,6 +161,13 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
           message: result.paymentResult.errorMessage || 'Ödeme başarısız oldu'
         })
         setIsProcessing(false)
+        // Hata mesajına scroll et
+        setTimeout(() => {
+          const errorElement = document.getElementById('payment-error')
+          if (errorElement) {
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 100)
         return
       }
       
@@ -154,6 +187,13 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
               message: result.paymentResult.errorMessage
             })
             setIsProcessing(false)
+            // Hata mesajına scroll et
+            setTimeout(() => {
+              const errorElement = document.getElementById('payment-error')
+              if (errorElement) {
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }
+            }, 100)
             return // Step4'e geçme
           }
         }
@@ -193,7 +233,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
   const calculateTotal = () => {
     let total = 0
     selectedTypes.forEach(type => {
-      const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+      const fee = getFee(type)
       const vatRate = Number(type.vat_rate) || 0.20
       total += fee + (fee * vatRate)
     })
@@ -321,7 +361,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             </h4>
             <div className="space-y-3">
               {selectedTypes.map((type: any) => {
-                const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+                const fee = getFee(type)
                 const vatRate = Number(type.vat_rate) || 0.20
                 const vat = fee * vatRate
                 const total = fee + vat
@@ -456,7 +496,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
           <div className="space-y-6 mb-6">
             {/* Payment Error Message */}
             {paymentError && (
-              <div className="bg-red-50 rounded-lg p-6 border-2 border-red-300 animate-pulse">
+              <div id="payment-error" className="bg-red-50 rounded-lg p-6 border-2 border-red-300 animate-pulse">
                 <div className="flex items-start">
                   <svg className="w-6 h-6 text-red-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

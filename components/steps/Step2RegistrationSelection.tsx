@@ -48,7 +48,7 @@ interface RegistrationType {
 
 export default function Step2RegistrationSelection({ onNext, onBack }: Step2RegistrationSelectionProps) {
   const { formData, updateRegistrationSelections, updateDocument } = useFormStore()
-  const { registrationTypes, registrationTypesLoading, currencyType } = useDataStore()
+  const { registrationTypes, registrationTypesLoading, currencyType, earlyBird } = useDataStore()
   const { t, language } = useTranslation()
   
   const [categories, setCategories] = useState<Category[]>([])
@@ -56,6 +56,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
   const [selections, setSelections] = useState<Record<number, number[]>>({}) // category_id -> [type_ids]
   const [error, setError] = useState<string | null>(null)
   const [showPriceWithVat, setShowPriceWithVat] = useState(true)
+  const [showEarlyBirdNotice, setShowEarlyBirdNotice] = useState(true)
   const [exchangeRates, setExchangeRates] = useState<{ USD: number; EUR: number }>({ USD: 1, EUR: 1 })
 
   // Döviz formatı
@@ -66,6 +67,29 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
       return `€${amount.toFixed(2)}`
     }
     return formatTurkishCurrency(amount)
+  }
+
+  // Erken kayıt fiyatını al (varsa ve aktifse)
+  const getFee = (type: any) => {
+    let baseFee = 0
+    
+    // Erken kayıt aktif mi ve bu tip için erken kayıt fiyatı var mı?
+    if (earlyBird.isActive) {
+      if (currencyType === 'USD' && type.early_bird_fee_usd != null) {
+        baseFee = Number(type.early_bird_fee_usd)
+      } else if (currencyType === 'EUR' && type.early_bird_fee_eur != null) {
+        baseFee = Number(type.early_bird_fee_eur)
+      } else if (currencyType === 'TRY' && type.early_bird_fee_try != null) {
+        baseFee = Number(type.early_bird_fee_try)
+      }
+    }
+    
+    // Erken kayıt fiyatı yoksa normal fiyatı kullan
+    if (baseFee === 0) {
+      baseFee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+    }
+    
+    return baseFee
   }
 
   // FormData'dan seçimleri yükle
@@ -94,6 +118,11 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
           const showVatSetting = settingsData.data.find((s: any) => s.setting_key === 'show_price_with_vat')
           if (showVatSetting) {
             setShowPriceWithVat(showVatSetting.setting_value === 'true')
+          }
+          
+          const showEarlyBirdSetting = settingsData.data.find((s: any) => s.setting_key === 'show_early_bird_notice')
+          if (showEarlyBirdSetting) {
+            setShowEarlyBirdNotice(showEarlyBirdSetting.setting_value === 'true')
           }
         }
 
@@ -165,7 +194,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
       typeIds.forEach(typeId => {
         const type = registrationTypes.find((t: any) => t.id === typeId)
         if (type) {
-          const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+          const fee = getFee(type)
           const vatRate = Number(type.vat_rate) || 0.20
           const vat = fee * vatRate
           const itemTotal = fee + vat
@@ -185,6 +214,8 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
     for (const category of requiredCategories) {
       if (!selections[category.id] || selections[category.id].length === 0) {
         setError(`${language === 'en' ? category.label_en : category.label_tr} seçimi zorunludur`)
+        // Hata mesajını göstermek için sayfanın en üstüne scroll et
+        window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
     }
@@ -193,6 +224,8 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
     const totalSelections = Object.values(selections).flat().length
     if (totalSelections === 0) {
       setError('En az bir kayıt türü seçmelisiniz')
+      // Hata mesajını göstermek için sayfanın en üstüne scroll et
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
@@ -306,7 +339,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                 <div className="space-y-3">
                   {types.map((type) => {
                     const isSelected = categorySelections.includes(type.id)
-                    const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+                    const fee = getFee(type)
                     const vat = fee * Number(type.vat_rate || 0.20)
                     const total = fee + vat
                     
@@ -341,6 +374,30 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                               <p className="text-sm text-gray-600">
                                 {language === 'en' ? type.description_en : type.description}
                               </p>
+                            )}
+                            
+                            {/* Erken Kayıt Uyarısı */}
+                            {showEarlyBirdNotice && earlyBird.isActive && earlyBird.deadline && (
+                              <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                {language === 'en' ? 'After' : ''}{' '}
+                                <span className="font-medium">
+                                  {new Date(earlyBird.deadline).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
+                                    day: 'numeric', 
+                                    month: 'long', 
+                                    year: 'numeric' 
+                                  })}
+                                </span>
+                                {language === 'en' ? ', the fee will be' : ' tarihinden sonra ücret'}{' '}
+                                <span className="font-semibold">
+                                  {(() => {
+                                    const normalFee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+                                    const normalVat = normalFee * Number(type.vat_rate || 0.20)
+                                    const normalTotal = normalFee + normalVat
+                                    return formatCurrency(showPriceWithVat ? normalTotal : normalFee)
+                                  })()}
+                                </span>
+                                {language === 'en' ? '.' : ' olacaktır.'}
+                              </div>
                             )}
                           </div>
                           
@@ -405,6 +462,30 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                             </p>
                           )}
                           
+                          {/* Erken Kayıt Uyarısı */}
+                          {showEarlyBirdNotice && earlyBird.isActive && earlyBird.deadline && (
+                            <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                              {language === 'en' ? 'After' : ''}{' '}
+                              <span className="font-medium">
+                                {new Date(earlyBird.deadline).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
+                                  day: 'numeric', 
+                                  month: 'long', 
+                                  year: 'numeric' 
+                                })}
+                              </span>
+                              {language === 'en' ? ', the fee will be' : ' tarihinden sonra ücret'}{' '}
+                              <span className="font-semibold">
+                                {(() => {
+                                  const normalFee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+                                  const normalVat = normalFee * Number(type.vat_rate || 0.20)
+                                  const normalTotal = normalFee + normalVat
+                                  return formatCurrency(showPriceWithVat ? normalTotal : normalFee)
+                                })()}
+                              </span>
+                              {language === 'en' ? '.' : ' olacaktır.'}
+                            </div>
+                          )}
+                          
                           <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                             <span className="text-xs text-gray-500">
                               {language === 'en' 
@@ -450,7 +531,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                       const type = registrationTypes.find((t: any) => t.id === typeId)
                       if (!type) return null
                       
-                      const fee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
+                      const fee = getFee(type)
                       const vatRate = Number(type.vat_rate) || 0.20
                       const vat = fee * vatRate
                       const total = fee + vat

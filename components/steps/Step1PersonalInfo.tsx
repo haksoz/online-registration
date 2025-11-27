@@ -29,8 +29,8 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
   // Dinamik validation schema oluştur
   const validationSchema = useMemo(() => {
     if (fields.length === 0) return null
-    return buildPersonalInfoSchema(fields)
-  }, [fields])
+    return buildPersonalInfoSchema(fields, language)
+  }, [fields, language])
 
   const {
     register,
