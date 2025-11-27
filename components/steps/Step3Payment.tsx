@@ -196,9 +196,34 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             }, 100)
             return // Step4'e geçme
           }
+          
+          // 3D Secure sayfasını aç
+          if (result.paymentResult.htmlContent) {
+            const paymentWindow = window.open('', '_blank', 'width=600,height=700')
+            if (paymentWindow) {
+              paymentWindow.document.write(result.paymentResult.htmlContent)
+              paymentWindow.document.close()
+              
+              // Ödeme sonucunu bekle (polling veya message event ile)
+              // Şimdilik kullanıcıyı bilgilendir
+              alert('3D Secure doğrulaması için yeni pencere açıldı. Lütfen ödemenizi tamamlayın.')
+              setIsProcessing(false)
+              
+              // TODO: Ödeme sonucunu kontrol etmek için polling eklenebilir
+              // Şimdilik Step4'e geçmeyelim, kullanıcı manuel olarak kontrol edecek
+              return
+            } else {
+              setPaymentError({
+                code: 'POPUP_BLOCKED',
+                message: 'Pop-up engellendi. Lütfen tarayıcınızın pop-up ayarlarını kontrol edin.'
+              })
+              setIsProcessing(false)
+              return
+            }
+          }
         }
         
-        // Başarılı - Step4'e geç
+        // Başarılı - Step4'e geç (bank transfer için)
         onNext()
       } else {
         alert('Kayıt sırasında hata oluştu.')

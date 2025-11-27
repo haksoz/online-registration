@@ -103,119 +103,72 @@ export async function POST(request: NextRequest) {
     // Generate unique reference number
     const referenceNumber = generateReferenceNumber()
 
-    // Online ödeme seçildiyse önce ödemeyi kontrol et ve POS log tut
-    let paymentResult: { success: boolean; errorCode: string | null; errorMessage: string | null } = { 
+    // Online ödeme seçildiyse 3D Secure ödeme başlat
+    let paymentResult: { success: boolean; errorCode: string | null; errorMessage: string | null; htmlContent?: string; orderId?: string } = { 
       success: true, 
       errorCode: null, 
       errorMessage: null 
     }
     
     if (payment.paymentMethod === 'online' && payment.cardNumber) {
-      const isTestMode = process.env.PAYMENT_TEST_MODE === 'true'
-      
-      // Kart numarasından son 4 hane ve BIN al
-      const cardNumber = payment.cardNumber.replace(/\s/g, '')
-      const cardLast4 = cardNumber.slice(-4)
-      const cardBin = cardNumber.slice(0, 6)
-      const cvv = payment.cardCvv
-      
-      if (!isTestMode) {
-        // TODO: Production'da gerçek POS entegrasyonu yapılacak
-        console.warn('⚠️ PAYMENT_TEST_MODE=false but no real POS integration implemented yet')
-      }
-      
-      // CVV'ye göre ödeme sonucunu belirle (TEST MODE)
-      let status = 'success'
-      let paymentStatus = 'approved'
-      let fraudScore = 10
-      
-      if (cvv === '120') {
-        status = 'failed'
-        paymentStatus = 'declined'
-        fraudScore = 25
-        paymentResult = { success: false, errorCode: '12', errorMessage: 'Geçersiz İşlem' }
-      } else if (cvv === '130') {
-        status = 'failed'
-        paymentStatus = 'declined'
-        fraudScore = 20
-        paymentResult = { success: false, errorCode: '13', errorMessage: 'Geçersiz Tutar' }
-      } else if (cvv === '340') {
-        status = 'failed'
-        paymentStatus = 'declined'
-        fraudScore = 85
-        paymentResult = { success: false, errorCode: '34', errorMessage: 'Fraud Şüphesi' }
-      } else if (cvv === '370') {
-        status = 'failed'
-        paymentStatus = 'declined'
-        fraudScore = 95
-        paymentResult = { success: false, errorCode: '37', errorMessage: 'Çalıntı Kart' }
-      } else if (cvv === '510') {
-        status = 'failed'
-        paymentStatus = 'declined'
-        fraudScore = 15
-        paymentResult = { success: false, errorCode: '51', errorMessage: 'Limit Yetersiz' }
-      }
-      
-      // POS transaction log - TÜM ödeme denemelerini kaydet
       try {
-        const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)}`
-        const orderId = `ORD_${referenceNumber}`
-        const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] || 
-                         request.headers.get('x-real-ip') || 
-                         'unknown'
-        const userAgent = request.headers.get('user-agent') || ''
+        // Ödeme başlatma isteği
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`
         
-        // Müşteri bilgilerini hazırla
-        const customerName = personalInfo.fullName || `${personalInfo.firstName} ${personalInfo.lastName}`.trim()
-        const customerEmail = personalInfo.email
-        const customerPhone = personalInfo.phone
-        const registrationType = types.map((t: any) => formLanguage === 'en' ? (t.label_en || t.label) : t.label).join(', ')
-        
-        await pool.execute(
-          `INSERT INTO online_payment_transactions (
-            registration_id, transaction_id, order_id, amount, currency,
-            status, payment_status, error_code, error_message,
-            gateway_name, card_type, card_last4, card_bin,
-            cardholder_name, customer_name, customer_email, customer_phone, registration_type,
-            ip_address, fraud_score, user_agent, initiated_at, completed_at, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
-          [
-            null, // registration_id - henüz oluşturulmadı
-            transactionId,
-            orderId,
-            fee,
-            currencyCode,
-            status,
-            paymentStatus,
-            paymentResult.errorCode,
-            paymentResult.errorMessage,
-            'Test Gateway',
-            'VISA',
-            cardLast4,
-            cardBin,
-            payment.cardHolderName,
-            customerName,
-            customerEmail,
-            customerPhone,
-            registrationType,
-            ipAddress,
-            fraudScore,
-            userAgent
-          ]
-        )
-      } catch (posError: any) {
-        console.error('Error creating POS log:', posError)
-      }
-      
-      // Ödeme başarısız ise kaydı oluşturma
-      if (!paymentResult.success) {
+        const paymentInitResponse = await fetch(`${baseUrl}/api/payment/initiate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: fee,
+            currency: 'TRY',
+            cardNumber: payment.cardNumber.replace(/\s/g, ''),
+            cardExpiry: payment.cardExpiry.replace('/', ''),
+            cardCvv: payment.cardCvv,
+            cardHolderName: payment.cardHolderName,
+            formSubmissionId: null // Henüz registration oluşturulmadı
+          })
+        })
+
+        const paymentData = await paymentInitResponse.json()
+
+        if (!paymentData.success) {
+          // Ödeme başlatılamadı
+          return NextResponse.json(
+            { 
+              success: false, 
+              message: 'Ödeme başlatılamadı', 
+              paymentResult: {
+                success: false,
+                errorCode: 'INIT_ERROR',
+                errorMessage: paymentData.error || 'Ödeme sistemi ile bağlantı kurulamadı'
+              }
+            },
+            { status: 400 }
+          )
+        }
+
+        // 3D Secure HTML içeriğini döndür
+        paymentResult = {
+          success: true,
+          errorCode: null,
+          errorMessage: null,
+          htmlContent: paymentData.htmlContent,
+          orderId: paymentData.orderId
+        }
+
+      } catch (paymentError: any) {
+        console.error('Payment initiation error:', paymentError)
         return NextResponse.json(
           { 
             success: false, 
-            message: 'Ödeme başarısız oldu', 
-            paymentResult: paymentResult
+            message: 'Ödeme başlatılamadı', 
+            paymentResult: {
+              success: false,
+              errorCode: 'SYSTEM_ERROR',
+              errorMessage: 'Ödeme sistemi geçici olarak kullanılamıyor'
+            }
           },
-          { status: 400 }
+          { status: 500 }
         )
       }
     }
