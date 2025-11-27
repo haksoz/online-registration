@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { pool } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
@@ -9,10 +9,10 @@ export async function POST(
     const { id } = params;
 
     // Önce diğer tüm gateway'leri pasif yap
-    await db.query('UPDATE payment_gateways SET is_active = FALSE');
+    await pool.query('UPDATE payment_gateways SET is_active = FALSE');
 
     // Seçili gateway'i aktif yap
-    await db.query(
+    await pool.query(
       'UPDATE payment_gateways SET is_active = TRUE WHERE id = ?',
       [id]
     );

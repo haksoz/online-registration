@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { pool } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +9,7 @@ export async function GET(
     const { orderId } = params;
 
     // Transaction durumunu kontrol et
-    const [transactions] = await db.query(
+    const [transactions] = await pool.query(
       `SELECT status, error_code, error_message, transaction_id, auth_code
        FROM payment_transactions 
        WHERE order_id = ?

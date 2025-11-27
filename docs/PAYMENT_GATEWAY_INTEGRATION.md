@@ -142,18 +142,21 @@ if (data.success) {
 
 ## 🧪 Test
 
-### Denizbank Test Kartları
+### Denizbank Test Kartı
 ```
-Kart No: 4508034508034509
+Kart No: 4508 0345 0803 4509
 Son Kullanma: 12/26
 CVV: 000
-3D Şifre: a (küçük harf a)
+3D Şifre: a (küçük harf)
 ```
+
+**Önemli:** 3D Secure sayfasında şifre olarak küçük harf "a" girilmelidir.
 
 ### Test Modu
 - Test modunda gerçek para çekilmez
-- Test URL'leri kullanılır
+- Test URL'leri kullanılır: `https://sanaltest.denizbank.com/mpi/Default.aspx`
 - Tüm işlemler loglanır
+- 3D Secure doğrulaması gerçek gibi çalışır
 
 ## 🆕 Yeni Banka Ekleme
 

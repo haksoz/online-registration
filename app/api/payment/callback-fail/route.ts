@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { pool } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (orderId) {
       // Transaction kaydını güncelle
-      await db.query(
+      await pool.query(
         `UPDATE payment_transactions 
          SET status = 'failed',
              error_code = ?,

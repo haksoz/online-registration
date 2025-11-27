@@ -80,23 +80,19 @@
 4. Gateway'i **Aktif** yap
 5. Kaydet
 
-### Test Kartları
+### Test Kartı
 
 #### Denizbank Test Kartı
 ```
-Kart No: 4508034508034509
+Kart No: 4508 0345 0803 4509
 Tarih: 12/26
 CVV: 000
 3D Şifre: a (küçük harf)
 ```
 
-#### Test Senaryoları
-- CVV `000`: ✅ Başarılı ödeme
-- CVV `120`: ❌ Geçersiz işlem
-- CVV `130`: ❌ Geçersiz tutar
-- CVV `340`: ❌ Fraud şüphesi
-- CVV `370`: ❌ Çalıntı kart
-- CVV `510`: ❌ Limit yetersiz
+**Önemli:** 3D Secure sayfasında şifre olarak küçük harf "a" girilmelidir.
+
+Bu test kartı ile gerçek para çekilmez. Sadece test amaçlıdır.
 
 ## 🔧 Yapılandırma
 

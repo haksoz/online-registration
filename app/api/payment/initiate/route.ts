@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import db from '@/lib/db';
+import { pool } from '@/lib/db';
 import { createPaymentService, getActiveGateway } from '@/lib/payment/paymentGatewayFactory';
 import { PaymentInitiateRequest } from '@/types/payment';
 
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Aktif gateway'i getir
-    const gateway = await getActiveGateway(db);
+    const gateway = await getActiveGateway(pool);
     
     if (!gateway) {
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Transaction kaydı oluştur
-    await db.query(
+    await pool.query(
       `INSERT INTO payment_transactions 
        (gateway_id, order_id, amount, currency, status, payment_method, 
         card_last4, ip_address, user_agent, form_submission_id) 

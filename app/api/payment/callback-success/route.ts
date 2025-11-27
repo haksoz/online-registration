@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { pool } from '@/lib/db';
 import { createPaymentService } from '@/lib/payment/paymentGatewayFactory';
 
 export async function POST(request: NextRequest) {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Transaction kaydını getir
-    const [transactions] = await db.query(
+    const [transactions] = await pool.query(
       `SELECT pt.*, pg.* 
        FROM payment_transactions pt
        JOIN payment_gateways pg ON pt.gateway_id = pg.id
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValid) {
       // Hash doğrulaması başarısız
-      await db.query(
+      await pool.query(
         `UPDATE payment_transactions 
          SET status = 'failed', 
              error_message = 'Güvenlik doğrulaması başarısız',
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     if (['1', '2', '3', '4'].includes(status3D) && procReturnCode === '00') {
       // Başarılı ödeme
-      await db.query(
+      await pool.query(
         `UPDATE payment_transactions 
          SET status = 'success',
              transaction_id = ?,
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       );
     } else {
       // Başarısız ödeme
-      await db.query(
+      await pool.query(
         `UPDATE payment_transactions 
          SET status = 'failed',
              error_code = ?,

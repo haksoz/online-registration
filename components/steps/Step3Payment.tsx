@@ -547,44 +547,46 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
               </div>
             )}
 
-            {/* Test Mode Banner - Show when test mode is enabled */}
-            {process.env.NEXT_PUBLIC_PAYMENT_TEST_MODE === 'true' && (
-              <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-300">
-                <div className="flex items-start">
-                  <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <div className="flex-1">
-                    <p className="text-sm text-yellow-800 font-bold">🧪 TEST MODU</p>
-                    <p className="text-xs text-yellow-700 mt-1 mb-2">
-                      Aşağıdaki test kartlarını kullanabilirsiniz:
-                    </p>
-                    <div className="bg-white rounded border border-yellow-200 p-3 text-xs space-y-2">
-                      <div>
-                        <p className="font-semibold text-gray-800 mb-1">{t('step3.testCardNumber')}</p>
-                        <p className="font-mono text-gray-900 text-sm">4546 7112 3456 7894</p>
-                        <p className="text-gray-600">{t('step3.testExpiry')}</p>
-                      </div>
-                      <div className="pt-2 border-t border-yellow-200">
-                        <p className="font-semibold text-gray-800 mb-1">{t('step3.testCvvCodes')}</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <p className="font-mono text-green-700">000 - ✅ Başarılı</p>
-                            <p className="font-mono text-red-700">120 - ❌ Geçersiz İşlem</p>
-                            <p className="font-mono text-red-700">130 - ❌ Geçersiz Tutar</p>
-                          </div>
-                          <div>
-                            <p className="font-mono text-red-700">340 - ❌ Fraud Şüphesi</p>
-                            <p className="font-mono text-red-700">370 - ❌ Çalıntı Kart</p>
-                            <p className="font-mono text-red-700">510 - ❌ Limit Yetersiz</p>
-                          </div>
-                        </div>
-                      </div>
+            {/* Test Mode Banner - Denizbank Test Kartı */}
+            <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-300">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm text-yellow-800 font-bold">🧪 TEST MODU - Denizbank Test Kartı</p>
+                  <p className="text-xs text-yellow-700 mt-1 mb-2">
+                    Aşağıdaki test kartını kullanabilirsiniz:
+                  </p>
+                  <div className="bg-white rounded border border-yellow-200 p-3 text-xs space-y-2">
+                    <div>
+                      <p className="font-semibold text-gray-800 mb-1">Kart Numarası:</p>
+                      <p className="font-mono text-gray-900 text-sm">4508 0345 0803 4509</p>
                     </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 mb-1">Son Kullanma Tarihi:</p>
+                      <p className="font-mono text-gray-900 text-sm">12/26</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 mb-1">CVV:</p>
+                      <p className="font-mono text-gray-900 text-sm">000</p>
+                    </div>
+                    <div className="pt-2 border-t border-yellow-200">
+                      <p className="font-semibold text-gray-800 mb-1">3D Secure Şifresi:</p>
+                      <p className="font-mono text-green-700 text-sm">a (küçük harf)</p>
+                      <p className="text-gray-600 mt-1">
+                        3D Secure sayfasında bu şifreyi gireceksiniz.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
+                    <p className="text-xs text-blue-800">
+                      ℹ️ Bu test kartı ile gerçek para çekilmez. Sadece test amaçlıdır.
+                    </p>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Info Banner */}
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">

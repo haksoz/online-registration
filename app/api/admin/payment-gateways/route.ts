@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { pool } from '@/lib/db';
 import { encrypt } from '@/lib/payment/hashGenerator';
 
 const ENCRYPTION_KEY = process.env.PAYMENT_ENCRYPTION_KEY || 'your-secret-key-change-this';
@@ -7,7 +7,7 @@ const ENCRYPTION_KEY = process.env.PAYMENT_ENCRYPTION_KEY || 'your-secret-key-ch
 // GET - Tüm gateway'leri listele
 export async function GET() {
   try {
-    const [gateways] = await db.query(
+    const [gateways] = await pool.query(
       `SELECT id, gateway_name, gateway_code, shop_code, merchant_id, 
               terminal_id, api_url_test, api_url_production, 
               test_mode, is_active, display_order, created_at, updated_at
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       updateFields.push('updated_at = NOW()');
       updateValues.push(id);
 
-      await db.query(
+      await pool.query(
         `UPDATE payment_gateways SET ${updateFields.join(', ')} WHERE id = ?`,
         updateValues
       );
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
       const placeholders = fields.map(() => '?').join(', ');
 
-      await db.query(
+      await pool.query(
         `INSERT INTO payment_gateways (${fields.join(', ')}) VALUES (${placeholders})`,
         values
       );

@@ -114,9 +114,12 @@
     "sslEncryption": "256-bit SSL Encryption",
     "sslEncryptionDesc": "Your payment is secured with 3D Secure. Your card information is never stored.",
     "checkCardInfo": "Please check your card information and try again.",
-    "testCardNumber": "Card Number (For all tests):",
-    "testExpiry": "Expiry: 12/26",
-    "testCvvCodes": "CVV Codes:"
+    "denizbankTestCard": "Denizbank Test Card",
+    "testCardNumber": "4508 0345 0803 4509",
+    "testExpiry": "12/26",
+    "testCvv": "000",
+    "test3DPassword": "a (lowercase)",
+    "testCardNote": "No real money will be charged with this test card."
   },
   "step4": {
     "title": "Registration Completed",
