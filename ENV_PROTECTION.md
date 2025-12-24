@@ -89,3 +89,6 @@ Bu komut `.env` dosyasını Git'ten kaldırdı ama local dosyanızı korudu.
 - `ENV_SETUP.md` - Detaylı kurulum rehberi
 - `HOSTINGER_DEPLOYMENT.md` - Hostinger deployment rehberi
 
+---
+**Son Güncelleme:** 2025-01-08 - Git push testi için güncellendi
+
