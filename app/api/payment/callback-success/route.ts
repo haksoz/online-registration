@@ -28,16 +28,17 @@ export async function POST(request: NextRequest) {
        JOIN payment_gateways pg ON pt.gateway_id = pg.id
        WHERE pt.order_id = ?`,
       [orderId]
-    );
+    ) as any[];
 
-    if (transactions.length === 0) {
+    const transactionsArray = Array.isArray(transactions) ? transactions : [];
+    if (transactionsArray.length === 0) {
       return NextResponse.json(
         { success: false, error: 'İşlem bulunamadı' },
         { status: 404 }
       );
     }
 
-    const transaction = transactions[0];
+    const transaction = transactionsArray[0];
     const gateway = {
       id: transaction.gateway_id,
       gateway_code: transaction.gateway_code,

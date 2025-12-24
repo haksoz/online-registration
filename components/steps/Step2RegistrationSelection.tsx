@@ -183,7 +183,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
   }
 
   // Kategoriye göre kayıt türlerini getir
-  const getTypesByCategory = (categoryId: number): RegistrationType[] => {
+  const getTypesByCategory = (categoryId: number): any[] => {
     return registrationTypes.filter((type: any) => type.category_id === categoryId && type.is_active)
   }
 
@@ -192,7 +192,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
     let total = 0
     Object.entries(selections).forEach(([categoryId, typeIds]) => {
       typeIds.forEach(typeId => {
-        const type = registrationTypes.find((t: any) => t.id === typeId)
+        const type = registrationTypes.find((t: any) => t.id === typeId) as any
         if (type) {
           const fee = getFee(type)
           const vatRate = Number(type.vat_rate) || 0.20
@@ -232,7 +232,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
     // Belge yükleme kontrolü
     const selectedTypeIds = Object.values(selections).flat()
     for (const typeId of selectedTypeIds) {
-      const type = registrationTypes.find((t: any) => t.id === typeId)
+      const type = registrationTypes.find((t: any) => t.id === typeId) as any
       if (type && (type.requires_document === true || type.requires_document === 1)) {
         if (!formData.documents?.[typeId]) {
           const typeLabel = language === 'en' ? type.label_en : type.label
@@ -302,7 +302,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                   {category.icon && category.icon !== '0' && <span className="text-3xl">{category.icon}</span>}
                   <h3 className="text-xl font-bold text-gray-900 uppercase">
                     {language === 'en' ? category.label_en : category.label_tr}
-                    {(category.is_required === true || category.is_required === 1) && <span className="text-red-500 ml-1">*</span>}
+                    {(category.is_required === true || (category as any).is_required === 1) && <span className="text-red-500 ml-1">*</span>}
                   </h3>
                   {categorySelections.length > 0 && (
                     <span className="px-3 py-1 bg-primary-100 text-primary-700 text-sm font-medium rounded-full">
@@ -528,7 +528,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                   </h4>
                   <div className="space-y-3">
                     {typeIds.map(typeId => {
-                      const type = registrationTypes.find((t: any) => t.id === typeId)
+                      const type = registrationTypes.find((t: any) => t.id === typeId) as any
                       if (!type) return null
                       
                       const fee = getFee(type)
@@ -537,7 +537,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                       const total = fee + vat
                       
                       // TL karşılığı hesapla (döviz seçiliyse)
-                      const exchangeRate = exchangeRates[currencyType] || 1
+                      const exchangeRate = (exchangeRates as any)[currencyType] || 1
                       const tryTotal = currencyType !== 'TRY' ? total * exchangeRate : total
                       
                       return (
@@ -658,7 +658,7 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                 </span>
                 {currencyType !== 'TRY' && (
                   <span className="text-sm text-gray-500">
-                    ≈ {formatTurkishCurrency(calculateTotal() * (exchangeRates[currencyType] || 1))} {language === 'en' ? '(TRY)' : '(TL)'}
+                    ≈ {formatTurkishCurrency(calculateTotal() * ((exchangeRates as any)[currencyType] || 1))} {language === 'en' ? '(TRY)' : '(TL)'}
                   </span>
                 )}
               </div>

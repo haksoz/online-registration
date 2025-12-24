@@ -18,6 +18,7 @@ interface EmailData {
     categoryName: string
     typeLabel: string
     fee: number
+    vatRate: number
     vat: number
     total: number
   }>

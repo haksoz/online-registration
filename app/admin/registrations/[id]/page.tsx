@@ -18,6 +18,7 @@ interface RegistrationSelection {
   vat_rate: number
   vat_amount_try: number
   total_try: number
+  payment_status?: 'pending' | 'completed' | 'cancelled' | 'refunded'
   is_cancelled: boolean
   cancelled_at?: string
   cancelled_by?: number
