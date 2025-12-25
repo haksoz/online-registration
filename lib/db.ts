@@ -5,21 +5,38 @@ if (typeof window === 'undefined' && !process.env.DB_HOST) {
   try {
     const fs = require('fs');
     const path = require('path');
-    const envPath = path.join(process.cwd(), '.env');
-    if (fs.existsSync(envPath)) {
-      const envFile = fs.readFileSync(envPath, 'utf8');
-      envFile.split('\n').forEach((line: string) => {
-        const [key, ...valueParts] = line.split('=');
-        if (key && valueParts.length > 0) {
-          const value = valueParts.join('=').trim();
-          if (value && !process.env[key.trim()]) {
-            process.env[key.trim()] = value;
+    
+    // Birden fazla yerde .env dosyasını ara
+    const possiblePaths = [
+      path.join(process.cwd(), '.env'),
+      path.join(process.cwd(), '..', '.env'),
+      path.join(__dirname, '..', '.env'),
+      path.join(__dirname, '..', '..', '.env'),
+      '/home/u187342439/domains/online-registration.ohdkongre.org/public_html/.env',
+      '/home/u187342439/public_html/.env',
+    ];
+    
+    for (const envPath of possiblePaths) {
+      if (fs.existsSync(envPath)) {
+        console.log('📁 .env dosyası bulundu:', envPath);
+        const envFile = fs.readFileSync(envPath, 'utf8');
+        envFile.split('\n').forEach((line: string) => {
+          const trimmedLine = line.trim();
+          if (trimmedLine && !trimmedLine.startsWith('#')) {
+            const [key, ...valueParts] = trimmedLine.split('=');
+            if (key && valueParts.length > 0) {
+              const value = valueParts.join('=').trim().replace(/^["']|["']$/g, '');
+              if (value && !process.env[key.trim()]) {
+                process.env[key.trim()] = value;
+              }
+            }
           }
-        }
-      });
+        });
+        break; // İlk bulunan dosyayı kullan
+      }
     }
   } catch (e) {
-    // .env dosyası okunamadı, environment variables kullanılacak
+    console.error('❌ .env dosyası okunamadı:', e);
   }
 }
 
