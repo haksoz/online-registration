@@ -50,19 +50,49 @@ console.log('🔍 DB Config Check:', {
   NODE_ENV: process.env.NODE_ENV || 'NOT SET',
 });
 
-export const pool = mysql.createPool({
-  host: process.env.DB_HOST === 'localhost' ? '127.0.0.1' : (process.env.DB_HOST || "127.0.0.1"),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "railway",
-  port: Number(process.env.DB_PORT) || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  maxIdle: 10,
-  idleTimeout: 60000,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+// Pool'u lazy initialization ile oluştur (environment variables'ın yüklendiğinden emin ol)
+let poolInstance: mysql.Pool | null = null;
+
+function getPool(): mysql.Pool {
+  if (!poolInstance) {
+    // Environment variables'ı tekrar kontrol et
+    const dbHost = process.env.DB_HOST === 'localhost' ? '127.0.0.1' : (process.env.DB_HOST || "127.0.0.1");
+    const dbUser = process.env.DB_USER || "root";
+    const dbPassword = process.env.DB_PASSWORD || "";
+    const dbName = process.env.DB_NAME || "railway";
+    const dbPort = Number(process.env.DB_PORT) || 3306;
+    
+    console.log('🔧 Pool oluşturuluyor:', {
+      host: dbHost,
+      user: dbUser,
+      password: dbPassword ? '***SET***' : 'EMPTY',
+      database: dbName,
+      port: dbPort,
+    });
+    
+    poolInstance = mysql.createPool({
+      host: dbHost,
+      user: dbUser,
+      password: dbPassword,
+      database: dbName,
+      port: dbPort,
+      waitForConnections: true,
+      connectionLimit: 10,
+      maxIdle: 10,
+      idleTimeout: 60000,
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0
+    });
+  }
+  return poolInstance;
+}
+
+// Proxy kullanarak lazy initialization
+export const pool = new Proxy({} as mysql.Pool, {
+  get(target, prop) {
+    return (getPool() as any)[prop];
+  }
 });
 
 
