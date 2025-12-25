@@ -1,4 +1,16 @@
+import 'dotenv/config';
 import mysql from "mysql2/promise";
+
+// Debug: Environment variables kontrolü (geçici - production'da kaldırılabilir)
+if (process.env.NODE_ENV !== 'production' || process.env.DEBUG_ENV === 'true') {
+  console.log('🔍 DB Config Check:', {
+    DB_HOST: process.env.DB_HOST || 'NOT SET',
+    DB_USER: process.env.DB_USER || 'NOT SET',
+    DB_PASSWORD: process.env.DB_PASSWORD ? '***SET***' : 'NOT SET',
+    DB_NAME: process.env.DB_NAME || 'NOT SET',
+    DB_PORT: process.env.DB_PORT || 'NOT SET',
+  });
+}
 
 export const pool = mysql.createPool({
   host: process.env.DB_HOST || "127.0.0.1",
