@@ -112,3 +112,6 @@ Sorun devam ederse:
 3. `.env` dosyasındaki değerlerin doğru olduğundan emin olun
 
 
+
+
+
