@@ -52,17 +52,32 @@ console.log('🔍 DB Config Check:', {
 
 // Pool'u lazy initialization ile oluştur (environment variables'ın yüklendiğinden emin ol)
 let poolInstance: mysql.Pool | null = null;
+let poolConfig: { host: string; user: string; password: string; database: string; port: number } | null = null;
 
 function getPool(): mysql.Pool {
-  if (!poolInstance) {
-    // Environment variables'ı tekrar kontrol et
-    const dbHost = process.env.DB_HOST === 'localhost' ? '127.0.0.1' : (process.env.DB_HOST || "127.0.0.1");
-    const dbUser = process.env.DB_USER || "root";
-    const dbPassword = process.env.DB_PASSWORD || "";
-    const dbName = process.env.DB_NAME || "railway";
-    const dbPort = Number(process.env.DB_PORT) || 3306;
+  // Environment variables'ı runtime'da tekrar kontrol et
+  const dbHost = process.env.DB_HOST === 'localhost' ? '127.0.0.1' : (process.env.DB_HOST || "127.0.0.1");
+  const dbUser = process.env.DB_USER || "root";
+  const dbPassword = process.env.DB_PASSWORD || "";
+  const dbName = process.env.DB_NAME || "railway";
+  const dbPort = Number(process.env.DB_PORT) || 3306;
+  
+  const currentConfig = { host: dbHost, user: dbUser, password: dbPassword, database: dbName, port: dbPort };
+  
+  // Eğer pool yoksa veya config değiştiyse yeni pool oluştur
+  if (!poolInstance || !poolConfig || 
+      poolConfig.host !== currentConfig.host ||
+      poolConfig.user !== currentConfig.user ||
+      poolConfig.password !== currentConfig.password ||
+      poolConfig.database !== currentConfig.database ||
+      poolConfig.port !== currentConfig.port) {
     
-    console.log('🔧 Pool oluşturuluyor:', {
+    // Eski pool'u kapat
+    if (poolInstance) {
+      poolInstance.end().catch(() => {});
+    }
+    
+    console.log('🔧 Pool oluşturuluyor (runtime):', {
       host: dbHost,
       user: dbUser,
       password: dbPassword ? '***SET***' : 'EMPTY',
@@ -84,7 +99,10 @@ function getPool(): mysql.Pool {
       enableKeepAlive: true,
       keepAliveInitialDelay: 0
     });
+    
+    poolConfig = currentConfig;
   }
+  
   return poolInstance;
 }
 
