@@ -36,6 +36,7 @@ export function useFormSettings() {
   const [invoiceIndividualNoteEn, setInvoiceIndividualNoteEn] = useState<string>('')
   const [invoiceCorporateNoteEn, setInvoiceCorporateNoteEn] = useState<string>('')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchSettings()
@@ -43,7 +44,13 @@ export function useFormSettings() {
 
   const fetchSettings = async () => {
     try {
+      setError(null)
       const response = await fetch('/api/form-settings')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       const data = await response.json()
       
       if (data.success) {
@@ -67,9 +74,13 @@ export function useFormSettings() {
         setInvoiceCorporateNote(data.invoiceCorporateNote || '')
         setInvoiceIndividualNoteEn(data.invoiceIndividualNoteEn || '')
         setInvoiceCorporateNoteEn(data.invoiceCorporateNoteEn || '')
+      } else {
+        throw new Error(data.error || 'Form ayarları yüklenemedi')
       }
     } catch (error) {
       console.error('Error fetching form settings:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
+      setError(`Veritabanı bağlantı hatası: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
@@ -135,6 +146,7 @@ export function useFormSettings() {
     invoiceIndividualNoteEn,
     invoiceCorporateNoteEn,
     loading,
+    error,
     isFieldVisible,
     isFieldRequired,
     getFieldSetting,

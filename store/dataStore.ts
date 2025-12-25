@@ -5,21 +5,25 @@ interface DataStore {
   // Registration Types
   registrationTypes: RegistrationType[]
   registrationTypesLoading: boolean
+  registrationTypesError: string | null
   fetchRegistrationTypes: () => Promise<void>
   
   // Bank Accounts
   bankAccounts: any[]
   bankAccountsLoading: boolean
+  bankAccountsError: string | null
   fetchBankAccounts: () => Promise<void>
   
   // Payment Settings
   paymentSettings: any
   paymentSettingsLoading: boolean
+  paymentSettingsError: string | null
   fetchPaymentSettings: () => Promise<void>
   
   // Exchange Rates
   exchangeRates: Record<string, number>
   exchangeRatesLoading: boolean
+  exchangeRatesError: string | null
   fetchExchangeRates: () => Promise<void>
   
   // Currency Type
@@ -33,6 +37,9 @@ interface DataStore {
     isActive: boolean
   }
   
+  // Global error state
+  hasAnyError: boolean
+  
   // Fetch all data at once
   fetchAllData: () => Promise<void>
   
@@ -43,18 +50,23 @@ interface DataStore {
 const initialState = {
   registrationTypes: [],
   registrationTypesLoading: false,
+  registrationTypesError: null,
   bankAccounts: [],
   bankAccountsLoading: false,
+  bankAccountsError: null,
   paymentSettings: {},
   paymentSettingsLoading: false,
+  paymentSettingsError: null,
   exchangeRates: {},
   exchangeRatesLoading: false,
+  exchangeRatesError: null,
   currencyType: 'TRY',
   earlyBird: {
     enabled: false,
     deadline: null,
     isActive: false
-  }
+  },
+  hasAnyError: false
 }
 
 export const useDataStore = create<DataStore>((set, get) => ({
@@ -64,9 +76,14 @@ export const useDataStore = create<DataStore>((set, get) => ({
     // Eğer zaten yüklenmişse tekrar yükleme
     if (get().registrationTypes.length > 0) return
     
-    set({ registrationTypesLoading: true })
+    set({ registrationTypesLoading: true, registrationTypesError: null })
     try {
       const response = await fetch('/api/registration-types')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       const data = await response.json()
       if (data.success) {
         set({ registrationTypes: data.data })
@@ -80,9 +97,16 @@ export const useDataStore = create<DataStore>((set, get) => ({
         if (data.earlyBird) {
           set({ earlyBird: data.earlyBird })
         }
+      } else {
+        throw new Error(data.error || 'Kayıt türleri yüklenemedi')
       }
     } catch (error) {
       console.error('Error fetching registration types:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
+      set({ 
+        registrationTypesError: `Kayıt türleri yüklenemedi: ${errorMessage}`,
+        hasAnyError: true
+      })
     } finally {
       set({ registrationTypesLoading: false })
     }
@@ -91,9 +115,14 @@ export const useDataStore = create<DataStore>((set, get) => ({
   fetchBankAccounts: async () => {
     if (get().bankAccounts.length > 0) return
     
-    set({ bankAccountsLoading: true })
+    set({ bankAccountsLoading: true, bankAccountsError: null })
     try {
       const response = await fetch('/api/bank-accounts/active')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       const data = await response.json()
       if (data.success) {
         // API data.accounts ve data.settings döndürüyor
@@ -109,9 +138,16 @@ export const useDataStore = create<DataStore>((set, get) => ({
           bankAccounts: data.data?.accounts || data.data || [],
           paymentSettings: camelCaseSettings.dekontEmail ? camelCaseSettings : get().paymentSettings
         })
+      } else {
+        throw new Error(data.error || 'Banka hesapları yüklenemedi')
       }
     } catch (error) {
       console.error('Error fetching bank accounts:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
+      set({ 
+        bankAccountsError: `Banka hesapları yüklenemedi: ${errorMessage}`,
+        hasAnyError: true
+      })
     } finally {
       set({ bankAccountsLoading: false })
     }
@@ -144,9 +180,14 @@ export const useDataStore = create<DataStore>((set, get) => ({
   fetchExchangeRates: async () => {
     if (Object.keys(get().exchangeRates).length > 0) return
     
-    set({ exchangeRatesLoading: true })
+    set({ exchangeRatesLoading: true, exchangeRatesError: null })
     try {
       const response = await fetch('/api/admin/exchange-rates')
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       const data = await response.json()
       if (data.success && data.rates) {
         const rates: Record<string, number> = {}
@@ -154,9 +195,16 @@ export const useDataStore = create<DataStore>((set, get) => ({
           rates[rate.currency_code] = rate.rate_to_try
         })
         set({ exchangeRates: rates })
+      } else {
+        throw new Error(data.error || 'Döviz kurları yüklenemedi')
       }
     } catch (error) {
       console.error('Error fetching exchange rates:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
+      set({ 
+        exchangeRatesError: `Döviz kurları yüklenemedi: ${errorMessage}`,
+        hasAnyError: true
+      })
     } finally {
       set({ exchangeRatesLoading: false })
     }

@@ -8,15 +8,21 @@ import { useFormStore } from '@/store/formStore'
 export default function Home() {
   const [pageSettings, setPageSettings] = useState<PageSettings | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { formData } = useFormStore()
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        setError(null)
         const settings = await fetchPageSettings()
         setPageSettings(settings)
       } catch (error) {
         console.error('Error loading page settings:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
+        setError(`Sayfa ayarları yüklenemedi: ${errorMessage}`)
+        // Hata durumunda varsayılan ayarları kullan
+        // fetchPageSettings zaten varsayılan değerleri döndürüyor
       } finally {
         setLoading(false)
       }
@@ -37,6 +43,9 @@ export default function Home() {
       </main>
     )
   }
+
+  // Show error notification if page settings failed to load
+  const showErrorNotification = error && !pageSettings
 
   // Check if header should be displayed
   const shouldShowTitle = pageSettings?.show_header === 'true'
@@ -122,6 +131,30 @@ export default function Home() {
       <div className={`pb-8 px-0 sm:px-6 lg:px-8 ${hasHeaderContent ? '-mt-12' : 'pt-8'} relative z-20`}>
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-xl p-4 md:p-8">
+            {/* Database Error Notification */}
+            {showErrorNotification && (
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <h3 className="text-sm font-medium text-red-800">
+                        {formData.formLanguage === 'en' ? 'Database Connection Warning' : 'Veritabanı Bağlantı Uyarısı'}
+                      </h3>
+                      <p className="text-sm text-red-700 mt-1">
+                        {formData.formLanguage === 'en' 
+                          ? 'Some features may not work properly due to database connection issues. Default settings are being used.'
+                          : 'Veritabanı bağlantı sorunları nedeniyle bazı özellikler düzgün çalışmayabilir. Varsayılan ayarlar kullanılıyor.'}
+                      </p>
+                      <p className="text-xs text-red-600 mt-2 font-mono">{error}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Top Info Message */}
             {pageSettings?.form_top_info_message && (
               <div className="mb-6 pb-6 border-b border-gray-200">
