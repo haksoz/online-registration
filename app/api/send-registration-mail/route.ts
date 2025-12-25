@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendMail } from '@/lib/sendMail'
+import { pool } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +15,6 @@ export async function POST(request: NextRequest) {
     }
     
     // Sayfa başlığını al
-    const { pool } = require('@/lib/db')
     const [titleRows] = await pool.execute(
       "SELECT setting_value FROM page_settings WHERE setting_key = 'form_title'"
     )

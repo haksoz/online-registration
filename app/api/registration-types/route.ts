@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAllRegistrationTypes, createRegistrationType, checkRegistrationTypeExists } from '@/lib/db'
+import { getAllRegistrationTypes, createRegistrationType, checkRegistrationTypeExists, pool } from '@/lib/db'
 import { validateRegistrationTypeInput } from '@/lib/validation'
 import { RegistrationType } from '@/types/registration'
 
@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     const registrationTypes = await getAllRegistrationTypes() as RegistrationType[]
 
     // Fetch currency type from step2_settings
-    const { pool } = require('@/lib/db')
     const [currencyRows] = await pool.execute(
       "SELECT setting_value FROM step2_settings WHERE setting_key = 'currency_type'"
     )

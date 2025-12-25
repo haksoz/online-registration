@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { pool } from '@/lib/db'
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,7 +53,6 @@ export async function POST(request: NextRequest) {
       throw mailError
     } finally {
       // Log kaydet
-      const { pool } = require('@/lib/db')
       await pool.execute(
         `INSERT INTO mail_logs (recipient_email, subject, mail_type, status, error_message) 
          VALUES (?, ?, 'test', ?, ?)`,
