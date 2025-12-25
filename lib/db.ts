@@ -1,5 +1,28 @@
 import mysql from "mysql2/promise";
 
+// Runtime'da .env dosyasını okumayı dene (Hostinger için)
+if (typeof window === 'undefined' && !process.env.DB_HOST) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const envPath = path.join(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const envFile = fs.readFileSync(envPath, 'utf8');
+      envFile.split('\n').forEach((line: string) => {
+        const [key, ...valueParts] = line.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').trim();
+          if (value && !process.env[key.trim()]) {
+            process.env[key.trim()] = value;
+          }
+        }
+      });
+    }
+  } catch (e) {
+    // .env dosyası okunamadı, environment variables kullanılacak
+  }
+}
+
 // Debug: Environment variables kontrolü - HER ZAMAN ÇALIŞSIN
 console.log('🔍 DB Config Check:', {
   DB_HOST: process.env.DB_HOST || 'NOT SET',
