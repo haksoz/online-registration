@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm install autoprefixer postcss tailwindcss && next build",
+    "build": "npm install autoprefixer postcss tailwindcss @types/jsonwebtoken && next build",
     "start": "next start",
     "lint": "next lint",
     "migrate:registration-types": "node scripts/migrate-registration-types.js",
