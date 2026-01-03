@@ -9,9 +9,11 @@ if (typeof window === 'undefined' && !process.env.DB_HOST) {
     // Birden fazla yerde .env dosyasını ara
     const possiblePaths = [
       path.join(process.cwd(), '.env'),
+      path.join(process.cwd(), '.env.local'),
       path.join(process.cwd(), '..', '.env'),
       path.join(__dirname, '..', '.env'),
       path.join(__dirname, '..', '..', '.env'),
+      // Hostinger specific paths (fallback, Vercel'de çalışmayacak)
       '/home/u187342439/domains/online-registration.ohdkongre.org/public_html/.env',
       '/home/u187342439/public_html/.env',
     ];
@@ -91,13 +93,13 @@ function getPool(): mysql.Pool {
       password: dbPassword,
       database: dbName,
       port: dbPort,
-      waitForConnections: true,
-      connectionLimit: 10,
-      maxIdle: 10,
-      idleTimeout: 60000,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0
+  waitForConnections: true,
+  connectionLimit: 10,
+  maxIdle: 10,
+  idleTimeout: 60000,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
     });
     
     poolConfig = currentConfig;
