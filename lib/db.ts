@@ -61,7 +61,7 @@ function getPool(): mysql.Pool {
   const dbHost = process.env.DB_HOST === 'localhost' ? '127.0.0.1' : (process.env.DB_HOST || "127.0.0.1");
   const dbUser = process.env.DB_USER || "root";
   const dbPassword = process.env.DB_PASSWORD || "";
-  const dbName = process.env.DB_NAME || "railway";
+  const dbName = process.env.DB_NAME || "form_wizard";
   const dbPort = Number(process.env.DB_PORT) || 3306;
   
   const currentConfig = { host: dbHost, user: dbUser, password: dbPassword, database: dbName, port: dbPort };

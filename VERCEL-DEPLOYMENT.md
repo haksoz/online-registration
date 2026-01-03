@@ -83,8 +83,8 @@ Vercel deploy edildikten sonra, veritabanı tablolarını oluşturmanız gerekiy
 1. db4free.net'e MySQL client ile bağlanın
 2. `test_form_wizard` veritabanını seçin
 3. Projenizdeki migration dosyalarını çalıştırın:
-   - `railway-schema.sql` veya
-   - `railway-migration.sql` veya
+   - `railway-schema.sql` (genel schema dosyası) veya
+   - `railway-migration.sql` (genel migration dosyası) veya
    - `scripts/` klasöründeki migration dosyaları
 
 ### Yöntem 2: Admin Panel Üzerinden

@@ -57,6 +57,7 @@ USE form_wizard;
 source railway-schema.sql;
 # veya
 source railway-migration.sql;
+# Not: Bu dosyalar Railway'den kalmıştır ama genel schema dosyalarıdır
 ```
 
 ### 4. Default Verileri Yükleyin
@@ -155,12 +156,15 @@ mysql -u root -p form_wizard < backup_20250116_120000.sql
 3. Environment variables ekleyin (.env.local içeriği)
 4. Deploy edin
 
-### Railway/Heroku Deployment
+### Railway/Heroku Deployment (Artık Kullanılmıyor)
 
-1. Railway/Heroku hesabınıza giriş yapın
-2. MySQL database oluşturun
-3. Environment variables ekleyin
-4. Deploy edin
+> **Not:** Railway deneme süresi dolduğu için artık kullanılmıyor. 
+> Alternatif olarak Vercel + db4free.net veya Vercel + PlanetScale kullanılabilir.
+
+1. ~~Railway/Heroku hesabınıza giriş yapın~~
+2. ~~MySQL database oluşturun~~
+3. ~~Environment variables ekleyin~~
+4. ~~Deploy edin~~
 
 ### VPS Deployment (Ubuntu)
 
