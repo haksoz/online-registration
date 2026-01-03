@@ -103,8 +103,8 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Kategorileri yükle
-        const categoriesResponse = await fetch('/api/admin/categories')
+        // Kategorileri yükle (public endpoint)
+        const categoriesResponse = await fetch('/api/categories')
         const categoriesData = await categoriesResponse.json()
         if (categoriesData.success) {
           const visibleCategories = categoriesData.data.filter((cat: Category) => cat.is_visible)
