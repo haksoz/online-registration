@@ -26,6 +26,14 @@ interface Category {
   early_bird_enabled?: boolean
 }
 
+/** Kategori ikonları: Kongre 3, Kurs 3, Konaklama 3, Diğer 3 — tek sırada */
+const CATEGORY_ICON_OPTIONS = [
+  '🎤', '📋', '🎭',   // Kongre / Etkinlik
+  '📚', '🎓', '📝',   // Kurs / Eğitim
+  '🏨', '🛏️', '📍',   // Konaklama
+  '📌', '⭐', '💼',   // Diğer
+]
+
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -193,37 +201,58 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <table className="w-full">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sıra</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İkon</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kayıt Türü</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">İşlemler</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sıra</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">İkon</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Görünür</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Zorunlu</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Çoklu Seçim</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Kontenjan takibi</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Erken kayıt</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktif kayıt türü</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {categories.map((category) => (
-              <tr key={category.id}>
-                <td className="px-6 py-4">{category.display_order}</td>
-                <td className="px-6 py-4 text-2xl">{category.icon}</td>
-                <td className="px-6 py-4">
+              <tr key={category.id} className={!category.is_active ? 'bg-gray-50' : ''}>
+                <td className="px-4 py-3">{category.display_order}</td>
+                <td className="px-4 py-3 text-2xl">{category.icon || '—'}</td>
+                <td className="px-4 py-3">
                   <div className="font-medium">{category.label_tr}</div>
                   <div className="text-sm text-gray-500">{category.label_en}</div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2 flex-wrap">
-                    {category.is_visible && <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Görünür</span>}
-                    {category.is_required && <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">Zorunlu</span>}
-                    {category.allow_multiple && <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Çoklu</span>}
-                    {!category.is_active && <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Pasif</span>}
-                  </div>
+                <td className="px-4 py-3 text-center">
+                  <span className={category.is_visible ? 'text-green-600' : 'text-gray-300'} title={category.is_visible ? 'Görünür' : 'Görünmez'}>
+                    {category.is_visible ? '✓' : '✗'}
+                  </span>
                 </td>
-                <td className="px-6 py-4">{category.type_count}</td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-4 py-3 text-center">
+                  <span className={category.is_required ? 'text-green-600' : 'text-gray-300'} title={category.is_required ? 'Zorunlu' : 'Zorunlu değil'}>
+                    {category.is_required ? '✓' : '✗'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className={category.allow_multiple ? 'text-green-600' : 'text-gray-300'} title={category.allow_multiple ? 'Çoklu seçim açık' : 'Tek seçim'}>
+                    {category.allow_multiple ? '✓' : '✗'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className={category.track_capacity ? 'text-green-600' : 'text-gray-300'} title={category.track_capacity ? 'Kontenjan takibi açık' : 'Kapalı'}>
+                    {category.track_capacity ? '✓' : '✗'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <span className={category.early_bird_enabled ? 'text-green-600' : 'text-gray-300'} title={category.early_bird_enabled ? 'Erken kayıt açık' : 'Kapalı'}>
+                    {category.early_bird_enabled ? '✓' : '✗'}
+                  </span>
+                </td>
+                <td className="px-4 py-3">{category.type_count}</td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
                   <button onClick={() => handleEdit(category)} className="text-blue-600 hover:text-blue-800 mr-3">Düzenle</button>
                   <button onClick={() => handleDelete(category.id)} className="text-red-600 hover:text-red-800">Sil</button>
                 </td>
@@ -253,13 +282,40 @@ export default function CategoriesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">İkon</label>
-                  <input
-                    type="text"
-                    value={formData.icon}
-                    onChange={(e) => setFormData({...formData, icon: e.target.value})}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    placeholder="🎤"
-                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
+                      {formData.icon || '—'}
+                    </span>
+                    <input
+                      type="text"
+                      value={formData.icon}
+                      onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                      className="flex-1 max-w-[6rem] px-2 py-1.5 border rounded-lg text-center text-xl"
+                      placeholder="Özel"
+                      maxLength={4}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 mt-2">
+                <label className="block text-sm font-medium mb-2">Önerilen ikonlar</label>
+                <div className="flex flex-wrap gap-1">
+                  {CATEGORY_ICON_OPTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, icon: emoji })}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg border-2 text-lg transition-colors ${
+                        formData.icon === emoji
+                          ? 'border-primary-500 bg-primary-50 text-primary-700'
+                          : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                      }`}
+                      title={emoji}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
                 </div>
               </div>
 

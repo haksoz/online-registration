@@ -23,7 +23,7 @@ export default function RegistrationTypesPage() {
   const fetchRegistrationTypes = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/registration-types')
+      const response = await fetch('/api/admin/registration-types')
       const data = await response.json()
       
       if (data.success) {
@@ -95,6 +95,17 @@ export default function RegistrationTypesPage() {
         onDelete={(type) => {
           setDeletingType(type)
           setShowDeleteModal(true)
+        }}
+        onToggleActive={async (type) => {
+          const newActive = !(type as any).is_active
+          const res = await fetch(`/api/admin/registration-types/${type.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: newActive }),
+          })
+          const data = await res.json()
+          if (data.success) fetchRegistrationTypes()
+          else showError('Hata', data.error || 'Güncellenemedi')
         }}
       />
 

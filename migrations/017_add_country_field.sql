@@ -11,7 +11,5 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- 2) form_field_settings'ta country yoksa ekle (cinsiyetten sonra, display_order 4)
-INSERT INTO form_field_settings (field_name, field_label, field_type, step_number, is_visible, is_required, display_order, placeholder)
-SELECT 'country', 'Ülke', 'select', 1, 1, 0, 4, NULL
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM form_field_settings WHERE field_name = 'country' AND step_number = 1);
+INSERT IGNORE INTO form_field_settings (field_name, field_label, field_type, step_number, is_visible, is_required, display_order, placeholder)
+VALUES ('country', 'Ülke', 'select', 1, 1, 0, 4, NULL);

@@ -9,6 +9,7 @@ interface RegistrationTypesTableProps {
   loading: boolean
   onEdit: (type: RegistrationType) => void
   onDelete: (type: RegistrationType) => void
+  onToggleActive?: (type: RegistrationType) => void | Promise<void>
 }
 
 interface Category {
@@ -23,11 +24,13 @@ export default function RegistrationTypesTable({
   registrationTypes,
   loading,
   onEdit,
-  onDelete
+  onDelete,
+  onToggleActive
 }: RegistrationTypesTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [togglingId, setTogglingId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchCategories()
@@ -114,6 +117,9 @@ export default function RegistrationTypesTable({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="h-4 bg-gray-200 rounded w-24"></div>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <div className="h-6 w-6 bg-gray-200 rounded mx-auto"></div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="h-4 bg-gray-200 rounded w-16"></div>
                 </td>
@@ -193,6 +199,9 @@ export default function RegistrationTypesTable({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Kategori
                 </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aktif
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ücret (TRY)
                 </th>
@@ -213,7 +222,7 @@ export default function RegistrationTypesTable({
             <tbody className="bg-white divide-y divide-gray-200">
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
                     <div className="flex flex-col items-center">
                       <svg className="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -223,8 +232,10 @@ export default function RegistrationTypesTable({
                   </td>
                 </tr>
               ) : (
-                currentItems.map((type) => (
-                  <tr key={type.id} className="hover:bg-gray-50 transition-colors">
+                currentItems.map((type) => {
+                  const isActive = (type as any).is_active !== false
+                  return (
+                  <tr key={type.id} className={`transition-colors ${isActive ? 'hover:bg-gray-50' : 'bg-gray-50/70'}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {type.id}
                     </td>
@@ -235,6 +246,23 @@ export default function RegistrationTypesTable({
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
                         {getCategoryName((type as any).category_id)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      {onToggleActive ? (
+                        <button
+                          type="button"
+                          onClick={() => togglingId === type.id ? undefined : (setTogglingId(type.id), onToggleActive(type).then(() => setTogglingId(null)).catch(() => setTogglingId(null)))}
+                          disabled={togglingId === type.id}
+                          className={`inline-flex items-center justify-center w-8 h-8 rounded border-2 text-sm font-medium transition-colors ${
+                            isActive ? 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100' : 'border-gray-200 bg-gray-100 text-gray-400 hover:bg-gray-200'
+                          } ${togglingId === type.id ? 'opacity-50 cursor-wait' : ''}`}
+                          title={isActive ? 'Aktif — Pasif yapmak için tıklayın' : 'Pasif — Aktif yapmak için tıklayın'}
+                        >
+                          {togglingId === type.id ? '…' : isActive ? '✓' : '✗'}
+                        </button>
+                      ) : (
+                        <span className={isActive ? 'text-green-600' : 'text-gray-400'}>{isActive ? '✓' : '✗'}</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                       {formatFee(type.fee_try)}
@@ -273,7 +301,8 @@ export default function RegistrationTypesTable({
                       </div>
                     </td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>

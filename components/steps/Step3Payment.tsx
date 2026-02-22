@@ -152,7 +152,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
         }),
       })
 
-      const result = await response.json()
+      const result = await response.json().catch(() => ({ success: false, message: 'Yanıt okunamadı' }))
       
       // Ödeme başarısız durumu (status 400)
       if (!response.ok && result.paymentResult) {
@@ -226,12 +226,14 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
         // Başarılı - Step4'e geç (bank transfer için)
         onNext()
       } else {
-        alert('Kayıt sırasında hata oluştu.')
+        const errMsg = result?.message || result?.error || 'Kayıt sırasında hata oluştu.'
+        alert(errMsg)
         setIsProcessing(false)
       }
     } catch (error) {
       console.error(error)
-      alert('Kayıt sırasında hata oluştu.')
+      const errMsg = error instanceof Error ? error.message : 'Kayıt sırasında hata oluştu.'
+      alert(errMsg)
       setIsProcessing(false)
     }
   }

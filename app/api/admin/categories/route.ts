@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const [categories] = await pool.execute(
       `SELECT c.*, 
-        (SELECT COUNT(*) FROM registration_types WHERE category_id = c.id) as type_count
+        (SELECT COUNT(*) FROM registration_types WHERE category_id = c.id AND is_active = 1) as type_count
        FROM registration_categories c 
        ORDER BY display_order, id`
     )
