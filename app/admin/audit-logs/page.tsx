@@ -11,12 +11,15 @@ interface AuditLog {
   table_name: string
   record_id: number
   action: 'CREATE' | 'UPDATE' | 'DELETE'
-  old_values: string | null // JSON string
-  new_values: string | null // JSON string
+  old_values: string | null
+  new_values: string | null
   changed_fields: string
   ip_address: string
   user_agent: string
   created_at: string
+  reference_number: string | null
+  full_name: string | null
+  registration_id: number | null
 }
 
 export default function AuditLogsPage() {
@@ -121,8 +124,8 @@ export default function AuditLogsPage() {
         <p className="text-gray-600 mt-1">Sistem üzerinde yapılan tüm değişikliklerin kaydı</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200" style={{ minWidth: '900px' }}>
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -135,15 +138,15 @@ export default function AuditLogsPage() {
                 İşlem
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tablo
+                Referans
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kayıt ID
+                Kayıtlı kişi
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Değişen Alanlar
+                Tablo / Kayıt
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                 Detay
               </th>
             </tr>
@@ -177,28 +180,34 @@ export default function AuditLogsPage() {
                       {getActionLabel(log.action)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
-                    {log.table_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {log.table_name === 'registrations' ? (
-                      <Link 
-                        href={`/admin/registrations/${log.record_id}`}
-                        className="text-primary-600 hover:text-primary-800 underline"
-                      >
-                        #{log.record_id}
-                      </Link>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {log.reference_number ? (
+                      log.registration_id ? (
+                        <Link
+                          href={`/admin/registrations/${log.registration_id}`}
+                          className="text-primary-600 hover:text-primary-800 underline"
+                        >
+                          {log.reference_number}
+                        </Link>
+                      ) : (
+                        log.reference_number
+                      )
                     ) : (
-                      `#${log.record_id}`
+                      <span className="text-gray-400">—</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                    {log.changed_fields || '-'}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {log.full_name || <span className="text-gray-400">—</span>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <span className="font-mono">{log.table_name}</span>
+                    <span className="text-gray-400 ml-1">#{log.record_id}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium w-24">
                     <button
+                      type="button"
                       onClick={() => setSelectedLog(log)}
-                      className="text-primary-600 hover:text-primary-800 transition-colors"
+                      className="px-3 py-1.5 rounded-md border border-primary-600 text-primary-600 hover:bg-primary-50 transition-colors"
                     >
                       Detay
                     </button>
@@ -260,6 +269,29 @@ export default function AuditLogsPage() {
                   <span className={getActionBadge(selectedLog.action)}>
                     {getActionLabel(selectedLog.action)}
                   </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Referans</label>
+                  <p className="text-sm text-gray-900">
+                    {selectedLog.reference_number ? (
+                      selectedLog.registration_id ? (
+                        <Link
+                          href={`/admin/registrations/${selectedLog.registration_id}`}
+                          className="text-primary-600 hover:text-primary-800 underline"
+                        >
+                          {selectedLog.reference_number}
+                        </Link>
+                      ) : (
+                        selectedLog.reference_number
+                      )
+                    ) : (
+                      '—'
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Kayıtlı kişi</label>
+                  <p className="text-sm text-gray-900">{selectedLog.full_name || '—'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Tablo</label>

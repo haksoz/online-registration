@@ -8,9 +8,9 @@ export const revalidate = 0
 // Public endpoint - Form render için
 export async function GET() {
   try {
-    // Form field settings - TÜM alanları döndür (frontend'de filtreleme yapılacak)
+    // Form field settings - TÜM alanları döndür (frontend'de filtreleme yapılacak), field_label_en dil desteği
     const [fieldRows] = await pool.execute(
-      `SELECT field_name, field_label, field_type, step_number, 
+      `SELECT field_name, field_label, COALESCE(field_label_en, field_label) AS field_label_en, field_type, step_number, 
               is_visible, is_required, display_order, placeholder, help_text
        FROM form_field_settings 
        ORDER BY step_number, display_order`
@@ -78,6 +78,16 @@ export async function GET() {
     )
     const showPriceWithVat = (showPriceWithVatRows as any[])[0]?.setting_value !== 'false'
 
+    // KVKK aydınlatma popup metinleri (TR/EN)
+    const [kvkkTrRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'kvkk_popup_tr'`
+    )
+    const [kvkkEnRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'kvkk_popup_en'`
+    )
+    const kvkkPopupTr = (kvkkTrRows as any[])[0]?.setting_value ?? ''
+    const kvkkPopupEn = (kvkkEnRows as any[])[0]?.setting_value ?? ''
+
     return NextResponse.json({
       success: true,
       data: [{
@@ -93,7 +103,9 @@ export async function GET() {
       invoiceIndividualNote: invoiceIndividualNote,
       invoiceCorporateNote: invoiceCorporateNote,
       invoiceIndividualNoteEn: invoiceIndividualNoteEn,
-      invoiceCorporateNoteEn: invoiceCorporateNoteEn
+      invoiceCorporateNoteEn: invoiceCorporateNoteEn,
+      kvkkPopupTr,
+      kvkkPopupEn
     })
   } catch (error) {
     console.error('Error fetching form settings:', error)

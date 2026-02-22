@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 export interface FormFieldSetting {
   field_name: string
   field_label: string
+  field_label_en?: string
   field_type: string
   step_number: number
   is_visible: boolean
@@ -35,6 +36,8 @@ export function useFormSettings() {
   const [invoiceCorporateNote, setInvoiceCorporateNote] = useState<string>('')
   const [invoiceIndividualNoteEn, setInvoiceIndividualNoteEn] = useState<string>('')
   const [invoiceCorporateNoteEn, setInvoiceCorporateNoteEn] = useState<string>('')
+  const [kvkkPopupTr, setKvkkPopupTr] = useState<string>('')
+  const [kvkkPopupEn, setKvkkPopupEn] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,6 +77,8 @@ export function useFormSettings() {
         setInvoiceCorporateNote(data.invoiceCorporateNote || '')
         setInvoiceIndividualNoteEn(data.invoiceIndividualNoteEn || '')
         setInvoiceCorporateNoteEn(data.invoiceCorporateNoteEn || '')
+        setKvkkPopupTr(data.kvkkPopupTr ?? '')
+        setKvkkPopupEn(data.kvkkPopupEn ?? '')
       } else {
         throw new Error(data.error || 'Form ayarları yüklenemedi')
       }
@@ -145,6 +150,8 @@ export function useFormSettings() {
     invoiceCorporateNote,
     invoiceIndividualNoteEn,
     invoiceCorporateNoteEn,
+    kvkkPopupTr,
+    kvkkPopupEn,
     loading,
     error,
     isFieldVisible,

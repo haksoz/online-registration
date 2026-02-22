@@ -39,18 +39,24 @@ interface RegistrationSelection {
 interface Registration {
   id: number
   reference_number: string
+  first_name?: string | null
+  last_name?: string | null
   full_name: string
+  gender?: string | null
   email: string
   phone: string
-  address?: string
-  company?: string
+  address?: string | null
+  company?: string | null
+  department?: string | null
+  country?: string | null
+  form_language?: string | null
   invoice_type: string
-  invoice_full_name?: string
-  id_number?: string
-  invoice_address?: string
-  invoice_company_name?: string
-  tax_office?: string
-  tax_number?: string
+  invoice_full_name?: string | null
+  id_number?: string | null
+  invoice_address?: string | null
+  invoice_company_name?: string | null
+  tax_office?: string | null
+  tax_number?: string | null
   registration_type: string
   fee: number
   currency: string
@@ -68,6 +74,7 @@ interface Registration {
   selections: RegistrationSelection[]
   created_at: string
   updated_at: string
+  kvkk_consent_at?: string | null
   cancellationDeadline?: string | null
 }
 
@@ -243,13 +250,27 @@ export default function RegistrationDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sol Kolon - Katılımcı ve Fatura Bilgileri */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Katılımcı Bilgileri */}
+          {/* Kişisel Bilgiler */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Katılımcı Bilgileri</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Kişisel Bilgiler</h2>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-500">Ad Soyad</label>
-                <p className="text-sm font-medium text-gray-900">{registration.full_name}</p>
+                <label className="text-xs text-gray-500">Ad</label>
+                <p className="text-sm text-gray-900">{registration.first_name ?? '—'}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Soyad</label>
+                <p className="text-sm text-gray-900">{registration.last_name ?? '—'}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Cinsiyet</label>
+                <p className="text-sm text-gray-900">
+                  {registration.gender === 'male' ? 'Erkek' : registration.gender === 'female' ? 'Kadın' : registration.gender === 'other' ? 'Diğer' : registration.gender === 'prefer_not_to_say' ? 'Belirtmek istemiyorum' : registration.gender ?? '—'}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Ülke</label>
+                <p className="text-sm text-gray-900">{registration.country ?? '—'}</p>
               </div>
               <div>
                 <label className="text-xs text-gray-500">E-posta</label>
@@ -257,20 +278,32 @@ export default function RegistrationDetailPage() {
               </div>
               <div>
                 <label className="text-xs text-gray-500">Telefon</label>
-                <p className="text-sm text-gray-900">{registration.phone}</p>
+                <p className="text-sm text-gray-900">{registration.phone ?? '—'}</p>
               </div>
-              {registration.address && (
-                <div>
-                  <label className="text-xs text-gray-500">Adres</label>
-                  <p className="text-sm text-gray-900">{registration.address}</p>
-                </div>
-              )}
-              {registration.company && (
-                <div>
-                  <label className="text-xs text-gray-500">Şirket</label>
-                  <p className="text-sm text-gray-900">{registration.company}</p>
-                </div>
-              )}
+              <div>
+                <label className="text-xs text-gray-500">Adres</label>
+                <p className="text-sm text-gray-900">{registration.address ?? '—'}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Şirket/Kurum</label>
+                <p className="text-sm text-gray-900">{registration.company ?? '—'}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Departman</label>
+                <p className="text-sm text-gray-900">{registration.department ?? '—'}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Form Dili</label>
+                <p className="text-sm text-gray-900">{registration.form_language === 'en' ? 'İngilizce' : registration.form_language === 'tr' ? 'Türkçe' : registration.form_language ?? '—'}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">KVKK Onayı</label>
+                <p className="text-sm text-gray-900">
+                  {registration.kvkk_consent_at
+                    ? `Onaylandı – ${new Date(registration.kvkk_consent_at).toLocaleString('tr-TR')}`
+                    : '—'}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -281,53 +314,44 @@ export default function RegistrationDetailPage() {
               <div>
                 <label className="text-xs text-gray-500">Fatura Tipi</label>
                 <p className="text-sm font-medium text-gray-900 capitalize">
-                  {registration.invoice_type === 'bireysel' ? 'Bireysel' : 'Kurumsal'}
+                  {registration.invoice_type === 'bireysel' ? 'Bireysel' : registration.invoice_type === 'kurumsal' ? 'Kurumsal' : registration.invoice_type ?? '—'}
                 </p>
               </div>
-              
-              {registration.invoice_type === 'bireysel' ? (
+              {registration.invoice_type === 'bireysel' && (
                 <>
-                  {registration.invoice_full_name && (
-                    <div>
-                      <label className="text-xs text-gray-500">Fatura Adı</label>
-                      <p className="text-sm text-gray-900">{registration.invoice_full_name}</p>
-                    </div>
-                  )}
-                  {registration.id_number && (
-                    <div>
-                      <label className="text-xs text-gray-500">TC Kimlik No</label>
-                      <p className="text-sm text-gray-900">{registration.id_number}</p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  {registration.invoice_company_name && (
-                    <div>
-                      <label className="text-xs text-gray-500">Şirket Adı</label>
-                      <p className="text-sm text-gray-900">{registration.invoice_company_name}</p>
-                    </div>
-                  )}
-                  {registration.tax_office && (
-                    <div>
-                      <label className="text-xs text-gray-500">Vergi Dairesi</label>
-                      <p className="text-sm text-gray-900">{registration.tax_office}</p>
-                    </div>
-                  )}
-                  {registration.tax_number && (
-                    <div>
-                      <label className="text-xs text-gray-500">Vergi No</label>
-                      <p className="text-sm text-gray-900">{registration.tax_number}</p>
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-xs text-gray-500">Fatura Adı / Ad Soyad</label>
+                    <p className="text-sm text-gray-900">{registration.invoice_full_name ?? '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">TC Kimlik No</label>
+                    <p className="text-sm text-gray-900">{registration.id_number ?? '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">Fatura Adresi</label>
+                    <p className="text-sm text-gray-900">{registration.invoice_address ?? '—'}</p>
+                  </div>
                 </>
               )}
-              
-              {registration.invoice_address && (
-                <div>
-                  <label className="text-xs text-gray-500">Fatura Adresi</label>
-                  <p className="text-sm text-gray-900">{registration.invoice_address}</p>
-                </div>
+              {registration.invoice_type === 'kurumsal' && (
+                <>
+                  <div>
+                    <label className="text-xs text-gray-500">Şirket Adı</label>
+                    <p className="text-sm text-gray-900">{registration.invoice_company_name ?? '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">Vergi Dairesi</label>
+                    <p className="text-sm text-gray-900">{registration.tax_office ?? '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">Vergi No</label>
+                    <p className="text-sm text-gray-900">{registration.tax_number ?? '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">Fatura Adresi</label>
+                    <p className="text-sm text-gray-900">{registration.invoice_address ?? '—'}</p>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -675,7 +699,7 @@ export default function RegistrationDetailPage() {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900">Kayıt Seçimleri</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Tarih: {new Date(registration.created_at).toLocaleDateString('tr-TR')}
+                    Tarih: {new Date(registration.created_at).toLocaleString('tr-TR')}
                   </p>
                 </div>
                 <div className="text-right">

@@ -157,6 +157,16 @@ export async function GET() {
     )
     const showEarlyBirdNotice = (showEarlyBirdNoticeRows as any[])[0]?.setting_value !== 'false'
 
+    // KVKK aydınlatma popup metinleri (TR/EN)
+    const [kvkkTrRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'kvkk_popup_tr'`
+    )
+    const [kvkkEnRows] = await pool.execute(
+      `SELECT setting_value FROM form_settings WHERE setting_key = 'kvkk_popup_en'`
+    )
+    const kvkkPopupTr = (kvkkTrRows as any[])[0]?.setting_value ?? ''
+    const kvkkPopupEn = (kvkkEnRows as any[])[0]?.setting_value ?? ''
+
     return NextResponse.json({
       success: true,
       fields: fieldRows,
@@ -170,7 +180,9 @@ export async function GET() {
       invoiceCorporateNoteEn: invoiceCorporateNoteEn,
       homepageUrl: homepageUrl,
       showPriceWithVat: showPriceWithVat,
-      showEarlyBirdNotice: showEarlyBirdNotice
+      showEarlyBirdNotice: showEarlyBirdNotice,
+      kvkkPopupTr,
+      kvkkPopupEn
     })
   } catch (error) {
     console.error('Error fetching admin form settings:', error)
@@ -185,22 +197,32 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { fields, paymentMethods, step2Settings, showPriceWithVat, showEarlyBirdNotice, homepageUrl, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn } = body
+    const { fields, paymentMethods, step2Settings, showPriceWithVat, showEarlyBirdNotice, homepageUrl, language, registrationDeadline, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn, kvkkPopupTr, kvkkPopupEn } = body
 
     const connection = await pool.getConnection()
     
     try {
       await connection.beginTransaction()
 
-      // Form field settings güncelle
+      // Form field settings güncelle (kvkk_consent için field_label, field_label_en de güncellenir)
       if (fields && Array.isArray(fields)) {
         for (const field of fields) {
-          await connection.execute(
-            `UPDATE form_field_settings 
-             SET is_visible = ?, is_required = ?, display_order = ?
-             WHERE field_name = ?`,
-            [field.is_visible, field.is_required, field.display_order, field.field_name]
-          )
+          const isKvkk = field.field_name === 'kvkk_consent'
+          if (isKvkk && field.field_label != null) {
+            await connection.execute(
+              `UPDATE form_field_settings 
+               SET is_visible = ?, is_required = ?, display_order = ?, field_label = ?, field_label_en = ?
+               WHERE field_name = ?`,
+              [field.is_visible, field.is_required, field.display_order, field.field_label, field.field_label_en ?? field.field_label, field.field_name]
+            )
+          } else {
+            await connection.execute(
+              `UPDATE form_field_settings 
+               SET is_visible = ?, is_required = ?, display_order = ?
+               WHERE field_name = ?`,
+              [field.is_visible, field.is_required, field.display_order, field.field_name]
+            )
+          }
         }
       }
 
@@ -311,6 +333,24 @@ export async function PUT(request: NextRequest) {
            VALUES ('homepage_url', ?, 'Anasayfa URL adresi')
            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
           [homepageUrl]
+        )
+      }
+
+      // KVKK popup metinleri (TR/EN)
+      if (kvkkPopupTr !== undefined) {
+        await connection.execute(
+          `INSERT INTO form_settings (setting_key, setting_value, description) 
+           VALUES ('kvkk_popup_tr', ?, 'KVKK Aydınlatma Metni - Türkçe (popup)')
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+          [kvkkPopupTr]
+        )
+      }
+      if (kvkkPopupEn !== undefined) {
+        await connection.execute(
+          `INSERT INTO form_settings (setting_key, setting_value, description) 
+           VALUES ('kvkk_popup_en', ?, 'KVKK Privacy Notice - English (popup)')
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+          [kvkkPopupEn]
         )
       }
 

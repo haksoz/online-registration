@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool, incrementCapacityForType } from '@/lib/db'
+import { createAuditLogFromRequest } from '@/lib/auditLog'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +72,25 @@ export async function POST(
 
     // Kontenjan: iptal geri alındığında kapasiteyi tekrar düşür (yer tekrar dolu)
     await incrementCapacityForType(selection.registration_type_id)
+
+    await createAuditLogFromRequest(request, {
+      tableName: 'registration_selections',
+      recordId: parseInt(params.selectionId, 10),
+      action: 'UPDATE',
+      oldValues: {
+        is_cancelled: selection.is_cancelled,
+        payment_status: selection.payment_status,
+        cancelled_at: selection.cancelled_at,
+        refund_status: selection.refund_status,
+      },
+      newValues: {
+        is_cancelled: false,
+        payment_status: newPaymentStatus,
+        cancelled_at: null,
+        refund_status: 'none',
+      },
+      changedFields: ['is_cancelled', 'payment_status', 'cancelled_at', 'refund_status'],
+    })
 
     // Ana kaydın toplamlarını güncelle
     const [totals] = await pool.execute(

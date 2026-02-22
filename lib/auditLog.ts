@@ -2,7 +2,7 @@ import { pool } from '@/lib/db'
 import { NextRequest } from 'next/server'
 
 export interface AuditLogData {
-  userId: number
+  userId: number | null
   tableName: string
   recordId: number
   action: 'CREATE' | 'UPDATE' | 'DELETE'
@@ -52,14 +52,28 @@ export async function createAuditLog(data: AuditLogData) {
 }
 
 export function extractUserInfoFromRequest(request: NextRequest) {
-  const ipAddress = request.ip || 
-    request.headers.get('x-forwarded-for') || 
-    request.headers.get('x-real-ip') || 
+  const forwarded = request.headers.get('x-forwarded-for')
+  const ipAddress = (forwarded?.split(',')[0]?.trim()) ||
+    request.headers.get('x-real-ip') ||
+    request.ip ||
     'unknown'
-  
   const userAgent = request.headers.get('user-agent') || 'unknown'
-  
   return { ipAddress, userAgent }
+}
+
+/** Request'ten user id + IP/UA alıp audit log yazar (admin işlemleri için). */
+export async function createAuditLogFromRequest(
+  request: NextRequest,
+  data: Omit<AuditLogData, 'userId' | 'ipAddress' | 'userAgent'>
+) {
+  const userId = getCurrentUserId(request)
+  const { ipAddress, userAgent } = extractUserInfoFromRequest(request)
+  await createAuditLog({
+    ...data,
+    userId,
+    ipAddress,
+    userAgent,
+  })
 }
 
 export function getCurrentUserId(request: NextRequest): number | null {

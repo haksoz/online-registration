@@ -41,6 +41,7 @@ export const personalInfoSchema = z
     invoiceCompanyName: z.string().optional(),
     taxOffice: z.string().optional(),
     taxNumber: z.string().optional(),
+    kvkk_consent: z.boolean().optional(),
   })
   .refine(
     (data) => {

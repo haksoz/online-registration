@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
+import { createAuditLogFromRequest, compareObjects } from '@/lib/auditLog'
 
 export const dynamic = 'force-dynamic'
 
@@ -111,6 +112,14 @@ export async function PATCH(
       )
     }
 
+    // Eski değerleri al (audit için)
+    const [oldRows] = await pool.execute(
+      'SELECT payment_status, payment_confirmed_at, payment_notes, payment_receipt_filename, payment_receipt_url, payment_receipt_uploaded_at, status FROM registrations WHERE id = ?',
+      [params.id]
+    )
+    const oldRow = (oldRows as any[])[0]
+    const oldValues = oldRow ? { ...oldRow } : {}
+
     values.push(params.id)
 
     await pool.execute(
@@ -127,6 +136,22 @@ export async function PATCH(
          WHERE registration_id = ? AND is_cancelled = FALSE`,
         [body.payment_status, params.id]
       )
+    }
+
+    const newValues: Record<string, unknown> = {}
+    for (const field of allowedFields) {
+      if (body[field] !== undefined) newValues[field] = body[field]
+    }
+    const changedFields = compareObjects(oldValues, newValues)
+    if (changedFields.length > 0) {
+      await createAuditLogFromRequest(request, {
+        tableName: 'registrations',
+        recordId: parseInt(params.id, 10),
+        action: 'UPDATE',
+        oldValues,
+        newValues,
+        changedFields,
+      })
     }
 
     return NextResponse.json({

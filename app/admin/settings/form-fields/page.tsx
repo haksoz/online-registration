@@ -6,6 +6,7 @@ interface FormFieldSetting {
   id: number
   field_name: string
   field_label: string
+  field_label_en?: string
   field_type: string
   step_number: number
   is_visible: boolean
@@ -38,6 +39,8 @@ export default function FormFieldsSettingsPage() {
   const [invoiceCorporateNote, setInvoiceCorporateNote] = useState('')
   const [invoiceIndividualNoteEn, setInvoiceIndividualNoteEn] = useState('')
   const [invoiceCorporateNoteEn, setInvoiceCorporateNoteEn] = useState('')
+  const [kvkkPopupTr, setKvkkPopupTr] = useState('')
+  const [kvkkPopupEn, setKvkkPopupEn] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -65,6 +68,8 @@ export default function FormFieldsSettingsPage() {
         setInvoiceCorporateNote(data.invoiceCorporateNote || '')
         setInvoiceIndividualNoteEn(data.invoiceIndividualNoteEn || '')
         setInvoiceCorporateNoteEn(data.invoiceCorporateNoteEn || '')
+        setKvkkPopupTr(data.kvkkPopupTr ?? '')
+        setKvkkPopupEn(data.kvkkPopupEn ?? '')
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
@@ -114,7 +119,9 @@ export default function FormFieldsSettingsPage() {
           invoiceIndividualNote,
           invoiceCorporateNote,
           invoiceIndividualNoteEn,
-          invoiceCorporateNoteEn
+          invoiceCorporateNoteEn,
+          kvkkPopupTr,
+          kvkkPopupEn
         })
       })
 
@@ -280,6 +287,87 @@ export default function FormFieldsSettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* KVKK Aydınlatma */}
+      {(() => {
+        const kvkkField = fields.find(f => f.field_name === 'kvkk_consent')
+        if (!kvkkField) return null
+        return (
+          <div className="bg-white rounded-lg shadow mb-6">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">KVKK Aydınlatma</h2>
+              <p className="text-sm text-gray-600 mt-1">Step 1 formunda İleri butonunun üstünde gösterilir. Checkbox metni ve popup içeriği TR/EN düzenlenebilir.</p>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex flex-wrap gap-6 items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Görünür</span>
+                  <button
+                    onClick={() => handleFieldToggle('kvkk_consent', 'visible')}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${kvkkField.is_visible ? 'bg-primary-600' : 'bg-gray-200'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${kvkkField.is_visible ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">Zorunlu</span>
+                  <button
+                    onClick={() => handleFieldToggle('kvkk_consent', 'required')}
+                    disabled={!kvkkField.is_visible}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${!kvkkField.is_visible ? 'opacity-50 cursor-not-allowed' : ''} ${kvkkField.is_required ? 'bg-primary-600' : 'bg-gray-200'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${kvkkField.is_required ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">🇹🇷 Checkbox metni (Türkçe)</label>
+                  <input
+                    type="text"
+                    value={kvkkField.field_label}
+                    onChange={(e) => setFields(fields.map(f => f.field_name === 'kvkk_consent' ? { ...f, field_label: e.target.value } : f))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="KVKK Aydınlatma Metni'ni okudum, anladım ve kabul ediyorum."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">🇬🇧 Checkbox label (English)</label>
+                  <input
+                    type="text"
+                    value={kvkkField.field_label_en ?? ''}
+                    onChange={(e) => setFields(fields.map(f => f.field_name === 'kvkk_consent' ? { ...f, field_label_en: e.target.value } : f))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="I have read, understood and accept the KVKK Privacy Notice."
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">🇹🇷 Popup içeriği (Türkçe)</label>
+                  <textarea
+                    value={kvkkPopupTr}
+                    onChange={(e) => setKvkkPopupTr(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="Metni oku tıklandığında açılacak aydınlatma metni..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">🇬🇧 Popup content (English)</label>
+                  <textarea
+                    value={kvkkPopupEn}
+                    onChange={(e) => setKvkkPopupEn(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="KVKK notice text shown in the popup..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Invoice Notes */}
       <div className="bg-white rounded-lg shadow mb-6">

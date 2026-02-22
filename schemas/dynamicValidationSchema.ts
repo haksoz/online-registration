@@ -30,7 +30,8 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[], language: 't
       invoiceAddress: 'Fatura Adresi zorunludur',
       invoiceCompanyName: 'Şirket Adı zorunludur',
       taxOffice: 'Vergi Dairesi zorunludur',
-      taxNumber: 'Vergi No zorunludur'
+      taxNumber: 'Vergi No zorunludur',
+      kvkk_consent: 'KVKK aydınlatma metnini kabul etmeniz gerekmektedir.'
     },
     en: {
       firstName: 'First name is required',
@@ -173,6 +174,13 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[], language: 't
   schemaFields.invoiceCompanyName = z.string().optional()
   schemaFields.taxOffice = z.string().optional()
   schemaFields.taxNumber = z.string().optional()
+
+  // KVKK consent (Step 1, İleri butonunun üstünde)
+  if (isVisible('kvkk_consent')) {
+    schemaFields.kvkk_consent = isRequired('kvkk_consent')
+      ? z.boolean().refine((v) => v === true, { message: msg.kvkk_consent })
+      : z.boolean().optional()
+  }
 
   // Create base schema
   let schema: any = z.object(schemaFields)

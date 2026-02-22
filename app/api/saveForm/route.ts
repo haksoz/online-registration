@@ -191,36 +191,57 @@ export async function POST(request: NextRequest) {
     // Determine payment status based on payment method
     const paymentStatus = payment.paymentMethod === 'online' ? 'completed' : 'pending'
 
-    // Prepare values array
-    const values = [
-      referenceNumber,
-      personalInfo.firstName || null,
-      personalInfo.lastName || null,
-      personalInfo.fullName || `${personalInfo.firstName} ${personalInfo.lastName}`.trim() || null,
-      personalInfo.gender || null,
-      personalInfo.email || null,
-      personalInfo.phone || null,
-      personalInfo.address || null,
-      personalInfo.company || null,
-      personalInfo.department || null,
-      personalInfo.country || null,
-      personalInfo.invoiceType || null,
-      personalInfo.invoiceFullName || null,
-      personalInfo.idNumber || null,
-      personalInfo.invoiceAddress || null,
-      personalInfo.invoiceCompanyName || null,
-      personalInfo.taxOffice || null,
-      personalInfo.taxNumber || null,
-      types.map((t: any) => t.label).join(', ') || null,
-      types.map((t: any) => t.label_en || t.label).join(', ') || null,
-      formLanguage || 'tr',
-      fee,
-      currencyCode,
-      feeInCurrency,
-      exchangeRate,
-      payment.paymentMethod || null,
-      paymentStatus,
+    // registrations tablosundaki mevcut sütunlara göre INSERT oluştur (country, kvkk_consent_at vb. eski DB'de olmayabilir)
+    const [colRows] = await pool.execute(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'registrations'`
+    )
+    const existingCols = new Set((colRows as { COLUMN_NAME: string }[]).map((r) => r.COLUMN_NAME))
+
+    const fullName = personalInfo.fullName || `${personalInfo.firstName || ''} ${personalInfo.lastName || ''}`.trim() || null
+    const columnSpec: [string, unknown][] = [
+      ['reference_number', referenceNumber],
+      ['first_name', personalInfo.firstName || null],
+      ['last_name', personalInfo.lastName || null],
+      ['full_name', fullName],
+      ['gender', personalInfo.gender || null],
+      ['email', personalInfo.email || null],
+      ['phone', personalInfo.phone || null],
+      ['address', personalInfo.address || null],
+      ['company', personalInfo.company || null],
+      ['department', personalInfo.department || null],
+      ['country', personalInfo.country || null],
+      ['invoice_type', personalInfo.invoiceType || null],
+      ['invoice_full_name', personalInfo.invoiceFullName || null],
+      ['id_number', personalInfo.idNumber || null],
+      ['invoice_address', personalInfo.invoiceAddress || null],
+      ['invoice_company_name', personalInfo.invoiceCompanyName || null],
+      ['tax_office', personalInfo.taxOffice || null],
+      ['tax_number', personalInfo.taxNumber || null],
+      ['registration_type', types.map((t: any) => t.label).join(', ') || null],
+      ['registration_type_label_en', types.map((t: any) => t.label_en || t.label).join(', ') || null],
+      ['form_language', formLanguage || 'tr'],
+      ['fee', fee],
+      ['currency_code', currencyCode],
+      ['fee_in_currency', feeInCurrency],
+      ['exchange_rate', exchangeRate],
+      ['payment_method', payment.paymentMethod || null],
+      ['payment_status', paymentStatus],
+      ['kvkk_consent_at', personalInfo.kvkk_consent === true ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null],
     ]
+
+    const insertCols: string[] = []
+    const insertVals: unknown[] = []
+    for (const [col, val] of columnSpec) {
+      if (!existingCols.has(col)) continue
+      insertCols.push(col)
+      insertVals.push(val)
+    }
+    if (existingCols.has('created_at')) {
+      insertCols.push('created_at')
+    }
+    const placeholdersForReg = insertCols.map((c) => (c === 'created_at' ? 'NOW()' : '?')).join(', ')
+    const insertRegSql = `INSERT INTO registrations (${insertCols.join(', ')}) VALUES (${placeholdersForReg})`
 
     const connection = await pool.getConnection()
     let registrationId: number
@@ -267,17 +288,8 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // INSERT registrations
-      const [insertReg] = await connection.execute(
-        `INSERT INTO registrations (
-          reference_number, first_name, last_name, full_name, gender, email, phone, address, company, department, country,
-          invoice_type, invoice_full_name, id_number, invoice_address,
-          invoice_company_name, tax_office, tax_number,
-          registration_type, registration_type_label_en, form_language, fee, currency_code, fee_in_currency, exchange_rate, payment_method, payment_status,
-          created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        values
-      )
+      // INSERT registrations (sadece tabloda var olan sütunlar)
+      const [insertReg] = await connection.execute(insertRegSql, insertVals)
       registrationId = (insertReg as any).insertId
 
       // Seçimleri kaydet ve kapasiteyi artır (transaction içinde)

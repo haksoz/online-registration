@@ -20,6 +20,7 @@ export interface PersonalInfo {
   invoiceCompanyName?: string
   taxOffice?: string
   taxNumber?: string
+  kvkk_consent?: boolean
 }
 
 export interface AccommodationInfo {
@@ -81,6 +82,7 @@ const initialFormData: FormData = {
     invoiceCompanyName: '',
     taxOffice: '',
     taxNumber: '',
+    kvkk_consent: false,
   },
   accommodation: {
     registrationType: '',

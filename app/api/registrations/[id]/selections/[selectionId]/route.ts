@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool, decrementCapacityForType } from '@/lib/db'
+import { createAuditLogFromRequest } from '@/lib/auditLog'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,7 +58,23 @@ export async function DELETE(
     // Kontenjan: iptal edilen seçim için kapasiteyi artır
     await decrementCapacityForType(selection.registration_type_id)
 
-    // Toplamlar artık anlık hesaplanıyor, güncellemeye gerek yok
+    const newState = paymentPending
+      ? { is_cancelled: true, payment_status: 'cancelled', cancelled_at: new Date(), refund_status: 'none' }
+      : { is_cancelled: true, cancelled_at: new Date(), refund_status: 'pending', refund_requested_at: new Date() }
+    await createAuditLogFromRequest(request, {
+      tableName: 'registration_selections',
+      recordId: parseInt(params.selectionId, 10),
+      action: 'UPDATE',
+      oldValues: {
+        is_cancelled: selection.is_cancelled,
+        payment_status: selection.payment_status,
+        refund_status: selection.refund_status,
+        registration_id: selection.registration_id,
+        registration_type_id: selection.registration_type_id,
+      },
+      newValues: { ...newState, registration_id: selection.registration_id, registration_type_id: selection.registration_type_id },
+      changedFields: ['is_cancelled', 'payment_status', 'cancelled_at', 'refund_status', 'refund_requested_at'],
+    })
 
     return NextResponse.json({
       success: true,

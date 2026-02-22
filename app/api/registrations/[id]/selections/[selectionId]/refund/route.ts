@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth'
+import { createAuditLogFromRequest } from '@/lib/auditLog'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,7 +62,14 @@ export async function POST(
         [currentUser.id, notes || 'Para iadesi yapıldı', params.selectionId]
       )
 
-      // Toplamlar artık anlık hesaplanıyor
+      await createAuditLogFromRequest(request, {
+        tableName: 'registration_selections',
+        recordId: parseInt(params.selectionId, 10),
+        action: 'UPDATE',
+        oldValues: { refund_status: selection.refund_status, payment_status: selection.payment_status },
+        newValues: { refund_status: 'completed', payment_status: 'refunded', refund_notes: notes || 'Para iadesi yapıldı' },
+        changedFields: ['refund_status', 'payment_status', 'refund_approved_at', 'refund_approved_by', 'refund_completed_at', 'refund_notes'],
+      })
 
       return NextResponse.json({
         success: true,
@@ -76,6 +84,15 @@ export async function POST(
          WHERE id = ?`,
         [notes || 'İade reddedildi', params.selectionId]
       )
+
+      await createAuditLogFromRequest(request, {
+        tableName: 'registration_selections',
+        recordId: parseInt(params.selectionId, 10),
+        action: 'UPDATE',
+        oldValues: { refund_status: selection.refund_status },
+        newValues: { refund_status: 'rejected', refund_notes: notes || 'İade reddedildi' },
+        changedFields: ['refund_status', 'refund_notes'],
+      })
 
       return NextResponse.json({
         success: true,
@@ -97,6 +114,15 @@ export async function POST(
          WHERE id = ?`,
         [params.selectionId]
       )
+
+      await createAuditLogFromRequest(request, {
+        tableName: 'registration_selections',
+        recordId: parseInt(params.selectionId, 10),
+        action: 'UPDATE',
+        oldValues: { refund_status: 'rejected' },
+        newValues: { refund_status: 'pending', refund_notes: null },
+        changedFields: ['refund_status', 'refund_notes'],
+      })
 
       return NextResponse.json({
         success: true,

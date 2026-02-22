@@ -18,9 +18,10 @@ interface Step1PersonalInfoProps {
 
 export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
   const { formData, updatePersonalInfo, setFormLanguage } = useFormStore()
-  const { fields, isFieldVisible, isFieldRequired, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn, loading: settingsLoading } = useFormSettings()
+  const { fields, isFieldVisible, isFieldRequired, getFieldSetting, invoiceIndividualNote, invoiceCorporateNote, invoiceIndividualNoteEn, invoiceCorporateNoteEn, kvkkPopupTr, kvkkPopupEn, loading: settingsLoading } = useFormSettings()
   const { t, language, canChangeLanguage, changeLanguage, loading: translationLoading } = useTranslation()
   const [usePersonalName, setUsePersonalName] = useState(false)
+  const [kvkkModalOpen, setKvkkModalOpen] = useState(false)
 
   // Dil değiştiğinde store'u güncelle
   useEffect(() => {
@@ -44,7 +45,8 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
     defaultValues: {
       ...formData.personalInfo,
       gender: formData.personalInfo.gender || undefined,
-      invoiceType: formData.personalInfo.invoiceType || undefined
+      invoiceType: formData.personalInfo.invoiceType || undefined,
+      kvkk_consent: formData.personalInfo.kvkk_consent ?? false,
     },
   })
 
@@ -607,6 +609,72 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
             </div>
           )}
         </div>
+
+        {/* KVKK Aydınlatma (tüm form alanlarının en altında, İleri butonunun hemen üstünde) */}
+        {isFieldVisible('kvkk_consent') && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setKvkkModalOpen(true)}
+                  className="text-sm text-primary-600 hover:text-primary-700 underline focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
+                >
+                  {language === 'en' ? 'Read notice' : 'Metni oku'}
+                </button>
+              </div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('kvkk_consent')}
+                  className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700">
+                  {language === 'en'
+                    ? (getFieldSetting('kvkk_consent')?.field_label_en ?? getFieldSetting('kvkk_consent')?.field_label ?? 'I have read, understood and accept the KVKK Privacy Notice.')
+                    : (getFieldSetting('kvkk_consent')?.field_label ?? 'KVKK Aydınlatma Metni\'ni okudum, anladım ve kabul ediyorum.')}
+                  {isFieldRequired('kvkk_consent') && <span className="text-red-500 ml-0.5">*</span>}
+                </span>
+              </label>
+              {errors.kvkk_consent && (
+                <p className="text-sm text-red-600">{errors.kvkk_consent.message}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* KVKK Aydınlatma Metni modal */}
+        {kvkkModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setKvkkModalOpen(false)}>
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {language === 'en' ? 'KVKK Privacy Notice' : 'KVKK Aydınlatma Metni'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setKvkkModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 p-1 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  aria-label={language === 'en' ? 'Close' : 'Kapat'}
+                >
+                  <span className="text-xl leading-none">×</span>
+                </button>
+              </div>
+              <div className="px-6 py-4 overflow-y-auto flex-1 prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                {language === 'en' ? (kvkkPopupEn || kvkkPopupTr || '—') : (kvkkPopupTr || kvkkPopupEn || '—')}
+              </div>
+              <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setKvkkModalOpen(false)}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {language === 'en' ? 'Close' : 'Kapat'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="mt-8 flex justify-end">
