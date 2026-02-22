@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pool } from '@/lib/db'
+import { pool, incrementCapacityForType } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +68,9 @@ export async function POST(
        WHERE id = ?`,
       [newPaymentStatus, params.selectionId]
     )
+
+    // Kontenjan: iptal geri alındığında kapasiteyi tekrar düşür (yer tekrar dolu)
+    await incrementCapacityForType(selection.registration_type_id)
 
     // Ana kaydın toplamlarını güncelle
     const [totals] = await pool.execute(

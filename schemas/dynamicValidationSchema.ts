@@ -15,6 +15,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[], language: 't
       lastName: 'Soyad zorunludur',
       lastNameMin: 'Soyad en az 2 karakter olmalıdır',
       gender: 'Lütfen cinsiyet seçiniz',
+      country: 'Ülke zorunludur',
       email: 'E-posta zorunludur',
       emailInvalid: 'Geçerli bir e-posta girin',
       phone: 'Telefon zorunludur',
@@ -37,6 +38,7 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[], language: 't
       lastName: 'Last name is required',
       lastNameMin: 'Last name must be at least 2 characters',
       gender: 'Please select gender',
+      country: 'Country is required',
       email: 'Email is required',
       emailInvalid: 'Please enter a valid email',
       phone: 'Phone is required',
@@ -89,6 +91,13 @@ export function buildPersonalInfoSchema(fields: FormFieldSetting[], language: 't
           invalid_type_error: msg.gender
         })
       : z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional().nullable()
+  }
+
+  // country
+  if (isVisible('country')) {
+    schemaFields.country = isRequired('country')
+      ? z.string().min(1, msg.country)
+      : z.string().optional()
   }
 
   // email

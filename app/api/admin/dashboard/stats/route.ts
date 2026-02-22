@@ -91,12 +91,8 @@ export async function GET() {
        GROUP BY refund_status`
     )
 
-    // Kayıt ve iptal deadline'ları
-    const [deadlines] = await pool.execute(
-      `SELECT setting_key, setting_value 
-       FROM form_settings 
-       WHERE setting_key IN ('registration_start_date', 'registration_deadline', 'cancellation_deadline')`
-    )
+    // Tarihler artık kategori bazlı (Kategoriler sayfası); global deadline gösterilmiyor
+    const deadlineObj: Record<string, string> = {}
 
     // Döviz kurları (son güncelleme)
     const [exchangeRates] = await pool.execute(
@@ -130,12 +126,6 @@ export async function GET() {
     }
     
     
-    // Deadline'ları objeye çevir
-    const deadlineObj: any = {}
-    ;(deadlines as any[]).forEach((row: any) => {
-      deadlineObj[row.setting_key] = row.setting_value
-    })
-
     return NextResponse.json({
       success: true,
       data: {

@@ -5,6 +5,7 @@ export interface PersonalInfo {
   lastName: string
   fullName: string // Computed field for backward compatibility
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | ''
+  country?: string
   email: string
   phone: string
   address: string
@@ -70,6 +71,7 @@ const initialFormData: FormData = {
     email: '',
     phone: '',
     address: '',
+    country: '',
     company: '',
     department: '',
     invoiceType: '',

@@ -25,12 +25,14 @@ interface FormData {
   description: string
   description_en: string
   requires_document: boolean
+  capacity: string
 }
 
 interface Category {
   id: number
   name: string
-  name_en: string
+  name_en?: string
+  track_capacity?: boolean
 }
 
 export default function EditRegistrationTypeModal({ 
@@ -79,7 +81,8 @@ export default function EditRegistrationTypeModal({
         vat_rate: ((registrationType as any).vat_rate * 100)?.toString() || '20',
         description: registrationType.description || '',
         description_en: (registrationType as any).description_en || '',
-        requires_document: (registrationType as any).requires_document || false
+        requires_document: (registrationType as any).requires_document || false,
+        capacity: (registrationType as any).capacity != null ? String((registrationType as any).capacity) : ''
       })
     }
   }, [registrationType])
@@ -96,6 +99,8 @@ export default function EditRegistrationTypeModal({
     }
   }
 
+  const MAX_LABEL_LEN = 255
+
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {}
 
@@ -105,6 +110,14 @@ export default function EditRegistrationTypeModal({
 
     if (!formData.category_id) {
       newErrors.category_id = 'Kategori seçimi zorunludur'
+    }
+
+    const selectedCategory = categories.find((c) => c.id === Number(formData.category_id))
+    if (selectedCategory?.track_capacity) {
+      const cap = formData.capacity.trim()
+      if (!cap || isNaN(Number(cap)) || Number(cap) < 1) {
+        newErrors.capacity = 'Bu kategoride kontenjan takibi açık; kapasite zorunludur (1 veya üzeri)'
+      }
     }
 
     // Sayı validasyonları (boş olabilir)
@@ -149,7 +162,8 @@ export default function EditRegistrationTypeModal({
           vat_rate: formData.vat_rate.trim() ? Number(formData.vat_rate) / 100 : 0.20,
           description: formData.description.trim() || undefined,
           description_en: formData.description_en.trim() || undefined,
-          requires_document: formData.requires_document
+          requires_document: formData.requires_document,
+          capacity: formData.capacity.trim() && !isNaN(Number(formData.capacity)) && Number(formData.capacity) >= 1 ? Number(formData.capacity) : null
         })
       })
 
@@ -174,7 +188,7 @@ export default function EditRegistrationTypeModal({
       fee_try: '', fee_usd: '', fee_eur: '', 
       early_bird_fee_try: '', early_bird_fee_usd: '', early_bird_fee_eur: '',
       vat_rate: '20', description: '', description_en: '', 
-      requires_document: false 
+      requires_document: false, capacity: ''
     })
     setErrors({})
     setSubmitting(false)
@@ -195,13 +209,14 @@ export default function EditRegistrationTypeModal({
           <div className="space-y-3">
             <div>
               <label htmlFor="edit-label" className="block text-xs font-medium text-gray-700 mb-1">
-                Label (Türkçe) <span className="text-red-500">*</span>
+                Label (Türkçe) <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(en fazla {MAX_LABEL_LEN} karakter)</span>
               </label>
               <input
                 type="text"
                 id="edit-label"
                 value={formData.label}
-                onChange={(e) => setFormData({ ...formData, label: e.target.value })}
+                maxLength={MAX_LABEL_LEN}
+                onChange={(e) => setFormData({ ...formData, label: e.target.value.slice(0, MAX_LABEL_LEN) })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={submitting}
               />
@@ -210,13 +225,14 @@ export default function EditRegistrationTypeModal({
 
             <div>
               <label htmlFor="edit-label-en" className="block text-xs font-medium text-gray-700 mb-1">
-                Label (English) <span className="text-red-500">*</span>
+                Label (English) <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(en fazla {MAX_LABEL_LEN} karakter)</span>
               </label>
               <input
                 type="text"
                 id="edit-label-en"
                 value={formData.label_en}
-                onChange={(e) => setFormData({ ...formData, label_en: e.target.value })}
+                maxLength={MAX_LABEL_LEN}
+                onChange={(e) => setFormData({ ...formData, label_en: e.target.value.slice(0, MAX_LABEL_LEN) })}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={submitting}
               />
@@ -242,6 +258,28 @@ export default function EditRegistrationTypeModal({
                 ))}
               </select>
               {errors.category_id && <p className="mt-1 text-xs text-red-600">{errors.category_id}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="edit-capacity" className="block text-xs font-medium text-gray-700 mb-1">
+                Kapasite (Kontenjan)
+                {categories.find((c) => c.id === Number(formData.category_id))?.track_capacity && <span className="text-red-500 ml-1">*</span>}
+              </label>
+              <input
+                type="number"
+                id="edit-capacity"
+                value={formData.capacity}
+                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Boş = sınırsız"
+                min="1"
+                step="1"
+                disabled={submitting}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Kategori kontenjan takibi açıksa doldurulması zorunludur. Boş bırakılırsa sınırsız kabul edilir.
+              </p>
+              {errors.capacity && <p className="mt-1 text-xs text-red-600">{errors.capacity}</p>}
             </div>
 
             {/* Normal Fiyatlar */}

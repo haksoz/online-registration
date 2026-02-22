@@ -21,7 +21,7 @@ export async function PUT(
 
     const body = await request.json()
     
-    const { label, label_en, category_id, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate, description, description_en } = body
+    const { label, label_en, category_id, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate, description, description_en, capacity } = body
 
     // Required fields check
     if (!label || !category_id) {
@@ -32,6 +32,22 @@ export async function PUT(
         },
         { status: 400 }
       )
+    }
+
+    // Kategori kontenjan takibiyse capacity zorunlu
+    const [catRows] = await pool.execute(
+      'SELECT track_capacity FROM registration_categories WHERE id = ?',
+      [Number(category_id)]
+    )
+    const trackCapacity = (catRows as any[])[0]?.track_capacity === 1
+    if (trackCapacity) {
+      const cap = capacity != null ? Number(capacity) : null
+      if (cap == null || isNaN(cap) || cap < 1) {
+        return NextResponse.json(
+          { success: false, error: 'Bu kategoride kontenjan takibi açık; kapasite zorunludur ve 1 veya üzeri olmalıdır' },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate numbers
@@ -81,22 +97,28 @@ export async function PUT(
       )
     }
 
+    const capacityVal = capacity != null && !isNaN(Number(capacity)) && Number(capacity) >= 1 ? Number(capacity) : null
+    const LABEL_MAX = 255
+    const safeLabel = String(label).trim().slice(0, LABEL_MAX)
+    const safeLabelEn = label_en != null ? String(label_en).trim().slice(0, LABEL_MAX) : null
+
     // Update registration type
     await pool.execute(
-      'UPDATE registration_types SET label = ?, label_en = ?, category_id = ?, fee_try = ?, fee_usd = ?, fee_eur = ?, early_bird_fee_try = ?, early_bird_fee_usd = ?, early_bird_fee_eur = ?, vat_rate = ?, description = ?, description_en = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE registration_types SET label = ?, label_en = ?, category_id = ?, fee_try = ?, fee_usd = ?, fee_eur = ?, early_bird_fee_try = ?, early_bird_fee_usd = ?, early_bird_fee_eur = ?, vat_rate = ?, description = ?, description_en = ?, capacity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [
-        label, 
-        label_en || null,
+        safeLabel,
+        safeLabelEn,
         Number(category_id),
-        fee_try ? Number(fee_try) : 0, 
-        fee_usd ? Number(fee_usd) : 0, 
+        fee_try ? Number(fee_try) : 0,
+        fee_usd ? Number(fee_usd) : 0,
         fee_eur ? Number(fee_eur) : 0,
         early_bird_fee_try ? Number(early_bird_fee_try) : null,
         early_bird_fee_usd ? Number(early_bird_fee_usd) : null,
         early_bird_fee_eur ? Number(early_bird_fee_eur) : null,
         vat_rate !== undefined ? Number(vat_rate) : 0.20,
-        description || null, 
+        description || null,
         description_en || null,
+        capacityVal,
         idValidation.numericId
       ]
     )

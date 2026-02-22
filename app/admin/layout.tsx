@@ -119,11 +119,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         items: [
           { href: '/admin/categories', label: 'Kayıt Kategorileri', icon: '📂', roles: ['admin', 'manager'] },
           { href: '/admin/registration-types', label: 'Kayıt Türleri', icon: '🏷️', roles: ['admin', 'manager'] },
+          { href: '/admin/settings/registration', label: 'Kayıt Ayarları', icon: '📅', roles: ['admin', 'manager'] },
         ]
       },
       { href: '/admin/settings/exchange-rates', label: 'Döviz Kurları', icon: '💱', roles: ['admin', 'manager'] },
       { href: '/admin/settings/page', label: 'Sayfa Ayarları', icon: '🎨', roles: ['admin', 'manager'] },
-      { href: '/admin/settings/registration', label: 'Kayıt Ayarları', icon: '📅', roles: ['admin', 'manager'] },
       { href: '/admin/settings/form-fields', label: 'Form Ayarları', icon: '📋', roles: ['admin', 'manager'] },
       { href: '/admin/settings/bank', label: 'Banka Ayarları', icon: '🏦', roles: ['admin', 'manager'] },
       { href: '/admin/settings/payment-gateway', label: 'Sanal POS Ayarları', icon: '💳', roles: ['admin', 'manager'] },

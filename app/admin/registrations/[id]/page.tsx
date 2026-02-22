@@ -68,6 +68,7 @@ interface Registration {
   selections: RegistrationSelection[]
   created_at: string
   updated_at: string
+  cancellationDeadline?: string | null
 }
 
 export default function RegistrationDetailPage() {
@@ -97,7 +98,14 @@ export default function RegistrationDetailPage() {
   }
 
   const handleCancelSelection = async (selectionId: number) => {
-    if (!confirm('Bu seçimi iptal etmek istediğinizden emin misiniz?')) return
+    let msg = 'Bu seçimi iptal etmek istediğinizden emin misiniz?'
+    if (registration?.cancellationDeadline) {
+      const deadline = new Date(registration.cancellationDeadline)
+      if (new Date() > deadline) {
+        msg += `\n\n⚠️ İptal son tarihi (${deadline.toLocaleString('tr-TR')}) geçmiş. Yine de iptal edebilirsiniz.`
+      }
+    }
+    if (!confirm(msg)) return
 
     try {
       const response = await fetch(`/api/registrations/${params.id}/selections/${selectionId}`, {

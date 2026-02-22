@@ -161,6 +161,11 @@ export default function ExchangeRatesPage() {
 
       {/* Exchange Rates Table */}
       <div className="bg-white rounded-lg shadow">
+        {rates.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            Döviz kuru kaydı bulunamadı. Sayfayı yenileyin; varsayılan TRY/USD/EUR kurları otomatik eklenir. Sorun sürerse veritabanında <code className="text-xs bg-gray-100 px-1">migrations/016_exchange_rates_seed.sql</code> dosyasını çalıştırın.
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -222,6 +227,7 @@ export default function ExchangeRatesPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
 
       {/* Save Button */}
@@ -246,22 +252,24 @@ export default function ExchangeRatesPage() {
       </div>
 
       {/* Info Box */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          <div className="text-sm text-blue-800">
-            <p className="font-medium mb-1">Döviz Kuru Bilgileri</p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
-              <li>TCMB'den Güncelle butonu ile güncel kurları otomatik çekebilirsiniz</li>
-              <li>Manuel olarak kurları düzenleyebilir ve kaydedebilirsiniz</li>
-              <li>Kurlar kayıt türü fiyatlarının hesaplanmasında kullanılır</li>
-              <li>1 {rates[0]?.currency_code} = {editingRates[rates[0]?.currency_code]} TL</li>
-            </ul>
+      {rates.length > 0 && (
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <div className="text-sm text-blue-800">
+              <p className="font-medium mb-1">Döviz Kuru Bilgileri</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>TCMB'den Güncelle butonu ile güncel kurları otomatik çekebilirsiniz</li>
+                <li>Manuel olarak kurları düzenleyebilir ve kaydedebilirsiniz</li>
+                <li>Kurlar kayıt türü fiyatlarının hesaplanmasında kullanılır</li>
+                <li>1 {rates[0].currency_code} = {editingRates[rates[0].currency_code] ?? rates[0].rate_to_try} TL</li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

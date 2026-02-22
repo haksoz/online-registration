@@ -1,53 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 
-// Kayıt ayarlarını getir
+// Kayıt ayarlarını getir (sadece bildirim e-postaları; tarihler kategori bazlı yönetiliyor)
 export async function GET() {
   try {
-    // Registration start date
-    const [startRows] = await pool.execute(
-      `SELECT setting_value FROM form_settings WHERE setting_key = 'registration_start_date'`
-    )
-    const registrationStartDate = (startRows as any[])[0]?.setting_value || ''
-
-    // Registration deadline
-    const [deadlineRows] = await pool.execute(
-      `SELECT setting_value FROM form_settings WHERE setting_key = 'registration_deadline'`
-    )
-    const registrationDeadline = (deadlineRows as any[])[0]?.setting_value || ''
-
-    // Cancellation deadline
-    const [cancellationRows] = await pool.execute(
-      `SELECT setting_value FROM form_settings WHERE setting_key = 'cancellation_deadline'`
-    )
-    const cancellationDeadline = (cancellationRows as any[])[0]?.setting_value || ''
-
-    // Notification email
     const [notificationRows] = await pool.execute(
       `SELECT setting_value FROM form_settings WHERE setting_key = 'notification_email'`
     )
     const notificationEmail = (notificationRows as any[])[0]?.setting_value || ''
 
-    // BCC email
     const [bccRows] = await pool.execute(
       `SELECT setting_value FROM form_settings WHERE setting_key = 'bcc_email'`
     )
     const bccEmail = (bccRows as any[])[0]?.setting_value || ''
 
-    // Early bird deadline - id=1 olan satırdan al
-    const [earlyBirdRows] = await pool.execute(
-      `SELECT early_bird_deadline, early_bird_enabled FROM form_settings WHERE id = 1`
-    )
-    const earlyBirdDeadline = (earlyBirdRows as any[])[0]?.early_bird_deadline || ''
-    const earlyBirdEnabled = (earlyBirdRows as any[])[0]?.early_bird_enabled || false
-
     return NextResponse.json({
       success: true,
-      registrationStartDate,
-      registrationDeadline,
-      cancellationDeadline,
-      earlyBirdDeadline,
-      earlyBirdEnabled,
       notificationEmail,
       bccEmail
     })
@@ -60,63 +28,27 @@ export async function GET() {
   }
 }
 
-// Kayıt ayarlarını güncelle
+// Kayıt ayarlarını güncelle (sadece bildirim e-postaları; tarihler kategori bazlı)
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { registrationStartDate, registrationDeadline, cancellationDeadline, earlyBirdDeadline, earlyBirdEnabled, notificationEmail, bccEmail } = body
+    const { notificationEmail, bccEmail } = body
 
     const connection = await pool.getConnection()
-    
     try {
       await connection.beginTransaction()
 
-      // Registration start date güncelle
-      await connection.execute(
-        `INSERT INTO form_settings (setting_key, setting_value, description) 
-         VALUES ('registration_start_date', ?, 'Kayıt başlangıç tarihi (boş ise hemen açık)')
-         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [registrationStartDate || '']
-      )
-
-      // Registration deadline güncelle
-      await connection.execute(
-        `INSERT INTO form_settings (setting_key, setting_value, description) 
-         VALUES ('registration_deadline', ?, 'Kayıt son tarihi (boş ise sınırsız)')
-         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [registrationDeadline || '']
-      )
-
-      // Cancellation deadline güncelle
-      await connection.execute(
-        `INSERT INTO form_settings (setting_key, setting_value, description) 
-         VALUES ('cancellation_deadline', ?, 'Kayıt iptal son tarihi (boş ise sınırsız)')
-         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [cancellationDeadline || '']
-      )
-
-      // Notification email güncelle
       await connection.execute(
         `INSERT INTO form_settings (setting_key, setting_value, description) 
          VALUES ('notification_email', ?, 'Kayıt bildirim mail adresi')
          ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [notificationEmail || '']
+        [notificationEmail ?? '']
       )
-
-      // BCC email güncelle
       await connection.execute(
         `INSERT INTO form_settings (setting_key, setting_value, description) 
          VALUES ('bcc_email', ?, 'Kayıt bildirim BCC mail adresi')
          ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [bccEmail || '']
-      )
-
-      // Early bird settings güncelle - id=1 olan satırı güncelle (form_enabled satırı)
-      await connection.execute(
-        `UPDATE form_settings 
-         SET early_bird_deadline = ?, early_bird_enabled = ?
-         WHERE id = 1`,
-        [earlyBirdDeadline || null, earlyBirdEnabled ? 1 : 0]
+        [bccEmail ?? '']
       )
 
       await connection.commit()

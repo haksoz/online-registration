@@ -31,24 +31,41 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Kayıt türlerini veritabanından çek (erken kayıt fiyatlarıyla birlikte)
+    // Kayıt türlerini veritabanından çek (category_id + erken kayıt fiyatları + kapasite)
     let registrationTypes: any[] = []
     if (selectedTypeIds.length > 0) {
       const placeholders = selectedTypeIds.map(() => '?').join(',')
       const [rows] = await pool.execute(
-        `SELECT id, label, label_en, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate FROM registration_types WHERE id IN (${placeholders})`,
+        `SELECT id, category_id, label, label_en, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate, capacity, current_registrations FROM registration_types WHERE id IN (${placeholders})`,
         selectedTypeIds
       )
       registrationTypes = rows as any[]
     }
 
-    // Erken kayıt bilgisini al
-    const [earlyBirdRows] = await pool.execute(
-      "SELECT early_bird_deadline, early_bird_enabled FROM form_settings WHERE id = 1"
-    )
-    const earlyBirdDeadline = (earlyBirdRows as any[])[0]?.early_bird_deadline || null
-    const earlyBirdEnabled = (earlyBirdRows as any[])[0]?.early_bird_enabled || false
-    const isEarlyBirdActive = earlyBirdEnabled && earlyBirdDeadline && new Date() < new Date(earlyBirdDeadline)
+    // Kategori bazlı erken kayıt (registration_categories)
+    const categoryIds = [...new Set(registrationTypes.map((t: any) => t.category_id).filter(Boolean))]
+    let categoryEarlyBird = new Map<number, { deadline: Date | null; enabled: boolean }>()
+    if (categoryIds.length > 0) {
+      const ph = categoryIds.map(() => '?').join(',')
+      const [catRows] = await pool.execute(
+        `SELECT id, early_bird_deadline, early_bird_enabled FROM registration_categories WHERE id IN (${ph})`,
+        categoryIds
+      )
+      categoryEarlyBird = new Map(
+        (catRows as any[]).map((c: any) => [
+          c.id,
+          {
+            deadline: c.early_bird_deadline ? new Date(c.early_bird_deadline) : null,
+            enabled: !!c.early_bird_enabled,
+          },
+        ])
+      )
+    }
+    const now = new Date()
+    const isEarlyBirdActiveForType = (type: any) => {
+      const cat = categoryEarlyBird.get(type.category_id)
+      return !!cat?.enabled && cat?.deadline !== null && now <= cat.deadline
+    }
 
     // Kullanılan döviz ve kur bilgisi
     const selectedCurrency = currencyType || 'TRY'
@@ -66,11 +83,9 @@ export async function POST(request: NextRequest) {
     let totalFee = 0
     const types = registrationTypes
     types.forEach((type: any) => {
-      // Erken kayıt fiyatını kontrol et
+      const isEarlyBirdActive = isEarlyBirdActiveForType(type)
       let baseFee = 0
-      
       if (isEarlyBirdActive) {
-        // Erken kayıt aktifse, erken kayıt fiyatını kullan (varsa)
         if (selectedCurrency === 'USD' && type.early_bird_fee_usd != null) {
           baseFee = Number(type.early_bird_fee_usd) * currentExchangeRate
         } else if (selectedCurrency === 'EUR' && type.early_bird_fee_eur != null) {
@@ -188,6 +203,7 @@ export async function POST(request: NextRequest) {
       personalInfo.address || null,
       personalInfo.company || null,
       personalInfo.department || null,
+      personalInfo.country || null,
       personalInfo.invoiceType || null,
       personalInfo.invoiceFullName || null,
       personalInfo.idNumber || null,
@@ -206,31 +222,81 @@ export async function POST(request: NextRequest) {
       paymentStatus,
     ]
 
-    // Insert into database
-    const [result] = await pool.execute(
-      `INSERT INTO registrations (
-        reference_number, first_name, last_name, full_name, gender, email, phone, address, company, department,
-        invoice_type, invoice_full_name, id_number, invoice_address,
-        invoice_company_name, tax_office, tax_number,
-        registration_type, registration_type_label_en, form_language, fee, currency_code, fee_in_currency, exchange_rate, payment_method, payment_status,
-        created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      values
-    )
+    const connection = await pool.getConnection()
+    let registrationId: number
 
-    const registrationId = (result as any).insertId
+    try {
+      await connection.beginTransaction()
 
-    // Seçimleri registration_selections tablosuna kaydet
-    if (registrationSelections && Object.keys(registrationSelections).length > 0) {
-      for (const [categoryId, typeIds] of Object.entries(registrationSelections)) {
-        for (const typeId of typeIds as number[]) {
-          const type = types.find((t: any) => t.id === typeId)
-          if (type) {
-            // Erken kayıt fiyatını kontrol et
+      // Seçilen türlerde kapasite kontrolü: FOR UPDATE ile satırları kilitle
+      const uniqueTypeIds = [...new Set(selectedTypeIds)] as number[]
+      if (uniqueTypeIds.length > 0) {
+        const placeholders = uniqueTypeIds.map(() => '?').join(',')
+        const [lockedRows] = await connection.execute(
+          `SELECT id, label, capacity, current_registrations 
+           FROM registration_types 
+           WHERE id IN (${placeholders}) 
+           FOR UPDATE`,
+          uniqueTypeIds
+        )
+        const lockedMap = new Map((lockedRows as any[]).map((r: any) => [r.id, r]))
+
+        // Tür başına seçim sayısı (aynı tür birden fazla seçilebilir)
+        const typeIdToCount: Record<number, number> = {}
+        for (const typeId of selectedTypeIds) {
+          typeIdToCount[typeId] = (typeIdToCount[typeId] || 0) + 1
+        }
+
+        for (const typeId of Object.keys(typeIdToCount).map(Number)) {
+          const row = lockedMap.get(typeId)
+          if (!row) continue
+          const capacity = row.capacity != null ? Number(row.capacity) : null
+          const current = Number(row.current_registrations ?? 0)
+          const need = typeIdToCount[typeId]
+          if (capacity != null && current + need > capacity) {
+            await connection.rollback()
+            connection.release()
+            return NextResponse.json(
+              {
+                success: false,
+                message: `${row.label} için yeterli kontenjan yok (kalan: ${capacity - current}, talep: ${need}). Lütfen sayfayı yenileyip tekrar deneyin.`,
+              },
+              { status: 400 }
+            )
+          }
+        }
+      }
+
+      // INSERT registrations
+      const [insertReg] = await connection.execute(
+        `INSERT INTO registrations (
+          reference_number, first_name, last_name, full_name, gender, email, phone, address, company, department, country,
+          invoice_type, invoice_full_name, id_number, invoice_address,
+          invoice_company_name, tax_office, tax_number,
+          registration_type, registration_type_label_en, form_language, fee, currency_code, fee_in_currency, exchange_rate, payment_method, payment_status,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        values
+      )
+      registrationId = (insertReg as any).insertId
+
+      // Seçimleri kaydet ve kapasiteyi artır (transaction içinde)
+      if (registrationSelections && Object.keys(registrationSelections).length > 0) {
+        for (const [categoryId, typeIds] of Object.entries(registrationSelections)) {
+          for (const typeId of typeIds as number[]) {
+            const type = types.find((t: any) => t.id === typeId)
+            if (!type) continue
+
+            await connection.execute(
+              `UPDATE registration_types 
+               SET current_registrations = current_registrations + 1 
+               WHERE id = ?`,
+              [typeId]
+            )
+
+            const isEarlyBirdActive = isEarlyBirdActiveForType(type)
             let typeFee = 0
-            
             if (isEarlyBirdActive) {
-              // Erken kayıt aktifse, erken kayıt fiyatını kullan (varsa)
               if (selectedCurrency === 'USD' && type.early_bird_fee_usd != null) {
                 typeFee = Number(type.early_bird_fee_usd) * currentExchangeRate
               } else if (selectedCurrency === 'EUR' && type.early_bird_fee_eur != null) {
@@ -239,8 +305,6 @@ export async function POST(request: NextRequest) {
                 typeFee = Number(type.early_bird_fee_try)
               }
             }
-            
-            // Erken kayıt fiyatı yoksa normal fiyatı kullan
             if (typeFee === 0) {
               if (selectedCurrency === 'USD') {
                 typeFee = Number(type.fee_usd || 0) * currentExchangeRate
@@ -250,50 +314,54 @@ export async function POST(request: NextRequest) {
                 typeFee = Number(type.fee_try || 0)
               }
             }
-            
             const vatRate = Number(type.vat_rate || 0.20)
             const vat = typeFee * vatRate
             const totalWithVat = typeFee + vat
-            
-            try {
-              // Belge bilgilerini al
-              const docInfo = documentUrls?.[typeId]
-              
-              const [selectionResult] = await pool.execute(
-                `INSERT INTO registration_selections (
-                  registration_id, category_id, registration_type_id, 
-                  applied_fee_try, applied_currency, applied_fee_amount, exchange_rate,
-                  vat_rate, vat_amount_try, total_try,
-                  payment_status, is_early_bird, is_cancelled,
-                  document_filename, document_url, document_uploaded_at,
-                  created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-                [
-                  registrationId, 
-                  Number(categoryId), 
-                  typeId, 
-                  typeFee,
-                  'TRY', // Artık her zaman TRY olarak kaydedilecek
-                  typeFee,
-                  1.0, // TRY olarak kaydedildiği için kur 1.0
-                  vatRate, 
-                  vat, 
-                  totalWithVat,
-                  paymentStatus, // Ana kaydın payment_status'u ile aynı
-                  isEarlyBirdActive ? 1 : 0, // Erken kayıt aktifse 1, değilse 0
-                  0, // is_cancelled
-                  docInfo?.filename || null,
-                  docInfo?.url || null,
-                  docInfo ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null
-                ]
-              )
-            } catch (selectionError) {
-              console.error('Error saving registration selection:', selectionError)
-            }
+            const docInfo = documentUrls?.[typeId]
+
+            await connection.execute(
+              `INSERT INTO registration_selections (
+                registration_id, category_id, registration_type_id,
+                applied_fee_try, applied_currency, applied_fee_amount, exchange_rate,
+                vat_rate, vat_amount_try, total_try,
+                payment_status, is_early_bird, is_cancelled,
+                document_filename, document_url, document_uploaded_at,
+                created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+              [
+                registrationId,
+                Number(categoryId),
+                typeId,
+                typeFee,
+                'TRY',
+                typeFee,
+                1.0,
+                vatRate,
+                vat,
+                totalWithVat,
+                paymentStatus,
+                isEarlyBirdActive ? 1 : 0,
+                0,
+                docInfo?.filename || null,
+                docInfo?.url || null,
+                docInfo ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null,
+              ]
+            )
           }
         }
       }
+
+      await connection.commit()
+    } catch (txError: any) {
+      await connection.rollback().catch(() => {})
+      connection.release()
+      console.error('SaveForm transaction error:', txError)
+      return NextResponse.json(
+        { success: false, message: 'Kayıt sırasında hata oluştu. Lütfen tekrar deneyin.' },
+        { status: 500 }
+      )
     }
+    connection.release()
 
     // Log kaydı oluştur
     try {

@@ -10,6 +10,7 @@ import { InternationalPhoneInput } from '@/components/ui/InternationalPhoneInput
 import { TCIdInput } from '@/components/ui/TCIdInput'
 import { useFormSettings } from '@/hooks/useFormSettings'
 import { useTranslation } from '@/hooks/useTranslation'
+import { COUNTRY_OPTIONS } from '@/constants/countries'
 
 interface Step1PersonalInfoProps {
   onNext: () => void
@@ -239,6 +240,34 @@ export default function Step1PersonalInfo({ onNext }: Step1PersonalInfoProps) {
               </div>
               {errors.gender && (
                 <p className="mt-1.5 text-sm text-red-600">{errors.gender.message}</p>
+              )}
+            </div>
+          )}
+
+          {/* Country (Ülke) - cinsiyetten sonra */}
+          {isFieldVisible('country') && (
+            <div>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('step1.country')} {isFieldRequired('country') && <span className="text-red-500">*</span>}
+              </label>
+              <select
+                id="country"
+                {...register('country')}
+                className={`w-full px-4 py-3 border rounded-lg transition-colors focus:outline-none focus:ring-2 ${
+                  errors.country
+                    ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                    : 'border-gray-300 focus:border-primary-500 focus:ring-primary-200'
+                }`}
+              >
+                <option value="">{t('step1.placeholders.country')}</option>
+                {COUNTRY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {language === 'en' ? opt.labelEn : opt.label}
+                  </option>
+                ))}
+              </select>
+              {errors.country && (
+                <p className="mt-1.5 text-sm text-red-600">{errors.country.message}</p>
               )}
             </div>
           )}

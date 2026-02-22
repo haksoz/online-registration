@@ -150,10 +150,11 @@ export async function createRegistrationType(data: {
   document_label_en: string | null;
   document_description: string | null;
   document_description_en: string | null;
+  capacity?: number | null;
 }) {
   const [result] = await pool.execute(
-    'INSERT INTO registration_types (value, label, label_en, category_id, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate, description, description_en, requires_document, document_label, document_label_en, document_description, document_description_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [data.value, data.label, data.label_en, data.category_id, data.fee_try, data.fee_usd, data.fee_eur, data.early_bird_fee_try, data.early_bird_fee_usd, data.early_bird_fee_eur, data.vat_rate, data.description, data.description_en, data.requires_document, data.document_label, data.document_label_en, data.document_description, data.document_description_en]
+    'INSERT INTO registration_types (value, label, label_en, category_id, fee_try, fee_usd, fee_eur, early_bird_fee_try, early_bird_fee_usd, early_bird_fee_eur, vat_rate, description, description_en, requires_document, document_label, document_label_en, document_description, document_description_en, capacity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [data.value, data.label, data.label_en, data.category_id, data.fee_try, data.fee_usd, data.fee_eur, data.early_bird_fee_try, data.early_bird_fee_usd, data.early_bird_fee_eur, data.vat_rate, data.description, data.description_en, data.requires_document, data.document_label, data.document_label_en, data.document_description, data.document_description_en, data.capacity ?? null]
   );
   return result;
 }
@@ -164,4 +165,31 @@ export async function checkRegistrationTypeExists(value: string) {
     [value]
   );
   return (rows as any)[0].count > 0;
+}
+
+/**
+ * Kontenjan: Yeni seçim eklenirken kapasiteyi artırır.
+ * Sadece capacity IS NULL veya current_registrations < capacity ise günceller.
+ * @returns affectedRows (1 = başarılı, 0 = kontenjan dolu)
+ */
+export async function incrementCapacityForType(registrationTypeId: number): Promise<number> {
+  const [result] = await pool.execute(
+    `UPDATE registration_types 
+     SET current_registrations = current_registrations + 1 
+     WHERE id = ? AND (capacity IS NULL OR current_registrations < capacity)`,
+    [registrationTypeId]
+  );
+  return (result as any).affectedRows ?? 0;
+}
+
+/**
+ * Kontenjan: Seçim iptal/geri alındığında kapasiteyi azaltır.
+ */
+export async function decrementCapacityForType(registrationTypeId: number): Promise<void> {
+  await pool.execute(
+    `UPDATE registration_types 
+     SET current_registrations = GREATEST(0, current_registrations - 1) 
+     WHERE id = ?`,
+    [registrationTypeId]
+  );
 }

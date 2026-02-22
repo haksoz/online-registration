@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { pool } from '@/lib/db'
+import { pool, decrementCapacityForType } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,6 @@ export async function DELETE(
     // Ödeme beklemedeyse (para henüz gelmemişse) direkt iptal, iade süreci yok
     // Ödeme tamamlanmışsa (para gelmişse) iade süreci başlat
     if (paymentPending) {
-      // Para henüz gelmemiş, direkt iptal (iade yok)
       await pool.execute(
         `UPDATE registration_selections 
          SET is_cancelled = TRUE, 
@@ -44,7 +43,6 @@ export async function DELETE(
         [params.selectionId]
       )
     } else {
-      // Para gelmiş, iade süreci başlat
       await pool.execute(
         `UPDATE registration_selections 
          SET is_cancelled = TRUE, 
@@ -55,6 +53,9 @@ export async function DELETE(
         [params.selectionId]
       )
     }
+
+    // Kontenjan: iptal edilen seçim için kapasiteyi artır
+    await decrementCapacityForType(selection.registration_type_id)
 
     // Toplamlar artık anlık hesaplanıyor, güncellemeye gerek yok
 

@@ -7,6 +7,8 @@ interface DataStore {
   registrationTypesLoading: boolean
   registrationTypesError: string | null
   fetchRegistrationTypes: () => Promise<void>
+  /** Kayıt türlerini her zaman yeniden çeker (kontenjan vb. güncel veri için Step 2'de kullanılır) */
+  refetchRegistrationTypes: () => Promise<void>
   
   // Bank Accounts
   bankAccounts: any[]
@@ -107,6 +109,28 @@ export const useDataStore = create<DataStore>((set, get) => ({
         registrationTypesError: `Kayıt türleri yüklenemedi: ${errorMessage}`,
         hasAnyError: true
       })
+    } finally {
+      set({ registrationTypesLoading: false })
+    }
+  },
+
+  refetchRegistrationTypes: async () => {
+    set({ registrationTypesLoading: true, registrationTypesError: null })
+    try {
+      const response = await fetch('/api/registration-types')
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      const data = await response.json()
+      if (data.success) {
+        set({ registrationTypes: data.data })
+        if (data.currencyType) set({ currencyType: data.currencyType })
+        if (data.earlyBird) set({ earlyBird: data.earlyBird })
+      } else {
+        throw new Error(data.error || 'Kayıt türleri yüklenemedi')
+      }
+    } catch (error) {
+      console.error('Error refetching registration types:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen hata'
+      set({ registrationTypesError: `Kayıt türleri güncellenemedi: ${errorMessage}`, hasAnyError: true })
     } finally {
       set({ registrationTypesLoading: false })
     }

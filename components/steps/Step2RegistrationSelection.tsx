@@ -44,11 +44,20 @@ interface RegistrationType {
   document_label_en?: string
   document_description?: string
   document_description_en?: string
+  /** Kontenjan yönetimi: null = sınırsız */
+  capacity?: number | null
+  current_registrations?: number
+  /** capacity varsa ve dolu değilse true */
+  is_available?: boolean
+  /** Bu türün kategorisinde erken kayıt aktif mi (kategori bazlı) */
+  is_early_bird_active?: boolean
+  /** Erken kayıt bitiş tarihi (ISO string), sadece is_early_bird_active true ise dolu */
+  early_bird_deadline?: string | null
 }
 
 export default function Step2RegistrationSelection({ onNext, onBack }: Step2RegistrationSelectionProps) {
   const { formData, updateRegistrationSelections, updateDocument } = useFormStore()
-  const { registrationTypes, registrationTypesLoading, currencyType, earlyBird } = useDataStore()
+  const { registrationTypes, registrationTypesLoading, currencyType, earlyBird, refetchRegistrationTypes } = useDataStore()
   const { t, language } = useTranslation()
   
   const [categories, setCategories] = useState<Category[]>([])
@@ -69,12 +78,11 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
     return formatTurkishCurrency(amount)
   }
 
-  // Erken kayıt fiyatını al (varsa ve aktifse)
+  // Erken kayıt fiyatını al (kategori bazlı: type.is_early_bird_active veya global earlyBird)
   const getFee = (type: any) => {
     let baseFee = 0
-    
-    // Erken kayıt aktif mi ve bu tip için erken kayıt fiyatı var mı?
-    if (earlyBird.isActive) {
+    const earlyActive = type.is_early_bird_active !== undefined ? type.is_early_bird_active : earlyBird.isActive
+    if (earlyActive) {
       if (currencyType === 'USD' && type.early_bird_fee_usd != null) {
         baseFee = Number(type.early_bird_fee_usd)
       } else if (currencyType === 'EUR' && type.early_bird_fee_eur != null) {
@@ -83,14 +91,16 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
         baseFee = Number(type.early_bird_fee_try)
       }
     }
-    
-    // Erken kayıt fiyatı yoksa normal fiyatı kullan
     if (baseFee === 0) {
       baseFee = Number(currencyType === 'USD' ? type.fee_usd : currencyType === 'EUR' ? type.fee_eur : type.fee_try)
     }
-    
     return baseFee
   }
+
+  // Step 2'ye her girildiğinde kayıt türlerini yeniden çek (kontenjan / is_available güncel olsun)
+  useEffect(() => {
+    refetchRegistrationTypes()
+  }, [refetchRegistrationTypes])
 
   // FormData'dan seçimleri yükle
   useEffect(() => {
@@ -107,7 +117,9 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
         const categoriesResponse = await fetch('/api/categories')
         const categoriesData = await categoriesResponse.json()
         if (categoriesData.success) {
-          const visibleCategories = categoriesData.data.filter((cat: Category) => cat.is_visible)
+          const visibleCategories = (categoriesData.data as any[]).filter(
+            (cat: any) => cat.is_visible && (cat.is_registration_open !== false)
+          )
           setCategories(visibleCategories)
         }
 
@@ -147,8 +159,10 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
     fetchData()
   }, [currencyType])
 
-  // Kayıt türü seç/kaldır
+  // Kayıt türü seç/kaldır (kontenjan doluysa seçim yapılamaz)
   const toggleSelection = (categoryId: number, typeId: number, allowMultiple: boolean) => {
+    const type = registrationTypes.find((t: any) => t.id === typeId) as any
+    if (type?.capacity != null && type?.is_available === false) return
     setSelections(prev => {
       const categorySelections = prev[categoryId] || []
       
@@ -342,15 +356,21 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                     const fee = getFee(type)
                     const vat = fee * Number(type.vat_rate || 0.20)
                     const total = fee + vat
+                    const hasCapacity = type.capacity != null
+                    const isFull = hasCapacity && type.is_available === false
                     
                     return (
                       <button
                         key={type.id}
+                        type="button"
+                        disabled={isFull && !isSelected}
                         onClick={() => toggleSelection(category.id, type.id, category.allow_multiple)}
                         className={`w-full p-4 rounded-lg border-2 transition-all text-left ${
-                          isSelected
-                            ? 'border-primary-500 bg-primary-50 shadow-sm'
-                            : 'border-gray-200 bg-white hover:border-primary-300'
+                          isFull && !isSelected
+                            ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-75'
+                            : isSelected
+                              ? 'border-primary-500 bg-primary-50 shadow-sm'
+                              : 'border-gray-200 bg-white hover:border-primary-300'
                         }`}
                       >
                         {/* Masaüstü Görünümü */}
@@ -375,13 +395,26 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                                 {language === 'en' ? type.description_en : type.description}
                               </p>
                             )}
-                            
-                            {/* Erken Kayıt Uyarısı */}
-                            {showEarlyBirdNotice && earlyBird.isActive && earlyBird.deadline && (
+                            {/* Kontenjan gösterimi */}
+                            {type.capacity != null && (
+                              <div className="mt-2 text-sm">
+                                {type.is_available ? (
+                                  <span className="text-gray-600">
+                                    📊 {type.capacity - (type.current_registrations ?? 0)}/{type.capacity} {language === 'en' ? 'spots' : 'kontenjan'}
+                                  </span>
+                                ) : (
+                                  <span className="font-medium text-red-600">
+                                    ❌ {language === 'en' ? 'FULL' : 'DOLU'}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {/* Erken Kayıt Uyarısı (sadece bu türün kategorisinde erken kayıt aktifse) */}
+                            {showEarlyBirdNotice && type.is_early_bird_active && type.early_bird_deadline && (
                               <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                                 {language === 'en' ? 'After' : ''}{' '}
                                 <span className="font-medium">
-                                  {new Date(earlyBird.deadline).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
+                                  {new Date(type.early_bird_deadline).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
                                     day: 'numeric', 
                                     month: 'long', 
                                     year: 'numeric' 
@@ -461,13 +494,24 @@ export default function Step2RegistrationSelection({ onNext, onBack }: Step2Regi
                               {language === 'en' ? type.description_en : type.description}
                             </p>
                           )}
-                          
-                          {/* Erken Kayıt Uyarısı */}
-                          {showEarlyBirdNotice && earlyBird.isActive && earlyBird.deadline && (
+                          {/* Kontenjan (mobil) */}
+                          {type.capacity != null && (
+                            <div className="mb-3 text-sm">
+                              {type.is_available ? (
+                                <span className="text-gray-600">
+                                  📊 {type.capacity - (type.current_registrations ?? 0)}/{type.capacity} {language === 'en' ? 'spots' : 'kontenjan'}
+                                </span>
+                              ) : (
+                                <span className="font-medium text-red-600">❌ {language === 'en' ? 'FULL' : 'DOLU'}</span>
+                              )}
+                            </div>
+                          )}
+                          {/* Erken Kayıt Uyarısı (sadece bu türün kategorisinde erken kayıt aktifse) */}
+                          {showEarlyBirdNotice && type.is_early_bird_active && type.early_bird_deadline && (
                             <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                               {language === 'en' ? 'After' : ''}{' '}
                               <span className="font-medium">
-                                {new Date(earlyBird.deadline).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
+                                {new Date(type.early_bird_deadline).toLocaleDateString(language === 'en' ? 'en-US' : 'tr-TR', { 
                                   day: 'numeric', 
                                   month: 'long', 
                                   year: 'numeric' 

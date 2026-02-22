@@ -41,6 +41,17 @@ export async function GET(
 
     registration.selections = selections
 
+    // İptal son tarihi: Bu kayıttaki kategorilerin en erken cancellation_deadline değeri (kategori bazlı)
+    const categoryIds = [...new Set((selections as any[]).map((s: any) => s.category_id).filter(Boolean))]
+    if (categoryIds.length > 0) {
+      const [catRows] = await pool.execute(
+        `SELECT MIN(cancellation_deadline) as deadline FROM registration_categories WHERE id IN (${categoryIds.map(() => '?').join(',')}) AND cancellation_deadline IS NOT NULL`,
+        categoryIds
+      )
+      const deadline = (catRows as any[])[0]?.deadline
+      if (deadline) registration.cancellationDeadline = deadline
+    }
+
     // Toplam hesapla: Aktif seçimler + İade bekleyen/reddedilen seçimler
     const includedSelections = (selections as any[]).filter(s => 
       !s.is_cancelled || (s.is_cancelled && ['pending', 'rejected'].includes(s.refund_status))

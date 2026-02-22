@@ -1,20 +1,100 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 
+// Varsayılan Step 1 alanları (tablo boşsa seed için)
+const DEFAULT_STEP1_FIELDS = [
+  { field_name: 'firstName', field_label: 'Ad', field_type: 'text', step_number: 1, is_visible: 1, is_required: 1, display_order: 1, placeholder: 'Ahmet' },
+  { field_name: 'lastName', field_label: 'Soyad', field_type: 'text', step_number: 1, is_visible: 1, is_required: 1, display_order: 2, placeholder: 'Yılmaz' },
+  { field_name: 'gender', field_label: 'Cinsiyet', field_type: 'radio', step_number: 1, is_visible: 1, is_required: 0, display_order: 3, placeholder: null },
+  { field_name: 'country', field_label: 'Ülke', field_type: 'select', step_number: 1, is_visible: 1, is_required: 0, display_order: 4, placeholder: null },
+  { field_name: 'email', field_label: 'E-posta', field_type: 'email', step_number: 1, is_visible: 1, is_required: 1, display_order: 5, placeholder: 'ornek@email.com' },
+  { field_name: 'phone', field_label: 'Telefon', field_type: 'phone', step_number: 1, is_visible: 1, is_required: 1, display_order: 6, placeholder: 'Telefon numarası' },
+  { field_name: 'address', field_label: 'Adres', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 7, placeholder: 'Örnek Cadde No:123, İstanbul' },
+  { field_name: 'company', field_label: 'Şirket/Kurum', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 8, placeholder: 'Örnek Şirket A.Ş.' },
+  { field_name: 'department', field_label: 'Departman', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 9, placeholder: 'İnsan Kaynakları' },
+  { field_name: 'invoiceType', field_label: 'Fatura Türü', field_type: 'radio', step_number: 1, is_visible: 1, is_required: 1, display_order: 10, placeholder: null },
+  { field_name: 'invoiceFullName', field_label: 'Fatura Ad Soyad', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 11, placeholder: 'Ad Soyad' },
+  { field_name: 'idNumber', field_label: 'TC Kimlik No', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 12, placeholder: '12345678901' },
+  { field_name: 'invoiceAddress', field_label: 'Fatura Adresi', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 13, placeholder: 'Fatura adresi' },
+  { field_name: 'invoiceCompanyName', field_label: 'Şirket Adı', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 14, placeholder: 'Şirket Adı' },
+  { field_name: 'taxOffice', field_label: 'Vergi Dairesi', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 15, placeholder: 'Kadıköy' },
+  { field_name: 'taxNumber', field_label: 'Vergi No', field_type: 'text', step_number: 1, is_visible: 1, is_required: 0, display_order: 16, placeholder: '1234567890' },
+]
+
 // Admin endpoint - Tüm ayarları getir (gizli alanlar dahil)
 export async function GET() {
   try {
-    // Form field settings
-    const [fieldRows] = await pool.execute(
+    let [rawFieldRows] = await pool.execute(
       `SELECT * FROM form_field_settings 
        ORDER BY step_number, display_order`
-    )
+    ) as [any[], any]
 
-    // Payment method settings
-    const [paymentRows] = await pool.execute(
+    if (!rawFieldRows?.length) {
+      try {
+        for (const f of DEFAULT_STEP1_FIELDS) {
+          await pool.execute(
+            `INSERT IGNORE INTO form_field_settings (field_name, field_label, field_type, step_number, is_visible, is_required, display_order, placeholder)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [f.field_name, f.field_label, f.field_type, f.step_number, f.is_visible, f.is_required, f.display_order, f.placeholder ?? null]
+          )
+        }
+        const [rows] = await pool.execute(
+          `SELECT * FROM form_field_settings ORDER BY step_number, display_order`
+        )
+        rawFieldRows = rows as any[]
+      } catch (seedErr) {
+        console.error('Form field settings seed failed:', seedErr)
+      }
+    }
+
+    // Mevcut kurulumda "country" alanı yoksa ekle (cinsiyetten sonra, display_order 4)
+    const hasCountry = (rawFieldRows || []).some((r: any) => r.field_name === 'country')
+    if (!hasCountry) {
+      try {
+        await pool.execute(
+          `INSERT INTO form_field_settings (field_name, field_label, field_type, step_number, is_visible, is_required, display_order, placeholder)
+           VALUES ('country', 'Ülke', 'select', 1, 1, 0, 4, NULL)`
+        )
+        const [rows] = await pool.execute(
+          `SELECT * FROM form_field_settings ORDER BY step_number, display_order`
+        )
+        rawFieldRows = rows as any[]
+      } catch (insertErr) {
+        console.error('Form field settings country insert failed:', insertErr)
+      }
+    }
+
+    const fieldRows = (rawFieldRows || []).map((row: any) => ({
+      ...row,
+      step_number: row.step_number != null ? Number(row.step_number) : 1,
+      is_visible: Boolean(row.is_visible),
+      is_required: Boolean(row.is_required),
+      display_order: row.display_order != null ? Number(row.display_order) : 0
+    }))
+
+    // Payment method settings (tablo boşsa varsayılanları ekle)
+    let [paymentRows] = await pool.execute(
       `SELECT * FROM payment_method_settings 
        ORDER BY display_order`
-    )
+    ) as [any[], any]
+    if (!paymentRows?.length) {
+      try {
+        await pool.execute(
+          `INSERT IGNORE INTO payment_method_settings (method_name, method_label, is_enabled, display_order, description, icon)
+           VALUES (?, ?, 1, 1, ?, ?), (?, ?, 1, 2, ?, ?)`,
+          ['online', 'Online Ödeme', 'Kredi kartı ile anında ödeme', '💳', 'bank_transfer', 'Banka Transferi', 'Havale/EFT ile ödeme', '🏦']
+        )
+        const [rows] = await pool.execute(`SELECT * FROM payment_method_settings ORDER BY display_order`)
+        paymentRows = rows as any[]
+      } catch (seedErr) {
+        console.error('Payment method settings seed failed:', seedErr)
+      }
+    }
+    const paymentMethods = (paymentRows || []).map((row: any) => ({
+      ...row,
+      is_enabled: Boolean(row.is_enabled),
+      display_order: row.display_order != null ? Number(row.display_order) : 0
+    }))
 
     // Step 2 settings
     const [step2Rows] = await pool.execute(
@@ -80,7 +160,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       fields: fieldRows,
-      paymentMethods: paymentRows,
+      paymentMethods: paymentMethods,
       step2Settings: step2Settings,
       language: language,
       registrationDeadline: registrationDeadline,

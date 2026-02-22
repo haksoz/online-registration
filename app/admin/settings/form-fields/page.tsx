@@ -135,7 +135,7 @@ export default function FormFieldsSettingsPage() {
     }
   }
 
-  const step1Fields = fields.filter(f => f.step_number === 1)
+  const step1Fields = fields.filter(f => Number(f.step_number ?? 1) === 1)
 
   if (loading) {
     return (
@@ -221,7 +221,13 @@ export default function FormFieldsSettingsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {step1Fields.map((field) => (
+                {step1Fields.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
+                      Step 1 alanı bulunamadı. Veritabanında <code className="bg-gray-100 px-1 rounded">form_field_settings</code> tablosunda <code className="bg-gray-100 px-1 rounded">step_number = 1</code> olan kayıtların bulunması gerekir.
+                    </td>
+                  </tr>
+                ) : step1Fields.map((field) => (
                   <tr key={field.field_name} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{field.field_label}</div>
@@ -465,6 +471,11 @@ export default function FormFieldsSettingsPage() {
         </div>
         
         <div className="p-6">
+          {paymentMethods.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              Ödeme yöntemi bulunamadı. Veritabanında <code className="bg-gray-100 px-1 rounded">payment_method_settings</code> tablosunda kayıt olmalıdır. Sayfayı yenileyin; tablo boşsa varsayılanlar (Online Ödeme, Banka Transferi) otomatik eklenir.
+            </p>
+          ) : (
           <div className="space-y-4">
             {paymentMethods.map((method) => (
               <div key={method.method_name} className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
@@ -501,6 +512,7 @@ export default function FormFieldsSettingsPage() {
               </div>
             ))}
           </div>
+          )}
         </div>
       </div>
 

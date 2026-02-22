@@ -27,12 +27,14 @@ interface FormData {
   document_label_en: string
   document_description: string
   document_description_en: string
+  capacity: string
 }
 
 interface Category {
   id: number
   name: string
-  name_en: string
+  name_en?: string
+  track_capacity?: boolean
 }
 
 export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }: AddRegistrationTypeModalProps) {
@@ -55,7 +57,8 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
     document_label: '',
     document_label_en: '',
     document_description: '',
-    document_description_en: ''
+    document_description_en: '',
+    capacity: ''
   })
 
   useEffect(() => {
@@ -76,9 +79,12 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
     }
   }
 
-  // Label'dan otomatik value oluştur
+  const MAX_LABEL_LEN = 255
+  const MAX_VALUE_LEN = 255
+
+  // Label'dan otomatik value oluştur (value max 255 karakter, label ile aynı)
   const generateValue = (label: string): string => {
-    return label
+    const slug = label
       .toLowerCase()
       .replace(/ğ/g, 'g')
       .replace(/ü/g, 'u')
@@ -89,14 +95,16 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
       .replace(/[^a-z0-9]/g, '_')
       .replace(/_+/g, '_')
       .replace(/^_|_$/g, '')
+    return slug.slice(0, MAX_VALUE_LEN)
   }
 
   // Label değiştiğinde value'yu otomatik güncelle
   const handleLabelChange = (newLabel: string) => {
+    const trimmed = newLabel.slice(0, MAX_LABEL_LEN)
     setFormData({
       ...formData,
-      label: newLabel,
-      value: generateValue(newLabel)
+      label: trimmed,
+      value: generateValue(trimmed)
     })
   }
   const [errors, setErrors] = useState<Partial<FormData>>({})
@@ -116,6 +124,14 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
 
     if (!formData.category_id) {
       newErrors.category_id = 'Kategori seçimi zorunludur'
+    }
+
+    const selectedCategory = categories.find((c) => c.id === Number(formData.category_id))
+    if (selectedCategory?.track_capacity) {
+      const cap = formData.capacity.trim()
+      if (!cap || isNaN(Number(cap)) || Number(cap) < 1) {
+        newErrors.capacity = 'Bu kategoride kontenjan takibi açık; kapasite zorunludur (1 veya üzeri)'
+      }
     }
 
     // Sayı validasyonları (boş olabilir)
@@ -165,7 +181,8 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
           document_label: formData.requires_document ? formData.document_label.trim() || undefined : undefined,
           document_label_en: formData.requires_document ? formData.document_label_en.trim() || undefined : undefined,
           document_description: formData.requires_document ? formData.document_description.trim() || undefined : undefined,
-          document_description_en: formData.requires_document ? formData.document_description_en.trim() || undefined : undefined
+          document_description_en: formData.requires_document ? formData.document_description_en.trim() || undefined : undefined,
+          capacity: formData.capacity.trim() && !isNaN(Number(formData.capacity)) && Number(formData.capacity) >= 1 ? Number(formData.capacity) : null
         })
       })
 
@@ -192,7 +209,8 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
       vat_rate: '20', 
       description: '', description_en: '',
       requires_document: false, document_label: '', document_label_en: '',
-      document_description: '', document_description_en: ''
+      document_description: '', document_description_en: '',
+      capacity: ''
     })
     setErrors({})
     setSubmitting(false)
@@ -213,13 +231,14 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="label" className="block text-xs font-medium text-gray-700 mb-1">
-                  Kayıt Türü Adı (TR) <span className="text-red-500">*</span>
+                  Kayıt Türü Adı (TR) <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(en fazla {MAX_LABEL_LEN} karakter)</span>
                 </label>
                 <input
                   type="text"
                   id="label"
                   value={formData.label}
                   onChange={(e) => handleLabelChange(e.target.value)}
+                  maxLength={MAX_LABEL_LEN}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Örn: Öğrenci"
                   disabled={submitting}
@@ -229,13 +248,14 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
 
               <div>
                 <label htmlFor="label_en" className="block text-xs font-medium text-gray-700 mb-1">
-                  Kayıt Türü Adı (EN)
+                  Kayıt Türü Adı (EN) <span className="text-gray-400 font-normal">(en fazla {MAX_LABEL_LEN} karakter)</span>
                 </label>
                 <input
                   type="text"
                   id="label_en"
                   value={formData.label_en}
-                  onChange={(e) => setFormData({ ...formData, label_en: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, label_en: e.target.value.slice(0, MAX_LABEL_LEN) })}
+                  maxLength={MAX_LABEL_LEN}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="Ex: Student"
                   disabled={submitting}
@@ -246,16 +266,20 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
 
             <div>
               <label htmlFor="value" className="block text-xs font-medium text-gray-700 mb-1">
-                Value (Otomatik) <span className="text-red-500">*</span>
+                Teknik ID (slug) <span className="text-red-500">*</span> <span className="text-gray-400 font-normal">(en fazla {MAX_VALUE_LEN} karakter)</span>
               </label>
               <input
                 type="text"
                 id="value"
                 value={formData.value}
-                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50"
+                onChange={(e) => setFormData({ ...formData, value: e.target.value.slice(0, MAX_VALUE_LEN) })}
+                maxLength={MAX_VALUE_LEN}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50 font-mono"
                 disabled={submitting}
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Kayıt türünü sistemde benzersiz tanımlayan kod (küçük harf, rakam, alt çizgi). Türkçe adı yazınca otomatik doldurulur; gerekirse elle düzenleyebilirsiniz. Aynı teknik ID iki türde kullanılamaz.
+              </p>
               {errors.value && <p className="mt-1 text-xs text-red-600">{errors.value}</p>}
             </div>
 
@@ -280,17 +304,27 @@ export default function AddRegistrationTypeModal({ isOpen, onClose, onSuccess }:
               {errors.category_id && <p className="mt-1 text-xs text-red-600">{errors.category_id}</p>}
             </div>
 
-            {formData.value && (
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Teknik ID (Otomatik)
-                </label>
-                <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-mono text-gray-700">
-                  {formData.value}
-                </div>
-                <p className="mt-1 text-xs text-gray-500">Bu değer otomatik oluşturulur ve değiştirilemez</p>
-              </div>
-            )}
+            <div>
+              <label htmlFor="capacity" className="block text-xs font-medium text-gray-700 mb-1">
+                Kapasite (Kontenjan)
+                {categories.find((c) => c.id === Number(formData.category_id))?.track_capacity && <span className="text-red-500 ml-1">*</span>}
+              </label>
+              <input
+                type="number"
+                id="capacity"
+                value={formData.capacity}
+                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Boş = sınırsız"
+                min="1"
+                step="1"
+                disabled={submitting}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Kategori kontenjan takibi açıksa doldurulması zorunludur. Boş bırakılırsa sınırsız kabul edilir.
+              </p>
+              {errors.capacity && <p className="mt-1 text-xs text-red-600">{errors.capacity}</p>}
+            </div>
 
             {/* Normal Fiyatlar */}
             <div className="border-t pt-3 mt-3">

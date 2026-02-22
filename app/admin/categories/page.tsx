@@ -18,6 +18,12 @@ interface Category {
   is_active: boolean
   icon?: string
   type_count: number
+  track_capacity?: boolean
+  registration_start_date?: string | null
+  registration_end_date?: string | null
+  cancellation_deadline?: string | null
+  early_bird_deadline?: string | null
+  early_bird_enabled?: boolean
 }
 
 export default function CategoriesPage() {
@@ -38,7 +44,13 @@ export default function CategoriesPage() {
     allow_multiple: false,
     display_order: 0,
     is_active: true,
-    icon: ''
+    icon: '',
+    track_capacity: false,
+    registration_start_date: '',
+    registration_end_date: '',
+    cancellation_deadline: '',
+    early_bird_deadline: '',
+    early_bird_enabled: false
   })
 
   const fetchCategories = async () => {
@@ -104,6 +116,13 @@ export default function CategoriesPage() {
     }
   }
 
+  const formatDateTimeLocal = (v: string | null | undefined) => {
+    if (!v) return ''
+    const d = new Date(v)
+    if (isNaN(d.getTime())) return ''
+    return d.toISOString().slice(0, 16)
+  }
+
   const handleEdit = (category: Category) => {
     setEditingCategory(category)
     setFormData({
@@ -119,7 +138,13 @@ export default function CategoriesPage() {
       allow_multiple: category.allow_multiple,
       display_order: category.display_order,
       is_active: category.is_active,
-      icon: category.icon || ''
+      icon: category.icon || '',
+      track_capacity: !!category.track_capacity,
+      registration_start_date: formatDateTimeLocal(category.registration_start_date),
+      registration_end_date: formatDateTimeLocal(category.registration_end_date),
+      cancellation_deadline: formatDateTimeLocal(category.cancellation_deadline),
+      early_bird_deadline: formatDateTimeLocal(category.early_bird_deadline),
+      early_bird_enabled: !!category.early_bird_enabled
     })
     setShowModal(true)
   }
@@ -138,7 +163,13 @@ export default function CategoriesPage() {
       allow_multiple: false,
       display_order: 0,
       is_active: true,
-      icon: ''
+      icon: '',
+      track_capacity: false,
+      registration_start_date: '',
+      registration_end_date: '',
+      cancellation_deadline: '',
+      early_bird_deadline: '',
+      early_bird_enabled: false
     })
     setEditingCategory(null)
   }
@@ -352,7 +383,7 @@ export default function CategoriesPage() {
                 </div>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center gap-6">
                 <label className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"
@@ -362,6 +393,67 @@ export default function CategoriesPage() {
                   />
                   <span className="text-sm font-medium">Aktif</span>
                 </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.track_capacity}
+                    onChange={(e) => setFormData({...formData, track_capacity: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Kontenjan takibi aktif mi?</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.early_bird_enabled}
+                    onChange={(e) => setFormData({...formData, early_bird_enabled: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Erken kayıt aktif</span>
+                </label>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Kayıt Tarihleri (bu kategori için)</h4>
+                <p className="text-xs text-gray-500 mb-3">Boş bırakılırsa sınırsız / hemen açık kabul edilir.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kayıt Başlangıç Tarihi</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.registration_start_date}
+                      onChange={(e) => setFormData({...formData, registration_start_date: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kayıt Son Tarihi</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.registration_end_date}
+                      onChange={(e) => setFormData({...formData, registration_end_date: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Kayıt İptal Son Tarihi</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.cancellation_deadline}
+                      onChange={(e) => setFormData({...formData, cancellation_deadline: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Erken Kayıt Bitiş Tarihi</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.early_bird_deadline}
+                      onChange={(e) => setFormData({...formData, early_bird_deadline: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">

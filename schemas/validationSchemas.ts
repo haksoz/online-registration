@@ -11,6 +11,7 @@ export const personalInfoSchema = z
       required_error: 'Cinsiyet zorunludur',
       invalid_type_error: 'Cinsiyet zorunludur'
     }),
+    country: z.string().optional(),
     email: z.string().email('Geçerli bir e-posta girin'),
     phone: z
       .string()
