@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import {
+  getAuditTableLabel,
+  getAuditFieldLabel,
+  formatAuditValue,
+  formatChangedFieldsList,
+} from '@/constants/auditLogLabels'
 
 interface AuditLog {
   id: number
@@ -20,6 +26,10 @@ interface AuditLog {
   reference_number: string | null
   full_name: string | null
   registration_id: number | null
+  /** Kayıt seçimi satırları için: hangi kategori (örn. Kurslar) */
+  selection_category_name?: string | null
+  /** Kayıt seçimi satırları için: hangi tür (örn. Pediatri Aşı Kursu) */
+  selection_type_label?: string | null
 }
 
 export default function AuditLogsPage() {
@@ -200,8 +210,13 @@ export default function AuditLogsPage() {
                     {log.full_name || <span className="text-gray-400">—</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    <span className="font-mono">{log.table_name}</span>
+                    <span>{getAuditTableLabel(log.table_name)}</span>
                     <span className="text-gray-400 ml-1">#{log.record_id}</span>
+                    {log.table_name === 'registration_selections' && (log.selection_category_name || log.selection_type_label) && (
+                      <div className="text-primary-700 font-medium mt-1">
+                        {[log.selection_category_name, log.selection_type_label].filter(Boolean).join(' – ')}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium w-24">
                     <button
@@ -295,12 +310,21 @@ export default function AuditLogsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Tablo</label>
-                  <p className="text-sm font-mono text-gray-900">{selectedLog.table_name}</p>
+                  <p className="text-sm text-gray-900">{getAuditTableLabel(selectedLog.table_name)}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Kayıt ID</label>
                   <p className="text-sm text-gray-900">#{selectedLog.record_id}</p>
                 </div>
+                {selectedLog.table_name === 'registration_selections' && (selectedLog.selection_category_name || selectedLog.selection_type_label) && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700">Seçim (Kategori / Tür)</label>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {[selectedLog.selection_category_name, selectedLog.selection_type_label].filter(Boolean).join(' – ')}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">Bu satırda yapılan işlem bu kategori ve kayıt türüne aittir.</p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">IP Adresi</label>
                   <p className="text-sm text-gray-900">{selectedLog.ip_address}</p>
@@ -311,7 +335,9 @@ export default function AuditLogsPage() {
               {selectedLog.changed_fields && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Değişen Alanlar</label>
-                  <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded">{selectedLog.changed_fields}</p>
+                  <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded">
+                    {formatChangedFieldsList(selectedLog.changed_fields)}
+                  </p>
                 </div>
               )}
 
@@ -336,25 +362,19 @@ export default function AuditLogsPage() {
                         {changedFields.map(field => (
                           <div key={field} className="border border-gray-200 rounded-lg overflow-hidden">
                             <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
-                              <span className="font-medium text-gray-900">{field}</span>
+                              <span className="font-medium text-gray-900">{getAuditFieldLabel(field)}</span>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 divide-x divide-gray-200">
                               <div className="p-4 bg-red-50">
                                 <p className="text-xs font-medium text-red-700 mb-2">Önceki Değer</p>
                                 <p className="text-sm text-gray-900 break-words">
-                                  {oldData[field] === null || oldData[field] === undefined 
-                                    ? <span className="text-gray-400 italic">boş</span>
-                                    : String(oldData[field])
-                                  }
+                                  {formatAuditValue(field, oldData[field])}
                                 </p>
                               </div>
                               <div className="p-4 bg-green-50">
                                 <p className="text-xs font-medium text-green-700 mb-2">Yeni Değer</p>
                                 <p className="text-sm text-gray-900 break-words">
-                                  {newData[field] === null || newData[field] === undefined 
-                                    ? <span className="text-gray-400 italic">boş</span>
-                                    : String(newData[field])
-                                  }
+                                  {formatAuditValue(field, newData[field])}
                                 </p>
                               </div>
                             </div>

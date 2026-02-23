@@ -10,14 +10,41 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = 20
     const offset = (page - 1) * limit
+    const referenceNumber = searchParams.get('reference_number')?.trim() || ''
+    const fullName = searchParams.get('full_name')?.trim() || ''
 
-    // Toplam sayı
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM audit_logs')
-    const total = (countResult as any[])[0].total
-    const totalPages = Math.ceil(total / limit)
+    const hasRefFilter = referenceNumber.length > 0
+    const hasNameFilter = fullName.length > 0
+    const filters: string[] = []
+    const params: (string | number)[] = []
+
+    if (hasRefFilter) {
+      filters.push('(COALESCE(r_reg.reference_number, r_sel.reference_number) LIKE ?)')
+      params.push(`%${referenceNumber}%`)
+    }
+    if (hasNameFilter) {
+      filters.push('(COALESCE(r_reg.full_name, r_sel.full_name) LIKE ?)')
+      params.push(`%${fullName}%`)
+    }
+    const whereClause = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : ''
+
+    // Toplam sayı (aynı JOIN + filtre)
+    const countSql = `
+      SELECT COUNT(*) as total
+      FROM audit_logs al
+      LEFT JOIN registrations r_reg ON (al.table_name = 'registrations' AND al.record_id = r_reg.id)
+      LEFT JOIN registration_selections rs ON (al.table_name = 'registration_selections' AND al.record_id = rs.id)
+      LEFT JOIN registrations r_sel ON rs.registration_id = r_sel.id
+      ${whereClause}
+    `
+    const [countResult] = await pool.execute(countSql, params)
+    const total = (countResult as any[])[0]?.total ?? 0
+    const totalPages = Math.max(1, Math.ceil(total / limit))
 
     // Referans no ve kayıtlı kişi: registrations'dan veya registration_selections üzerinden
-    const [rows] = await pool.execute(`
+    // Kayıt seçimi satırları için kategori ve tür adı (hangi kurs/kongre türü etkilendi)
+    const [rows] = await pool.execute(
+      `
       SELECT 
         al.id,
         al.user_id,
@@ -34,15 +61,22 @@ export async function GET(request: NextRequest) {
         u.email as user_email,
         COALESCE(r_reg.reference_number, r_sel.reference_number) as reference_number,
         COALESCE(r_reg.full_name, r_sel.full_name) as full_name,
-        COALESCE(r_reg.id, r_sel.id) as registration_id
+        COALESCE(r_reg.id, r_sel.id) as registration_id,
+        rt_sel.label as selection_type_label,
+        rc_sel.label_tr as selection_category_name
       FROM audit_logs al
       LEFT JOIN users u ON al.user_id = u.id
       LEFT JOIN registrations r_reg ON (al.table_name = 'registrations' AND al.record_id = r_reg.id)
       LEFT JOIN registration_selections rs ON (al.table_name = 'registration_selections' AND al.record_id = rs.id)
       LEFT JOIN registrations r_sel ON rs.registration_id = r_sel.id
+      LEFT JOIN registration_types rt_sel ON rs.registration_type_id = rt_sel.id
+      LEFT JOIN registration_categories rc_sel ON rs.category_id = rc_sel.id
+      ${whereClause}
       ORDER BY al.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
-    `)
+    `,
+      params
+    )
 
     const auditLogs = (rows as any[]).map(log => ({
       id: log.id,
@@ -61,6 +95,8 @@ export async function GET(request: NextRequest) {
       reference_number: log.reference_number || null,
       full_name: log.full_name || null,
       registration_id: log.registration_id || null,
+      selection_type_label: log.selection_type_label || null,
+      selection_category_name: log.selection_category_name || null,
     }))
 
     return NextResponse.json({

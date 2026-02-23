@@ -138,6 +138,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           { href: '/admin/mail-logs', label: 'Mail Logları', icon: '📬', roles: ['admin', 'manager'] },
           { href: '/admin/pos-logs', label: 'POS Logları', icon: '💳', roles: ['admin', 'manager'] },
           { href: '/admin/audit-logs', label: 'Sistem Logları', icon: '🔍', roles: ['admin'] },
+          { href: '/admin/audit-logs/timeline', label: 'Olay Geçmişi', icon: '📋', roles: ['admin'] },
         ]
       },
       { href: '/admin/settings/users', label: 'Kullanıcı Yönetimi', icon: '👥', roles: ['admin'] },
