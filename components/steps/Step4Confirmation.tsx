@@ -155,19 +155,32 @@ export default function Step4Confirmation() {
   }
 
   const selectedTypes = getSelectedTypes()
+
+  // Kalem bazlı indirimli tutar varsa onu kullan
+  const getDiscountedItem = (type: any) =>
+    formData.discountedItems?.find(
+      (it) => it.registration_type_id === type.id && it.category_id === type.category_id
+    )
   
-  // Toplam hesapla (KDV dahil)
+  // Toplam hesapla (KDV dahil); indirim uygulandıysa indirimli toplam
   const calculateTotal = () => {
     let total = 0
     selectedTypes.forEach(type => {
-      const fee = getFee(type)
-      const vatRate = Number(type.vat_rate) || 0.20
-      total += fee + (fee * vatRate)
+      const discounted = getDiscountedItem(type)
+      if (discounted) {
+        total += discounted.total_try
+      } else {
+        const fee = getFee(type)
+        const vatRate = Number(type.vat_rate) || 0.20
+        total += fee + (fee * vatRate)
+      }
     })
     return total
   }
 
   const grandTotal = calculateTotal()
+  const displayTotal = formData.discountedGrandTotal != null ? formData.discountedGrandTotal : grandTotal
+  const isDiscounted = !!(formData.discountCode && formData.discountedGrandTotal != null)
 
   const handleNewRegistration = () => {
     formStore.resetForm()
@@ -337,32 +350,41 @@ export default function Step4Confirmation() {
           <h3 className="font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-300">
             {language === 'en' ? 'Selected Registrations' : 'Seçilen Kayıtlar'}
           </h3>
+
+          {isDiscounted && (
+            <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+              {language === 'en' ? 'Discount applied:' : 'İndirim uygulandı:'} <strong>{formData.discountCode}</strong>
+            </div>
+          )}
           
           <div className="space-y-2">
             {selectedTypes.map((type: any) => {
-              const fee = getFee(type)
+              const discounted = getDiscountedItem(type)
               const vatRate = Number(type.vat_rate) || 0.20
-              const vat = fee * vatRate
-              const total = fee + vat
-              
-              // TL karşılığı
+              const fee = discounted ? discounted.discounted_fee_try : getFee(type)
+              const vat = discounted ? discounted.vat_amount_try : fee * vatRate
+              const total = discounted ? discounted.total_try : fee + vat
+              const isItemDiscounted = !!discounted
+
               const exchangeRate = exchangeRates[currencyType] || 1
-              const tryTotal = currencyType !== 'TRY' ? total * exchangeRate : total
+              const tryTotal = currencyType !== 'TRY' && !isItemDiscounted ? total * exchangeRate : total
               
               return (
                 <div key={type.id} className="flex justify-between items-center text-sm py-2 border-b border-gray-200">
                   <div>
                     <p className="font-medium">{language === 'en' ? type.label_en || type.label : type.label}</p>
                     <p className="text-xs text-gray-500">
-                      {formatCurrency(fee)} + %{(vatRate * 100).toFixed(0)} {language === 'en' ? 'VAT' : 'KDV'}
+                      {isItemDiscounted
+                        ? `${formatTurkishCurrency(fee)} TL + %${(vatRate * 100).toFixed(0)} ${language === 'en' ? 'VAT' : 'KDV'}`
+                        : `${formatCurrency(fee)} + %${(vatRate * 100).toFixed(0)} ${language === 'en' ? 'VAT' : 'KDV'}`}
                     </p>
-                    {currencyType !== 'TRY' && (
+                    {!isItemDiscounted && currencyType !== 'TRY' && (
                       <p className="text-xs text-gray-400">
                         ≈ {formatTurkishCurrency(tryTotal)} {language === 'en' ? '(TRY)' : '(TL)'}
                       </p>
                     )}
                   </div>
-                  <p className="font-semibold">{formatCurrency(total)}</p>
+                  <p className="font-semibold">{isItemDiscounted ? formatTurkishCurrency(total) + ' TL' : formatCurrency(total)}</p>
                 </div>
               )
             })}
@@ -370,13 +392,20 @@ export default function Step4Confirmation() {
             <div className="flex justify-between items-center pt-3 border-t-2 border-gray-400">
               <div>
                 <span className="font-bold text-gray-900 block">{language === 'en' ? 'Total (VAT Included):' : 'Toplam (KDV Dahil):'}</span>
-                {currencyType !== 'TRY' && (
+                {isDiscounted && (
+                  <span className="text-sm text-green-600 block">
+                    {formData.discountCode} {language === 'en' ? 'applied' : 'uygulandı'}
+                  </span>
+                )}
+                {!isDiscounted && currencyType !== 'TRY' && (
                   <span className="text-xs text-gray-500">
                     ≈ {formatTurkishCurrency(grandTotal * (exchangeRates[currencyType] || 1))} {language === 'en' ? '(TRY)' : '(TL)'}
                   </span>
                 )}
               </div>
-              <span className="text-xl font-bold text-primary-600">{formatCurrency(grandTotal)}</span>
+              <span className="text-xl font-bold text-primary-600">
+                {isDiscounted ? formatTurkishCurrency(displayTotal) + ' TL' : formatCurrency(displayTotal)}
+              </span>
             </div>
           </div>
         </div>

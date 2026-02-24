@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
+import { applyDiscountCode } from '@/lib/discountApply'
 
 function generateReferenceNumber(): string {
   const date = new Date();
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
       documentUrls,
       currencyType,
       exchangeRates,
+      discountCode: discountCodeInput,
     } = formData
 
     // Seçilen kayıt türlerini al ve toplam hesapla
@@ -110,10 +112,52 @@ export async function POST(request: NextRequest) {
       totalFee += baseFee + (baseFee * vatRate)
     })
 
-    const fee = totalFee
-    const currencyCode = 'TRY' // Artık her zaman TRY olarak kaydedilecek
-    const feeInCurrency = totalFee
-    const exchangeRate = 1.0 // TRY olarak kaydedildiği için kur 1.0
+    // İndirim kodu: doğrula ve indirimli tutarları al
+    let discountCodeId: number | null = null
+    const discountMap = new Map<string, { discounted_fee_try: number; vat_amount_try: number; total_try: number }>()
+    if (discountCodeInput && typeof discountCodeInput === 'string' && discountCodeInput.trim()) {
+      const items = []
+      for (const [catId, typeIds] of Object.entries(registrationSelections || {})) {
+        for (const typeId of typeIds as number[]) {
+          const type = registrationTypes.find((t: any) => t.id === typeId)
+          if (!type) continue
+          const isEarlyBirdActive = isEarlyBirdActiveForType(type)
+          let baseFee = 0
+          if (isEarlyBirdActive) {
+            if (selectedCurrency === 'USD' && type.early_bird_fee_usd != null) baseFee = Number(type.early_bird_fee_usd) * currentExchangeRate
+            else if (selectedCurrency === 'EUR' && type.early_bird_fee_eur != null) baseFee = Number(type.early_bird_fee_eur) * currentExchangeRate
+            else if (selectedCurrency === 'TRY' && type.early_bird_fee_try != null) baseFee = Number(type.early_bird_fee_try)
+          }
+          if (baseFee === 0) {
+            if (selectedCurrency === 'USD') baseFee = Number(type.fee_usd || 0) * currentExchangeRate
+            else if (selectedCurrency === 'EUR') baseFee = Number(type.fee_eur || 0) * currentExchangeRate
+            else baseFee = Number(type.fee_try || 0)
+          }
+          const vatRate = Number(type.vat_rate || 0.20)
+          items.push({ category_id: Number(catId), registration_type_id: typeId, fee_try: baseFee, vat_rate: vatRate })
+        }
+      }
+      const discountResult = await applyDiscountCode(discountCodeInput.trim(), items)
+      if (discountResult.valid && discountResult.items && discountResult.grandTotalTry != null) {
+        totalFee = discountResult.grandTotalTry
+        discountCodeId = discountResult.discountCodeId ?? null
+        discountResult.items.forEach((it: any) => {
+          // Sadece gerçekten indirim uygulanan kalemleri (discount_applied=true) map'e al
+          if (it.discount_applied) {
+            discountMap.set(`${it.category_id}-${it.registration_type_id}`, {
+              discounted_fee_try: it.discounted_fee_try,
+              vat_amount_try: it.vat_amount_try,
+              total_try: it.total_try,
+            })
+          }
+        })
+      }
+    }
+
+    const feeFinal = totalFee
+    const currencyCode = 'TRY'
+    const feeInCurrency = feeFinal
+    const exchangeRate = 1.0
 
     // Generate unique reference number
     const referenceNumber = generateReferenceNumber()
@@ -125,7 +169,8 @@ export async function POST(request: NextRequest) {
       errorMessage: null 
     }
     
-    if (payment.paymentMethod === 'online' && payment.cardNumber) {
+    // Online ödeme sadece tutar > 0 ise başlat
+    if (payment.paymentMethod === 'online' && payment.cardNumber && feeFinal > 0) {
       try {
         // Ödeme başlatma isteği
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`
@@ -134,7 +179,7 @@ export async function POST(request: NextRequest) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: fee,
+            amount: feeFinal,
             currency: 'TRY',
             cardNumber: payment.cardNumber.replace(/\s/g, ''),
             cardExpiry: payment.cardExpiry.replace('/', ''),
@@ -188,8 +233,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Determine payment status based on payment method
-    const paymentStatus = payment.paymentMethod === 'online' ? 'completed' : 'pending'
+    // Ödeme durumu: indirimle 0 TL ise veya online ödeme yapıldıysa completed
+    const paymentStatus = feeFinal === 0 ? 'completed' : (payment.paymentMethod === 'online' ? 'completed' : 'pending')
 
     // registrations tablosundaki mevcut sütunlara göre INSERT oluştur (country, kvkk_consent_at vb. eski DB'de olmayabilir)
     const [colRows] = await pool.execute(
@@ -221,7 +266,7 @@ export async function POST(request: NextRequest) {
       ['registration_type', types.map((t: any) => t.label).join(', ') || null],
       ['registration_type_label_en', types.map((t: any) => t.label_en || t.label).join(', ') || null],
       ['form_language', formLanguage || 'tr'],
-      ['fee', fee],
+      ['fee', feeFinal],
       ['currency_code', currencyCode],
       ['fee_in_currency', feeInCurrency],
       ['exchange_rate', exchangeRate],
@@ -229,6 +274,7 @@ export async function POST(request: NextRequest) {
       ['payment_status', paymentStatus],
       ['kvkk_consent_at', personalInfo.kvkk_consent === true ? new Date().toISOString().slice(0, 19).replace('T', ' ') : null],
     ]
+    if (discountCodeId != null) columnSpec.push(['discount_code_id', discountCodeId])
 
     const insertCols: string[] = []
     const insertVals: unknown[] = []
@@ -293,6 +339,8 @@ export async function POST(request: NextRequest) {
       registrationId = (insertReg as any).insertId
 
       // Seçimleri kaydet ve kapasiteyi artır (transaction içinde)
+      // İndirim varsa kalem toplamlarının genel toplamla (feeFinal) uyumunu kontrol ederiz
+      let sumSelectionTotalTry = 0
       if (registrationSelections && Object.keys(registrationSelections).length > 0) {
         for (const [categoryId, typeIds] of Object.entries(registrationSelections)) {
           for (const typeId of typeIds as number[]) {
@@ -331,26 +379,35 @@ export async function POST(request: NextRequest) {
             const totalWithVat = typeFee + vat
             const docInfo = documentUrls?.[typeId]
 
+            const discountKey = `${categoryId}-${typeId}`
+            const discounted = discountMap.get(discountKey)
+            const appliedFeeTry = discounted ? discounted.discounted_fee_try : typeFee
+            const appliedVatTry = discounted ? discounted.vat_amount_try : vat
+            const appliedTotalTry = discounted ? discounted.total_try : totalWithVat
+            sumSelectionTotalTry += appliedTotalTry
+
+            const selectionDiscountCodeId = discounted && discountCodeId != null ? discountCodeId : null
             await connection.execute(
               `INSERT INTO registration_selections (
                 registration_id, category_id, registration_type_id,
                 applied_fee_try, applied_currency, applied_fee_amount, exchange_rate,
-                vat_rate, vat_amount_try, total_try,
+                vat_rate, vat_amount_try, total_try, discount_code_id,
                 payment_status, is_early_bird, is_cancelled,
                 document_filename, document_url, document_uploaded_at,
                 created_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
               [
                 registrationId,
                 Number(categoryId),
                 typeId,
-                typeFee,
+                appliedFeeTry,
                 'TRY',
-                typeFee,
+                appliedFeeTry,
                 1.0,
                 vatRate,
-                vat,
-                totalWithVat,
+                appliedVatTry,
+                appliedTotalTry,
+                selectionDiscountCodeId,
                 paymentStatus,
                 isEarlyBirdActive ? 1 : 0,
                 0,
@@ -361,6 +418,21 @@ export async function POST(request: NextRequest) {
             )
           }
         }
+      }
+
+      // Kaydedilecek kalem toplamı (sumSelectionTotalTry) genel toplamla (feeFinal) uyuşmalı
+      if (registrationSelections && Object.keys(registrationSelections).length > 0 && Math.abs(sumSelectionTotalTry - feeFinal) > 0.02) {
+        await connection.rollback()
+        connection.release()
+        return NextResponse.json(
+          {
+            success: false,
+            message: discountCodeId != null
+              ? 'İndirim tutarları tutarsız. Lütfen indirim kodunu kaldırıp tekrar uygulayın veya sayfayı yenileyin.'
+              : 'Kayıt tutarları tutarsız. Lütfen sayfayı yenileyip tekrar deneyin.',
+          },
+          { status: 400 }
+        )
       }
 
       await connection.commit()
@@ -374,6 +446,17 @@ export async function POST(request: NextRequest) {
       )
     }
     connection.release()
+
+    if (discountCodeId != null) {
+      try {
+        await pool.execute(
+          'UPDATE discount_codes SET used_count = used_count + 1 WHERE id = ?',
+          [discountCodeId]
+        )
+      } catch (e) {
+        console.error('Discount code used_count increment failed:', e)
+      }
+    }
 
     // Log kaydı oluştur
     try {

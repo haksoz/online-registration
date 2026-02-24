@@ -119,6 +119,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         items: [
           { href: '/admin/categories', label: 'Kayıt Kategorileri', icon: '📂', roles: ['admin', 'manager'] },
           { href: '/admin/registration-types', label: 'Kayıt Türleri', icon: '🏷️', roles: ['admin', 'manager'] },
+          { href: '/admin/discount-codes', label: 'İndirim Kodları', icon: '🎫', roles: ['admin', 'manager'] },
           { href: '/admin/settings/registration', label: 'Kayıt Ayarları', icon: '📅', roles: ['admin', 'manager'] },
         ]
       },

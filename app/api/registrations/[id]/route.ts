@@ -65,6 +65,15 @@ export async function GET(
     registration.vat_amount = vatAmount
     registration.grand_total = grandTotal
 
+    if (registration.discount_code_id) {
+      const [codeRows] = await pool.execute(
+        'SELECT code FROM discount_codes WHERE id = ?',
+        [registration.discount_code_id]
+      )
+      const codeRow = (codeRows as any[])[0]
+      if (codeRow) registration.discount_code = codeRow.code
+    }
+
     return NextResponse.json({
       success: true,
       data: registration

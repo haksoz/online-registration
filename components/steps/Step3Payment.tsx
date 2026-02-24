@@ -19,7 +19,7 @@ interface Step3PaymentProps {
 }
 
 export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
-  const { formData, updatePayment, setReferenceNumber, setRegistrationId } = useFormStore()
+  const { formData, updatePayment, setReferenceNumber, setRegistrationId, setDiscount } = useFormStore()
   const { getEnabledPaymentMethods, loading: settingsLoading } = useFormSettings()
   const { t, language } = useTranslation()
   const { 
@@ -87,6 +87,7 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
@@ -94,10 +95,17 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
     },
   })
 
+  useEffect(() => {
+    if (formData.discountCode != null && formData.discountedGrandTotal === 0) setValue('paymentMethod', 'bank_transfer')
+  }, [formData.discountCode, formData.discountedGrandTotal, setValue])
+
   const paymentMethod = watch('paymentMethod')
 
   const [paymentError, setPaymentError] = useState<{ code: string; message: string } | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [discountInput, setDiscountInput] = useState(formData.discountCode ?? '')
+  const [discountMessage, setDiscountMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [validatingDiscount, setValidatingDiscount] = useState(false)
 
   const onSubmit = async (data: PaymentFormData) => {
     try {
@@ -269,6 +277,61 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
 
   const grandTotal = calculateTotal()
 
+  const displayTotal = formData.discountedGrandTotal != null ? formData.discountedGrandTotal : grandTotal
+  const isDiscounted = formData.discountCode != null && formData.discountedGrandTotal != null
+  const isFree = isDiscounted && formData.discountedGrandTotal === 0
+
+  const handleApplyDiscount = async () => {
+    const code = discountInput.trim()
+    if (!code) {
+      setDiscountMessage({ type: 'error', text: language === 'en' ? 'Enter a discount code.' : 'İndirim kodu girin.' })
+      return
+    }
+    setValidatingDiscount(true)
+    setDiscountMessage(null)
+    try {
+      const exchangeRate = currencyType === 'TRY' ? 1 : Number(exchangeRates?.[currencyType]) || 1
+      const items = selectedTypes.map((type: any) => {
+        const fee = getFee(type)
+        const feeTry = currencyType === 'TRY' ? fee : fee * exchangeRate
+        return {
+          category_id: type.category_id,
+          registration_type_id: type.id,
+          fee_try: feeTry,
+          vat_rate: Number(type.vat_rate) || 0.2,
+        }
+      })
+      const res = await fetch('/api/discount/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, items }),
+      })
+      const data = await res.json()
+      if (data.success && data.valid) {
+        setDiscount(code, data.grandTotalTry, data.items)
+        setDiscountMessage({
+          type: 'success',
+          text: language === 'en'
+            ? `Discount applied. New total: ${formatTurkishCurrency(data.grandTotalTry)} TL`
+            : `İndirim uygulandı. Yeni toplam: ${formatTurkishCurrency(data.grandTotalTry)} TL`,
+        })
+      } else {
+        setDiscount(undefined, undefined, undefined)
+        setDiscountMessage({ type: 'error', text: data.message || (language === 'en' ? 'Invalid discount code.' : 'Geçersiz indirim kodu.') })
+      }
+    } catch {
+      setDiscountMessage({ type: 'error', text: language === 'en' ? 'Could not validate code.' : 'Kod doğrulanamadı.' })
+    } finally {
+      setValidatingDiscount(false)
+    }
+  }
+
+  const handleRemoveDiscount = () => {
+    setDiscountInput('')
+    setDiscount(undefined, undefined, undefined)
+    setDiscountMessage(null)
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
@@ -388,15 +451,18 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             </h4>
             <div className="space-y-3">
               {selectedTypes.map((type: any) => {
-                const fee = getFee(type)
+                const discountedItem = formData.discountedItems?.find(
+                  (it) => it.registration_type_id === type.id && it.category_id === type.category_id
+                )
                 const vatRate = Number(type.vat_rate) || 0.20
-                const vat = fee * vatRate
-                const total = fee + vat
-                
-                // TL karşılığı
+                const fee = discountedItem ? discountedItem.discounted_fee_try : getFee(type)
+                const vat = discountedItem ? discountedItem.vat_amount_try : fee * vatRate
+                const total = discountedItem ? discountedItem.total_try : fee + vat
+                const isItemDiscounted = !!discountedItem
+
                 const exchangeRate = exchangeRates[currencyType] || 1
                 const tryTotal = currencyType !== 'TRY' ? total * exchangeRate : total
-                
+
                 return (
                   <div key={type.id} className="bg-white rounded-lg p-3 border border-gray-200">
                     <div className="flex justify-between items-start">
@@ -405,16 +471,18 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                           {language === 'en' ? type.label_en || type.label : type.label}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {formatCurrency(fee)} + %{(vatRate * 100).toFixed(0)} {language === 'en' ? 'VAT' : 'KDV'}
+                          {isItemDiscounted
+                            ? `${formatTurkishCurrency(fee)} TL + %${(vatRate * 100).toFixed(0)} ${language === 'en' ? 'VAT' : 'KDV'}`
+                            : `${formatCurrency(fee)} + %${(vatRate * 100).toFixed(0)} ${language === 'en' ? 'VAT' : 'KDV'}`}
                         </p>
-                        {currencyType !== 'TRY' && (
+                        {!isItemDiscounted && currencyType !== 'TRY' && (
                           <p className="text-xs text-gray-400 mt-0.5">
                             ≈ {formatTurkishCurrency(tryTotal)} {language === 'en' ? '(TRY)' : '(TL)'}
                           </p>
                         )}
                       </div>
                       <p className="font-semibold text-gray-900">
-                        {formatCurrency(total)}
+                        {isItemDiscounted ? formatTurkishCurrency(total) + ' TL' : formatCurrency(total)}
                       </p>
                     </div>
                   </div>
@@ -427,14 +495,19 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
                     <span className="font-semibold text-gray-900 block">
                       {language === 'en' ? 'Total (VAT Included):' : 'Genel Toplam (KDV Dahil):'}
                     </span>
-                    {currencyType !== 'TRY' && (
+                    {isDiscounted && (
+                      <span className="text-sm text-green-600">
+                        {formData.discountCode} {language === 'en' ? 'applied' : 'uygulandı'}
+                      </span>
+                    )}
+                    {!isDiscounted && currencyType !== 'TRY' && (
                       <span className="text-xs text-gray-500">
                         ≈ {formatTurkishCurrency(grandTotal * (exchangeRates[currencyType] || 1))} {language === 'en' ? '(TRY)' : '(TL)'}
                       </span>
                     )}
                   </div>
                   <span className="text-xl font-bold text-primary-600">
-                    {formatCurrency(grandTotal)}
+                    {isDiscounted ? formatTurkishCurrency(displayTotal) + ' TL' : formatCurrency(displayTotal)}
                   </span>
                 </div>
               </div>
@@ -442,7 +515,44 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
           </div>
         </div>
 
-        {/* Payment Method Selection */}
+        {/* İndirim kodu - ödeme yönteminden önce */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {language === 'en' ? 'Discount code' : 'İndirim kodu'}
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={discountInput}
+              onChange={(e) => setDiscountInput(e.target.value)}
+              placeholder={language === 'en' ? 'Enter code' : 'Kod girin'}
+              className="border border-gray-300 rounded-md px-3 py-2 max-w-xs font-mono"
+              disabled={!!formData.discountCode}
+            />
+            {!formData.discountCode ? (
+              <button
+                type="button"
+                onClick={handleApplyDiscount}
+                disabled={validatingDiscount}
+                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 disabled:opacity-50"
+              >
+                {validatingDiscount ? (language === 'en' ? 'Checking...' : 'Kontrol...') : (language === 'en' ? 'Apply' : 'Uygula')}
+              </button>
+            ) : (
+              <button type="button" onClick={handleRemoveDiscount} className="px-4 py-2 text-red-600 hover:text-red-800 text-sm">
+                {language === 'en' ? 'Remove' : 'Kaldır'}
+              </button>
+            )}
+          </div>
+          {discountMessage && (
+            <p className={`mt-1.5 text-sm ${discountMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+              {discountMessage.text}
+            </p>
+          )}
+        </div>
+
+        {/* Payment Method Selection - gizle toplam 0 TL ise */}
+        {!isFree && (
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">
             {t('step3.paymentMethod')} <span className="text-red-500">*</span>
@@ -491,9 +601,19 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
             <p className="mt-1.5 text-sm text-red-600">{errors.paymentMethod.message}</p>
           )}
         </div>
+        )}
 
-        {/* Payment Method Warning Message */}
-        {paymentMethod && enabledPaymentMethods.find(m => m.method_name === paymentMethod) && (
+        {/* Toplam 0 TL: Ödeme gerekmiyor */}
+        {isFree && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-medium">
+              {language === 'en' ? 'No payment required. You can complete your registration.' : 'Ödeme gerekmiyor. Kaydı tamamlayabilirsiniz.'}
+            </p>
+          </div>
+        )}
+
+        {/* Payment Method Warning Message - sadece ödeme gerekliyse */}
+        {!isFree && paymentMethod && enabledPaymentMethods.find(m => m.method_name === paymentMethod) && (
           (() => {
             const selectedMethod = enabledPaymentMethods.find(m => m.method_name === paymentMethod)
             const warningMessage = language === 'en' 
@@ -850,7 +970,13 @@ export default function Step3Payment({ onNext, onBack }: Step3PaymentProps) {
         <div className="flex justify-between pt-6 border-t border-gray-200">
           <button
             type="button"
-            onClick={onBack}
+            onClick={() => {
+              // Step 2'ye dönüldüğünde indirimi sıfırla; tekrar Step 3'e gelindiğinde kodu tekrar sorsun
+              setDiscount(undefined, undefined, undefined)
+              setDiscountInput('')
+              setDiscountMessage(null)
+              onBack()
+            }}
             className="px-8 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors shadow-sm hover:shadow-md"
           >
             {t('common.back')}

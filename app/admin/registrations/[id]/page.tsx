@@ -34,6 +34,7 @@ interface RegistrationSelection {
   document_filename?: string
   document_url?: string
   document_uploaded_at?: string
+  discount_code_id?: number | null
 }
 
 interface Registration {
@@ -76,6 +77,8 @@ interface Registration {
   updated_at: string
   kvkk_consent_at?: string | null
   cancellationDeadline?: string | null
+  discount_code_id?: number | null
+  discount_code?: string | null
 }
 
 export default function RegistrationDetailPage() {
@@ -791,6 +794,11 @@ export default function RegistrationDetailPage() {
                           </p>
                         </div>
                         <div className="text-right">
+                          {selection.discount_code_id && !selection.is_cancelled && registration.discount_code && (
+                            <span className="inline-block text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded mb-1">
+                              İndirimli ({registration.discount_code})
+                            </span>
+                          )}
                           <p className={`text-lg font-semibold ${
                             isMoneyNotInSystem
                               ? 'text-gray-400 line-through' 
@@ -815,6 +823,9 @@ export default function RegistrationDetailPage() {
                                 : 'text-gray-700'
                           }`}>
                             Toplam: {formatTurkishCurrency(selection.total_try)}
+                            {selection.discount_code_id && !selection.is_cancelled && (
+                              <span className="text-green-600 ml-1">(indirimli)</span>
+                            )}
                           </span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
@@ -999,7 +1010,7 @@ export default function RegistrationDetailPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-300">
-                  <span className="text-gray-900">TOPLAM</span>
+                  <span className="text-gray-900">{registration.discount_code ? 'TOPLAM (İndirimli)' : 'TOPLAM'}</span>
                   <span className="text-primary-600">
                     {formatTurkishCurrency(registration.grand_total)}
                   </span>

@@ -46,6 +46,18 @@ export interface FormData {
   referenceNumber?: string
   registrationId?: number
   formLanguage?: 'tr' | 'en'
+  /** İndirim kodu (kullanıcı girişi) */
+  discountCode?: string
+  /** Validate sonrası indirimli toplam (gösterim için) */
+  discountedGrandTotal?: number
+  /** Validate sonrası kalem bazlı indirimli tutarlar (gösterim için) */
+  discountedItems?: Array<{
+    category_id: number
+    registration_type_id: number
+    discounted_fee_try: number
+    vat_amount_try: number
+    total_try: number
+  }>
 }
 
 interface FormStore {
@@ -60,6 +72,7 @@ interface FormStore {
   setReferenceNumber: (referenceNumber: string) => void
   setRegistrationId: (registrationId: number) => void
   setFormLanguage: (language: 'tr' | 'en') => void
+  setDiscount: (code: string | undefined, discountedGrandTotal: number | undefined, discountedItems?: FormData['discountedItems']) => void
   resetForm: () => void
 }
 
@@ -172,6 +185,15 @@ export const useFormStore = create<FormStore>((set) => ({
       formData: {
         ...state.formData,
         formLanguage: language,
+      },
+    })),
+  setDiscount: (code, discountedGrandTotal, discountedItems) =>
+    set((state) => ({
+      formData: {
+        ...state.formData,
+        discountCode: code,
+        discountedGrandTotal,
+        discountedItems: discountedItems ?? undefined,
       },
     })),
   resetForm: () => set({ currentStep: 1, formData: initialFormData }),
