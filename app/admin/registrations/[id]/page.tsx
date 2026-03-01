@@ -372,9 +372,9 @@ export default function RegistrationDetailPage() {
               <div>
                 <label className="text-xs text-gray-500">Ödeme Durumu</label>
                 <p className={`text-sm font-medium ${
-                  registration.payment_status === 'completed' ? 'text-green-600' : 'text-orange-600'
+                  activeSelections.length === 0 ? 'text-gray-500' : registration.payment_status === 'completed' ? 'text-green-600' : 'text-orange-600'
                 }`}>
-                  {registration.payment_status === 'completed' ? 'Tamamlandı' : 'Beklemede'}
+                  {activeSelections.length === 0 ? '—' : registration.payment_status === 'completed' ? 'Tamamlandı' : 'Beklemede'}
                 </p>
               </div>
 
@@ -558,8 +558,8 @@ export default function RegistrationDetailPage() {
                 </div>
               )}
               
-              {/* Tahsilat Onay Butonu */}
-              {registration.payment_status === 'pending' && (
+              {/* Tahsilat Onay Butonu - tüm seçimler iptal edilmişse gösterme */}
+              {registration.payment_status === 'pending' && activeSelections.length > 0 && (
                 <div className="pt-3 border-t border-gray-200">
                   <button
                     onClick={() => {

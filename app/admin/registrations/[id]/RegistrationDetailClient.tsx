@@ -58,6 +58,7 @@ interface Registration {
   payment_confirmed_at?: string
   payment_notes?: string
   created_at: string
+  selections?: Array<{ is_cancelled?: boolean }>
 }
 
 interface PaymentReceipt {
@@ -1045,8 +1046,8 @@ Devam etmek istediğinizden emin misiniz?`
                     <span className={getPaymentStatusBadge(registration.payment_status)}>
                       {getPaymentStatusLabel(registration.payment_status)}
                     </span>
-                    {/* Tahsilat onay butonu - sadece beklemedeki kayıtlar için */}
-                    {registration.payment_method === 'bank_transfer' && registration.status === 1 && registration.payment_status === 'pending' && currentUser?.role !== 'reporter' && (
+                    {/* Tahsilat onay butonu - tüm seçimler iptal edilmişse gösterme */}
+                    {registration.payment_method === 'bank_transfer' && registration.status === 1 && registration.payment_status === 'pending' && currentUser?.role !== 'reporter' && registration.selections?.some((s) => !s.is_cancelled) && (
                       <button
                         onClick={() => handlePaymentConfirmation()}
                         className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"

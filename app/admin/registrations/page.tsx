@@ -375,7 +375,7 @@ export default function RegistrationsPage() {
       'Kayıt Durumu': r.status === 1 ? 'Kayıtlı' : r.status === 0 ? 'İptal' : 'Bilinmiyor',
       'Ücret (TL)': formatTurkishCurrency(calculateGrandTotal(r)),
       'Ödeme Yöntemi': getPaymentMethodLabel(r.payment_method),
-      'Ödeme Durumu': getPaymentStatusLabel(r.payment_status),
+      'Ödeme Durumu': (r.status === 0 && (r.refund_status === 'completed' || r.refund_status === 'rejected')) || (r.selections?.length && r.selections.every((sel: any) => sel.is_cancelled)) ? '' : getPaymentStatusLabel(r.payment_status),
       'Kayıt Tarihi': new Date(r.created_at).toLocaleString('tr-TR', {
         year: 'numeric',
         month: '2-digit',
@@ -585,63 +585,43 @@ export default function RegistrationsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex flex-col gap-1">
-                      {/* Aktif kayıtlar için ödeme durumu */}
-                      {r.status === 1 && (
+                      {/* Tüm seçimler iptal edilmişse ödeme durumunda bir şey gösterme */}
+                      {!(r.selections?.length && r.selections.every((sel: any) => sel.is_cancelled)) && (
                         <>
-                          <span className={getPaymentStatusBadge(r.payment_status)}>
-                            {getCombinedPaymentStatus(r.payment_method, r.payment_status)}
-                          </span>
-                          
-                          {/* Dekont durumu - sadece dekont varsa göster */}
-                          {r.payment_method === 'bank_transfer' && r.payment_receipt_filename && (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                              📄 Dekont Var
-                            </span>
-                          )}
-                          
-                          {/* Tahsilat onay butonu */}
-                          {r.payment_method === 'bank_transfer' && r.payment_status === 'pending' && currentUser?.role !== 'reporter' && (
-                            <button
-                              onClick={() => handlePaymentConfirmation(r.id)}
-                              className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                              title="Tahsilatı Onayla"
-                            >
-                              ✓ Tahsilatı Onayla
-                            </button>
-                          )}
-                        </>
-                      )}
-                      
-                      {/* İptal edilen kayıtlar için iade durumu */}
-                      {r.status === 0 && (
-                        <>
-                          {/* Ödeme tamamlanmış ve iade var */}
-                          {r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' ? (
+                          {/* Aktif kayıtlar için ödeme durumu */}
+                          {r.status === 1 && (
                             <>
-                              {/* Ödeme yöntemi bilgisi - sadece iade beklemede ise göster */}
-                              {r.refund_status === 'pending' && (
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                  {r.payment_method === 'online' ? 'Online Ödeme Tamamlandı' : 'Banka Transferi Tamamlandı'}
+                              <span className={getPaymentStatusBadge(r.payment_status)}>
+                                {getCombinedPaymentStatus(r.payment_method, r.payment_status)}
+                              </span>
+                              
+                              {r.payment_method === 'bank_transfer' && r.payment_receipt_filename && (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                  📄 Dekont Var
                                 </span>
                               )}
                               
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                r.refund_status === 'completed' ? 'bg-green-100 text-green-800' :
-                                r.refund_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {r.refund_status === 'pending' ? '💰 İade Beklemede' :
-                                 r.refund_status === 'completed' ? '✅ İade Tamamlandı' :
-                                 r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
-                                 `💰 ${r.refund_status}`}
-                              </span>
+                              {r.payment_method === 'bank_transfer' && r.payment_status === 'pending' && currentUser?.role !== 'reporter' && r.selections?.some((sel: any) => !sel.is_cancelled) && (
+                                <button
+                                  onClick={() => handlePaymentConfirmation(r.id)}
+                                  className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                  title="Tahsilatı Onayla"
+                                >
+                                  ✓ Tahsilatı Onayla
+                                </button>
+                              )}
                             </>
-                          ) : (
-                            /* Ödeme beklemedeyken iptal veya iade yok */
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                              {r.payment_status === 'completed' ? '💳 Ödeme Alındı' : '⏳ Ödeme Beklemedeyken İptal Edildi'}
-                            </span>
+                          )}
+                          
+                          {/* İptal edilen kayıtlar: sadece iade beklemede ise göster */}
+                          {r.status === 0 && (
+                            <>
+                              {r.payment_status === 'completed' && r.refund_status === 'pending' && (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                  💰 İade Beklemede
+                                </span>
+                              )}
+                            </>
                           )}
                         </>
                       )}
@@ -816,50 +796,31 @@ export default function RegistrationsPage() {
               <div className="mb-3">
                 <div className="text-xs font-medium text-gray-500 mb-2">Ödeme Durumu</div>
                 <div className="flex flex-col gap-1">
-                  {r.status === 1 && (
+                  {!(r.selections?.length && r.selections.every((sel: any) => sel.is_cancelled)) && (
                     <>
-                      <span className={getPaymentStatusBadge(r.payment_status)}>
-                        {getCombinedPaymentStatus(r.payment_method, r.payment_status)}
-                      </span>
-                      {r.payment_method === 'bank_transfer' && r.payment_receipt_filename && (
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          📄 Dekont Var
-                        </span>
-                      )}
-                      {r.payment_method === 'bank_transfer' && r.payment_status === 'pending' && currentUser?.role !== 'reporter' && (
-                        <button
-                          onClick={() => handlePaymentConfirmation(r.id)}
-                          className="px-3 py-2 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                        >
-                          ✓ Tahsilatı Onayla
-                        </button>
-                      )}
-                    </>
-                  )}
-                  {r.status === 0 && (
-                    <>
-                      {r.payment_status === 'completed' && r.refund_status && r.refund_status !== 'none' ? (
+                      {r.status === 1 && (
                         <>
-                          {r.refund_status === 'pending' && (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                              {r.payment_method === 'online' ? 'Online Ödeme Tamamlandı' : 'Banka Transferi Tamamlandı'}
+                          <span className={getPaymentStatusBadge(r.payment_status)}>
+                            {getCombinedPaymentStatus(r.payment_method, r.payment_status)}
+                          </span>
+                          {r.payment_method === 'bank_transfer' && r.payment_receipt_filename && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              📄 Dekont Var
                             </span>
                           )}
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            r.refund_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            r.refund_status === 'completed' ? 'bg-green-100 text-green-800' :
-                            r.refund_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {r.refund_status === 'pending' ? '💰 İade Beklemede' :
-                             r.refund_status === 'completed' ? '✅ İade Tamamlandı' :
-                             r.refund_status === 'rejected' ? '❌ İade Reddedildi' : 
-                             `💰 ${r.refund_status}`}
-                          </span>
+                          {r.payment_method === 'bank_transfer' && r.payment_status === 'pending' && currentUser?.role !== 'reporter' && r.selections?.some((sel: any) => !sel.is_cancelled) && (
+                            <button
+                              onClick={() => handlePaymentConfirmation(r.id)}
+                              className="px-3 py-2 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                            >
+                              ✓ Tahsilatı Onayla
+                            </button>
+                          )}
                         </>
-                      ) : (
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                          {r.payment_status === 'completed' ? '💳 Ödeme Alındı' : '⏳ Ödeme Beklemedeyken İptal Edildi'}
+                      )}
+                      {r.status === 0 && r.payment_status === 'completed' && r.refund_status === 'pending' && (
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          💰 İade Beklemede
                         </span>
                       )}
                     </>
